@@ -2,9 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
+/* Kalifind-inspired design system with purple branding */
 
 @layer base {
   :root {
@@ -17,24 +15,35 @@ All colors MUST be HSL.
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    /* Purple brand colors */
+    --primary: 264 83% 58%;
+    --primary-foreground: 0 0% 100%;
+    --primary-hover: 264 83% 52%;
 
-    --secondary: 210 40% 96.1%;
+    --secondary: 250 7% 97%;
     --secondary-foreground: 222.2 47.4% 11.2%;
 
-    --muted: 210 40% 96.1%;
+    --muted: 250 7% 97%;
     --muted-foreground: 215.4 16.3% 46.9%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent: 264 83% 95%;
+    --accent-foreground: 264 83% 25%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 264 83% 58%;
+
+    /* Search specific colors */
+    --search-highlight: 129 76% 59%;
+    --search-bar: 0 0% 98%;
+    --filter-bg: 0 0% 100%;
+    
+    /* Loading colors */
+    --loading: 220 13% 91%;
+    --loading-shimmer: 0 0% 98%;
 
     --radius: 0.5rem;
 
