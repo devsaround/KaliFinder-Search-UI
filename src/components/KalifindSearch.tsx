@@ -1,5 +1,5 @@
 import React, { useState, useTransition, useRef, useEffect } from 'react';
-import { Search, ShoppingCart, X, Mic, Camera } from 'lucide-react';
+import { Search, ShoppingCart, X, Mic, Camera, Filter, ChevronDown } from 'lucide-react';
 
 interface Product {
   id: string;
@@ -22,6 +22,7 @@ interface FilterState {
 const KalifindSearch: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [showRecentSearch, setShowRecentSearch] = useState(false);
+  const [showMobileFilters, setShowMobileFilters] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -36,6 +37,7 @@ const KalifindSearch: React.FC = () => {
 
   const searchRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const mobileFiltersRef = useRef<HTMLDivElement>(null);
 
   // Mock data
   const mockProducts: Product[] = [
@@ -135,6 +137,9 @@ const KalifindSearch: React.FC = () => {
     const handleClickOutside = (event: MouseEvent) => {
       if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
         setShowRecentSearch(false);
+      }
+      if (mobileFiltersRef.current && !mobileFiltersRef.current.contains(event.target as Node)) {
+        setShowMobileFilters(false);
       }
     };
 
@@ -308,6 +313,171 @@ const KalifindSearch: React.FC = () => {
           </div>
         </div>
       </header>
+
+      {/* Mobile Filter Button - Only visible on tablet/mobile */}
+      <div className="!block lg:!hidden !px-4 !py-3 !border-b !border-border !bg-background">
+        <button
+          onClick={() => setShowMobileFilters(true)}
+          className="!flex !items-center !gap-2 !px-4 !py-2 !bg-primary !text-primary-foreground !rounded-lg !font-medium hover:!bg-primary-hover !transition-colors"
+        >
+          <Filter className="!w-4 !h-4" />
+          Filters
+          <span className="!bg-primary-foreground !text-primary !px-2 !py-1 !rounded !text-xs !font-bold">
+            {filters.categories.length + filters.sizes.length + filters.colors.length}
+          </span>
+        </button>
+      </div>
+
+      {/* Mobile Filter Modal Overlay */}
+      {showMobileFilters && (
+        <div className="!fixed !inset-0 !bg-black !bg-opacity-50 !z-50 lg:!hidden">
+          <div 
+            ref={mobileFiltersRef}
+            className="!absolute !top-0 !left-0 !right-0 !bg-background !max-h-screen !overflow-y-auto !shadow-xl"
+          >
+            {/* Mobile Filter Header */}
+            <div className="!flex !items-center !justify-between !p-4 !border-b !border-border !bg-background !sticky !top-0 !z-10">
+              <h2 className="!text-lg !font-semibold !text-foreground">Filters</h2>
+              <button
+                onClick={() => setShowMobileFilters(false)}
+                className="!p-2 !hover:bg-muted !rounded-full !transition-colors"
+              >
+                <X className="!w-5 !h-5 !text-foreground" />
+              </button>
+            </div>
+
+            {/* Mobile Filter Content */}
+            <div className="!p-4 !space-y-6">
+              {/* Category Filter */}
+              <div>
+                <h3 className="!font-medium !text-foreground !mb-3 !flex !items-center !justify-between">
+                  Category
+                  <ChevronDown className="!w-4 !h-4" />
+                </h3>
+                <div className="!space-y-3">
+                  {categories.map((category) => (
+                    <label key={category.name} className="!flex !items-center !justify-between !cursor-pointer !p-2 !hover:bg-muted !rounded-lg">
+                      <div className="!flex !items-center !gap-3">
+                        <input
+                          type="checkbox"
+                          checked={filters.categories.includes(category.name)}
+                          onChange={() => handleCategoryChange(category.name)}
+                          className="!w-5 !h-5 !text-primary !bg-background !border-border !rounded focus:!ring-primary"
+                        />
+                        <span className="!text-foreground !text-base">{category.name}</span>
+                      </div>
+                      <span className="!text-muted-foreground !text-sm !bg-muted !px-2 !py-1 !rounded">{category.count}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {/* Price Range */}
+              <div>
+                <h3 className="!font-medium !text-foreground !mb-3 !flex !items-center !justify-between">
+                  Price
+                  <ChevronDown className="!w-4 !h-4" />
+                </h3>
+                <div className="!space-y-4">
+                  <div className="!relative">
+                    <input
+                      type="range"
+                      min="0"
+                      max="250"
+                      value={filters.priceRange[1]}
+                      onChange={(e) => setFilters(prev => ({
+                        ...prev,
+                        priceRange: [prev.priceRange[0], parseInt(e.target.value)]
+                      }))}
+                      className="!w-full !h-3 !bg-muted !rounded-lg !appearance-none !cursor-pointer"
+                      style={{
+                        background: `linear-gradient(to right, hsl(var(--primary)) 0%, hsl(var(--primary)) ${(filters.priceRange[1] / 250) * 100}%, hsl(var(--muted)) ${(filters.priceRange[1] / 250) * 100}%, hsl(var(--muted)) 100%)`
+                      }}
+                    />
+                  </div>
+                  <div className="!flex !justify-between !text-sm !text-muted-foreground">
+                    <span>0 €</span>
+                    <span>{filters.priceRange[1]} €</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Size Filter */}
+              <div>
+                <h3 className="!font-medium !text-foreground !mb-3 !flex !items-center !justify-between">
+                  Size
+                  <ChevronDown className="!w-4 !h-4" />
+                </h3>
+                <div className="!grid !grid-cols-4 !gap-3">
+                  {sizes.map((size) => (
+                    <button
+                      key={size}
+                      onClick={() => handleSizeChange(size)}
+                      className={`!border !border-border !rounded-lg !py-3 !text-base !font-medium ${
+                        filters.sizes.includes(size)
+                          ? '!bg-primary !text-primary-foreground !border-primary'
+                          : '!bg-background !text-foreground hover:!bg-muted'
+                      }`}
+                    >
+                      {size}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Color Filter */}
+              <div>
+                <h3 className="!font-medium !text-foreground !mb-3 !flex !items-center !justify-between">
+                  Color
+                  <ChevronDown className="!w-4 !h-4" />
+                </h3>
+                <div className="!flex !gap-4 !flex-wrap">
+                  {colors.map((color) => (
+                    <button
+                      key={color}
+                      onClick={() => handleColorChange(color)}
+                      className={`!w-12 !h-12 !rounded-full !border-4 !transition-all ${
+                        filters.colors.includes(color)
+                          ? '!border-primary !scale-110 !shadow-lg'
+                          : '!border-border hover:!border-muted-foreground'
+                      } ${
+                        color === 'black' ? '!bg-black' :
+                        color === 'white' ? '!bg-white !border-gray-300' :
+                        color === 'red' ? '!bg-red-500' :
+                        color === 'blue' ? '!bg-blue-500' :
+                        color === 'yellow' ? '!bg-yellow-500' : ''
+                      }`}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              {/* Apply/Clear Buttons */}
+              <div className="!flex !gap-3 !pt-4 !border-t !border-border">
+                <button
+                  onClick={() => {
+                    setFilters({
+                      categories: [],
+                      priceRange: [0, 250],
+                      sizes: [],
+                      colors: []
+                    });
+                  }}
+                  className="!flex-1 !py-3 !border !border-border !text-foreground !rounded-lg !font-medium hover:!bg-muted !transition-colors"
+                >
+                  Clear All
+                </button>
+                <button
+                  onClick={() => setShowMobileFilters(false)}
+                  className="!flex-1 !py-3 !bg-primary !text-primary-foreground !rounded-lg !font-medium hover:!bg-primary-hover !transition-colors"
+                >
+                  Apply Filters
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="!flex !max-w-6xl !mx-auto">
         {/* Sidebar Filters */}
