@@ -8,9 +8,12 @@ interface SearchModalProps {
 }
 
 const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => {
+  const [isAnimating, setIsAnimating] = useState(false);
+
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden';
+      setIsAnimating(true);
     } else {
       document.body.style.overflow = 'unset';
     }
@@ -23,7 +26,7 @@ const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => {
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        onClose();
+        handleClose();
       }
     };
 
@@ -34,20 +37,33 @@ const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => {
     return () => {
       document.removeEventListener('keydown', handleEscape);
     };
-  }, [isOpen, onClose]);
+  }, [isOpen]);
+
+  const handleClose = () => {
+    setIsAnimating(false);
+    setTimeout(() => {
+      onClose();
+    }, 300);
+  };
 
   if (!isOpen) return null;
 
   return (
-    <div className="!fixed !inset-0 !z-[9999] !flex !items-start !justify-center">
+    <div className="!fixed !inset-0 !z-[9999] !w-screen !h-screen">
       {/* Backdrop */}
       <div 
-        className="!fixed !inset-0 !bg-black/60 !backdrop-blur-sm !transition-opacity !duration-300"
-        onClick={onClose}
+        className={`!fixed !inset-0 !bg-black/60 !backdrop-blur-sm !transition-all !duration-300 !ease-out ${
+          isAnimating ? '!opacity-100' : '!opacity-0'
+        }`}
+        onClick={handleClose}
       />
       
       {/* Modal Content */}
-      <div className="!relative !w-full !h-full !max-w-none !bg-white !overflow-auto !animate-fade-in">
+      <div className={`!fixed !inset-0 !w-full !h-full !bg-white !overflow-auto !transition-all !duration-300 !ease-out !transform ${
+        isAnimating 
+          ? '!translate-y-0 !opacity-100 !scale-100' 
+          : '!translate-y-4 !opacity-0 !scale-95'
+      }`}>
         {/* Header */}
         <div className="!sticky !top-0 !z-10 !bg-white !border-b !border-gray-200 !px-4 !py-3 !shadow-sm">
           <div className="!flex !items-center !justify-between !max-w-7xl !mx-auto">
@@ -63,7 +79,7 @@ const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => {
             
             {/* Close Button */}
             <button
-              onClick={onClose}
+              onClick={handleClose}
               className="!p-2 !rounded-full !hover:bg-gray-100 !transition-colors !duration-200"
               aria-label="Close search"
             >
