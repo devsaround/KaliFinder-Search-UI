@@ -37,10 +37,10 @@
     --ring: 264 83% 58%;
 
     /* Search specific colors */
-    --search-highlight: 129 76% 59%;
+    --search-highlight: 264 83% 58%;
     --search-bar: 0 0% 98%;
     --filter-bg: 0 0% 100%;
-    
+
     /* Loading colors */
     --loading: 220 13% 91%;
     --loading-shimmer: 0 0% 98%;
@@ -112,3 +112,4 @@
     @apply bg-background text-foreground;
   }
 }
+

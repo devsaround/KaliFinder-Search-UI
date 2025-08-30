@@ -1,18 +1,19 @@
-import SearchIcon from '../components/SearchIcon';
-import { Search } from 'lucide-react';
+// import SearchIcon from "../components/SearchIcon.tsx.old";
+import SearchIcon from "../components/SearchIcon.tsx";
+import { Search } from "lucide-react";
 
 const Index = () => {
   return (
-    <div className="!min-h-screen !bg-gray-50 !flex !items-center !justify-center">
+    <div className="!min-h-screen !bg-gray-50 !flex !items-center !justify-center ">
       {/* Header Bar */}
       <div className="!fixed !top-0 !left-0 !right-0 !bg-white !border-b !border-gray-200 !px-4 !py-3 !shadow-sm !z-50">
+        {/* <div className="!flex !items-center !justify-between !max-w-7xl !mx-auto"> */}
         <div className="!flex !items-center !justify-between !max-w-7xl !mx-auto">
           {/* Left side - Country/Currency */}
           <div className="!flex !items-center !space-x-4 !text-sm !text-gray-600">
             <span>Spain | EUR €</span>
             <span>English</span>
           </div>
-          
           {/* Right side - Icons */}
           <div className="!flex !items-center !space-x-4">
             <SearchIcon />
@@ -24,15 +25,6 @@ const Index = () => {
       </div>
 
       {/* Main Content */}
-      <div className="!mt-20 !text-center">
-        <h1 className="!text-4xl !font-bold !text-gray-900 !mb-4">Welcome to Kalifind</h1>
-        <p className="!text-lg !text-gray-600 !mb-8">Click the search icon above to start exploring</p>
-        <div className="!flex !items-center !justify-center !space-x-2 !text-gray-500">
-          <span>Try clicking the</span>
-          <Search className="!w-5 !h-5 !text-purple-600" />
-          <span>icon in the header</span>
-        </div>
-      </div>
     </div>
   );
 };

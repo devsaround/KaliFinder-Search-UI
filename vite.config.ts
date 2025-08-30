@@ -9,14 +9,21 @@ export default defineConfig(({ mode }) => ({
     host: "::",
     port: 8080,
   },
-  plugins: [
-    react(),
-    mode === 'development' &&
-    componentTagger(),
-  ].filter(Boolean),
+  plugins: [react(), mode === "development" && componentTagger()].filter(
+    Boolean,
+  ),
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
+  },
+  build: {
+    lib: {
+      entry: path.resolve(__dirname, "src/embed.tsx"),
+      name: "KalifindSearch",
+      formats: ["umd"],
+      fileName: (format) => `kalifind-search.js`,
+    },
+    outDir: "search-cdn",
   },
 }));

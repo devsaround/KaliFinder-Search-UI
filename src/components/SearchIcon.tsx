@@ -1,31 +1,37 @@
-import React, { useState } from 'react';
-import { Search } from 'lucide-react';
-import SearchModal from './SearchModal';
+import React, { useState } from "react";
+import { Search } from "lucide-react";
+import SearchDropdown from "./SearchDropdown";
+import { useIsOpen } from "@/hooks/zustand";
 
 const SearchIcon: React.FC = () => {
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  // const [isOpen, setIsOpen] = useState(false);
+  const isOpen = useIsOpen((state: any) => state.isOpen);
+  const toggleIsOpen = useIsOpen((state: any) => state.toggleIsOpen);
 
-  const openModal = () => {
-    setIsModalOpen(true);
-  };
-
-  const closeModal = () => {
-    setIsModalOpen(false);
-  };
+  // const toggleSearch = () => {
+  //   // setIsOpen(!isOpen);
+  //   toggleIsOpen;
+  // };
+  //
+  // const closeSearch = () => {
+  //   // setIsOpen(false);
+  //   toggleIsOpen;
+  // };
+  console.log(isOpen);
 
   return (
     <>
       {/* Search Icon Button */}
       <button
-        onClick={openModal}
-        className="!p-2 !rounded-full !hover:bg-gray-100 !transition-all !duration-200 !hover:scale-105 !focus:outline-none !focus:ring-2 !focus:ring-purple-500 !focus:ring-offset-2"
-        aria-label="Open search"
+        onClick={toggleIsOpen}
+        className="relative p-2 rounded-lg bg-background hover:bg-muted transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 group"
+        aria-label="Toggle search"
       >
-        <Search className="!w-6 !h-6 !text-gray-700 !hover:text-purple-600 !transition-colors !duration-200" />
+        <Search className="w-6 h-6 text-muted-foreground group-hover:text-primary transition-colors duration-200" />
       </button>
 
-      {/* Search Modal */}
-      <SearchModal isOpen={isModalOpen} onClose={closeModal} />
+      {/* Search Dropdown */}
+      <SearchDropdown isOpen={isOpen} onClose={toggleIsOpen} />
     </>
   );
 };
