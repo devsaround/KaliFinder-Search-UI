@@ -11,7 +11,12 @@ interface SearchDropdownProps {
   apiKey?: string;
 }
 
-const SearchDropdown: React.FC<SearchDropdownProps> = ({ isOpen, onClose, userId, apiKey }) => {
+const SearchDropdown: React.FC<SearchDropdownProps> = ({
+  isOpen,
+  onClose,
+  userId,
+  apiKey,
+}) => {
   const [isAnimating, setIsAnimating] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -62,7 +67,6 @@ const SearchDropdown: React.FC<SearchDropdownProps> = ({ isOpen, onClose, userId
   if (!isOpen && !isAnimating) return null;
 
   return (
-    // <div className="fixed inset-0 z-[9999]">
     <div className="fixed inset-0 z-[9999] !min-h-screen">
       {/* Backdrop */}
       <div
@@ -84,7 +88,8 @@ const SearchDropdown: React.FC<SearchDropdownProps> = ({ isOpen, onClose, userId
           overflowY: "auto",
         }}
       >
-        <div className="px-4 max-w-7xl mx-auto">
+        {/* <div className="px-4 max-w-7xl mx-auto"> */}
+        <div className="px-4 w-full max-w-screen-2xl mx-auto py-6">
           <EcommerceSearch userId={userId} apiKey={apiKey} />
         </div>
       </div>

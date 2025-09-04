@@ -39,7 +39,11 @@ const KalifindSearchTest: React.FC<{ userId?: string; apiKey?: string }> = ({
   const [filteredProducts, setFilteredProducts] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isPending, startTransition] = useTransition();
-  const [recentSearches, setRecentSearches] = useState([]);
+  const [recentSearches, setRecentSearches] = useState([
+    // "Sunglass",
+    // "Adidas shoes",
+    "",
+  ]);
   const [autocompleteSuggestions, setAutocompleteSuggestions] = useState<
     string[]
   >([]);
@@ -580,7 +584,7 @@ const KalifindSearchTest: React.FC<{ userId?: string; apiKey?: string }> = ({
         </div>
       )}
 
-      <div className="!flex !max-w-7xl !mx-auto">
+      <div className="!flex !w-full">
         <aside className="!w-64 !p-6 !bg-filter-bg !hidden lg:!block">
           <Accordion
             type="multiple"
@@ -820,4 +824,3 @@ const KalifindSearchTest: React.FC<{ userId?: string; apiKey?: string }> = ({
 };
 
 export default KalifindSearchTest;
-

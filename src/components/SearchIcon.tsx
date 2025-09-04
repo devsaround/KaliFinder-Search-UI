@@ -3,7 +3,10 @@ import { Search } from "lucide-react";
 import SearchDropdown from "./SearchDropdown";
 import { useIsOpen } from "@/hooks/zustand";
 
-const SearchIcon: React.FC<{ userId?: string; apiKey?: string }> = ({ userId, apiKey }) => {
+const SearchIcon: React.FC<{ userId?: string; apiKey?: string }> = ({
+  userId,
+  apiKey,
+}) => {
   // const [isOpen, setIsOpen] = useState(false);
   const isOpen = useIsOpen((state: any) => state.isOpen);
   const toggleIsOpen = useIsOpen((state: any) => state.toggleIsOpen);
@@ -31,7 +34,12 @@ const SearchIcon: React.FC<{ userId?: string; apiKey?: string }> = ({ userId, ap
       </button>
 
       {/* Search Dropdown */}
-      <SearchDropdown isOpen={isOpen} onClose={toggleIsOpen} userId={userId} apiKey={apiKey} />
+      <SearchDropdown
+        isOpen={isOpen}
+        onClose={toggleIsOpen}
+        userId={userId}
+        apiKey={apiKey}
+      />
     </>
   );
 };
