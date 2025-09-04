@@ -1,19 +1,30 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
-// import EmbeddableKalifindSearch from "./components/KalifindSearch";
 import App from "./App.tsx";
 import "./index.css";
 
-const container = document.getElementById("kalifind-search-container");
-
-if (container) {
-  const root = ReactDOM.createRoot(container);
-  root.render(
-    <React.StrictMode>
-      {/* <EmbeddableKalifindSearch /> */}
-      <App />
-    </React.StrictMode>,
-  );
-} else {
-  console.error('Could not find element with id "kalifind-search-container"');
+interface KalifindSearchConfig {
+  containerId: string;
+  userId?: string;
+  apiKey?: string;
 }
+
+const init = (config: KalifindSearchConfig) => {
+  const container = document.getElementById(config.containerId);
+
+  if (container) {
+    const root = ReactDOM.createRoot(container);
+    root.render(
+      <React.StrictMode>
+        <App userId={config.userId} apiKey={config.apiKey} />
+      </React.StrictMode>,
+    );
+  } else {
+    console.error(`Could not find element with id "${config.containerId}"`);
+  }
+};
+
+// Expose the init function to the global scope
+(window as any).KalifindSearch = {
+  init,
+};

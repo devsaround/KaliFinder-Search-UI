@@ -749,8 +749,8 @@ const KalifindSearchTest: React.FC<{ userId?: string; apiKey?: string }> = ({
 
         <main className="!flex-1">
           {recentSearches.length > 0 && (
-            <div className="!p-6">
-              <h2 className="!text-xl !font-medium !text-foreground !mb-4">
+            <div className="!pt-10 !pl-6 !pb-4">
+              <h2 className="!text-xl !font-medium !text-foreground !mb-2">
                 Recent Searches
               </h2>
               <div className="!flex !flex-wrap !gap-2">
@@ -766,7 +766,7 @@ const KalifindSearchTest: React.FC<{ userId?: string; apiKey?: string }> = ({
               </div>
             </div>
           )}
-          <div className="!p-6">
+          <div className="!px-6">
             <h2 className="!text-xl !font-medium !text-foreground !mb-6">
               Recommended products
             </h2>

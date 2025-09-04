@@ -1,14 +1,17 @@
 import React, { useState, useEffect, useRef } from "react";
 import { X } from "lucide-react";
-import EcommerceSearch from "./KalifindSearch.tsx";
+// import EcommerceSearch from "./KalifindSearch.tsx";
+import EcommerceSearch from "./KalifindSearchTest.tsx";
 // import EcommerceSearch from "./KalifindSearchOld.tsx";
 
 interface SearchDropdownProps {
   isOpen: boolean;
   onClose: () => void;
+  userId?: string;
+  apiKey?: string;
 }
 
-const SearchDropdown: React.FC<SearchDropdownProps> = ({ isOpen, onClose }) => {
+const SearchDropdown: React.FC<SearchDropdownProps> = ({ isOpen, onClose, userId, apiKey }) => {
   const [isAnimating, setIsAnimating] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -82,7 +85,7 @@ const SearchDropdown: React.FC<SearchDropdownProps> = ({ isOpen, onClose }) => {
         }}
       >
         <div className="px-4 max-w-7xl mx-auto">
-          <EcommerceSearch />
+          <EcommerceSearch userId={userId} apiKey={apiKey} />
         </div>
       </div>
     </div>
