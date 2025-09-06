@@ -9,6 +9,8 @@ interface SearchDropdownProps {
   onClose: () => void;
   userId?: string;
   apiKey?: string;
+  storeId?: string;
+  storeType?: string;
 }
 
 const SearchDropdown: React.FC<SearchDropdownProps> = ({
@@ -90,7 +92,12 @@ const SearchDropdown: React.FC<SearchDropdownProps> = ({
       >
         {/* <div className="px-4 max-w-7xl mx-auto"> */}
         <div className="px-4 w-full max-w-screen-2xl mx-auto py-6">
-          <EcommerceSearch userId={userId} apiKey={apiKey} />
+          <EcommerceSearch
+            userId={userId}
+            apiKey={apiKey}
+            storeId={storeId}
+            storeType={storeType}
+          />
         </div>
       </div>
     </div>

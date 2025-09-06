@@ -8,14 +8,34 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
-const App = ({ userId, apiKey }: { userId?: string; apiKey?: string }) => (
+const App = ({
+  userId,
+  apiKey,
+  storeId,
+  storeType,
+}: {
+  storeId?: string;
+  storeType?: string;
+  userId?: string;
+  apiKey?: string;
+}) => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
       <Sonner />
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Index userId={userId} apiKey={apiKey} />} />
+          <Route
+            path="/"
+            element={
+              <Index
+                storeId={storeId}
+                storeType={storeType}
+                userId={userId}
+                apiKey={apiKey}
+              />
+            }
+          />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

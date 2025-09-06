@@ -7,6 +7,8 @@ interface KalifindSearchConfig {
   containerId: string;
   userId?: string;
   apiKey?: string;
+  storeId?: string;
+  storeType?: string;
 }
 
 const init = (config: KalifindSearchConfig) => {
@@ -16,7 +18,12 @@ const init = (config: KalifindSearchConfig) => {
     const root = ReactDOM.createRoot(container);
     root.render(
       <React.StrictMode>
-        <App userId={config.userId} apiKey={config.apiKey} />
+        <App
+          storeId={config.storeId}
+          storeType={config.storeType}
+          userId={config.userId}
+          apiKey={config.apiKey}
+        />
       </React.StrictMode>,
     );
   } else {
