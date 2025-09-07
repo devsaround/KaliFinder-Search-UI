@@ -191,6 +191,10 @@ const KalifindSearchTest: React.FC<{
 
   // search products
   useEffect(() => {
+    if (isPriceLoading) {
+      return; // Wait for the initial price to be loaded
+    }
+
     startTransition(() => {
       setIsLoading(true);
       const fetchProducts = async () => {
@@ -264,6 +268,7 @@ const KalifindSearchTest: React.FC<{
       fetchProducts();
     });
   }, [
+    isPriceLoading, // Add this
     debouncedSearchQuery,
     filters.categories,
     filters.colors,
