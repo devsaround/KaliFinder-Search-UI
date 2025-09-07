@@ -15,6 +15,8 @@ const Index = ({
 }) => {
   console.log(userId);
   console.log(apiKey);
+  console.log(storeId);
+  console.log(storeType);
   return (
     <div>
       {/* <div className="!min-h-screen !bg-gray-50 !flex !items-center !justify-center "> */}

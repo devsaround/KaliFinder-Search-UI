@@ -18,6 +18,8 @@ const SearchDropdown: React.FC<SearchDropdownProps> = ({
   onClose,
   userId,
   apiKey,
+  storeType,
+  storeId,
 }) => {
   const [isAnimating, setIsAnimating] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);

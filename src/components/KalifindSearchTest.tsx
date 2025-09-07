@@ -78,29 +78,29 @@ const KalifindSearchTest: React.FC<{
     filters.sizes.length > 0 ||
     filters.priceRange[1] < maxPrice;
 
-  useEffect(() => {
-    const initMaxPrice = async () => {
-      try {
-        const response = await fetch(
-          `${import.meta.env.VITE_BACKEND_URL}/v1/search`,
-          {
-            headers: { "X-Api-Key": apiKey || "" },
-          },
-        );
-        const result = await response.json();
-        const max = Math.max(...result.map((p: any) => p.price));
-        setMaxPrice(max);
-        setFilters((prev: any) => ({
-          ...prev,
-          priceRange: [0, max], // sync with the new max
-        }));
-      } catch (err) {
-        console.error("Failed to fetch initial max price:", err);
-      }
-    };
-
-    initMaxPrice();
-  }, [apiKey]);
+  // useEffect(() => {
+  //   const initMaxPrice = async () => {
+  //     try {
+  //       const response = await fetch(
+  //         `${import.meta.env.VITE_BACKEND_URL}/v1/search`,
+  //         {
+  //           headers: { "X-Api-Key": apiKey || "" },
+  //         },
+  //       );
+  //       const result = await response.json();
+  //       const max = Math.max(...result.map((p: any) => p.price));
+  //       setMaxPrice(max);
+  //       setFilters((prev: any) => ({
+  //         ...prev,
+  //         priceRange: [0, max], // sync with the new max
+  //       }));
+  //     } catch (err) {
+  //       console.error("Failed to fetch initial max price:", err);
+  //     }
+  //   };
+  //
+  //   initMaxPrice();
+  // }, [storeId, storeType]);
 
   // Click outside handler
   useEffect(() => {
@@ -130,10 +130,20 @@ const KalifindSearchTest: React.FC<{
         setIsAutocompleteLoading(true);
         (async () => {
           try {
+            const params = new URLSearchParams();
+            if (debouncedSearchQuery) {
+              params.append("q", debouncedSearchQuery);
+            }
+            if (storeId) {
+              params.append("storeId", storeId.toString());
+            }
+            if (storeType) {
+              params.append("storeType", storeType);
+            }
             const response = await fetch(
               `${
                 import.meta.env.VITE_BACKEND_URL
-              }/v1/autocomplete?q=${debouncedSearchQuery}`,
+              }/v1/autocomplete?${params.toString()}`,
               {
                 headers: {
                   "X-Api-Key": apiKey || "",
@@ -178,11 +188,12 @@ const KalifindSearchTest: React.FC<{
             params.append("q", debouncedSearchQuery);
           }
           if (storeId) {
-            params.append("storeId", storeId);
+            params.append("storeId", storeId.toString());
           }
           if (storeType) {
             params.append("storeType", storeType);
           }
+
           if (filters.categories.length > 0) {
             params.append("categories", filters.categories.join(","));
           }
@@ -195,11 +206,11 @@ const KalifindSearchTest: React.FC<{
           if (filters.brands.length > 0) {
             params.append("brands", filters.brands.join(","));
           }
-          params.append("minPrice", debouncedPriceRange[0].toString());
-          params.append(
-            "maxPrice",
-            debouncedPriceRange[1].toString() ?? "999999",
-          );
+          // params.append("minPrice", debouncedPriceRange[0].toString());
+          // params.append(
+          //   "maxPrice",
+          //   debouncedPriceRange[1].toString() ?? "999999",
+          // );
 
           const response = await fetch(
             `${
@@ -212,6 +223,9 @@ const KalifindSearchTest: React.FC<{
             },
           );
           console.log("User ID:", userId);
+          console.log(
+            `http://localhost:8000/api/v1/search?${params.toString()}`,
+          );
           if (!response.ok) {
             throw new Error("bad response");
           }
