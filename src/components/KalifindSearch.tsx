@@ -1,6 +1,6 @@
 import React, { useState, useTransition, useRef, useEffect } from "react";
 import { Search, ShoppingCart, X, Filter } from "lucide-react";
-import { useIsOpen } from "@/hooks/zustand";
+
 import { useDebounce } from "@/hooks/use-debounce";
 import { Slider } from "@/components/ui/slider";
 import {
@@ -29,24 +29,32 @@ interface FilterState {
   genders: string[];
 }
 
-const KalifindSearchTest: React.FC<{ userId?: string; apiKey?: string }> = ({
-  userId,
-  apiKey,
-}) => {
+const KalifindSearchTest: React.FC<{
+  storeId?: string;
+  storeType?: string;
+  userId?: string;
+  apiKey?: string;
+  onClose?: () => void; // Add onClose to props
+}> = ({ userId, apiKey, storeId, storeType, onClose }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [showAutocomplete, setShowAutocomplete] = useState(false);
   const [showMobileFilters, setShowMobileFilters] = useState(false);
   const [filteredProducts, setFilteredProducts] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isPending, startTransition] = useTransition();
-  const [recentSearches, setRecentSearches] = useState([]);
+  const [recentSearches, setRecentSearches] = useState([
+    // "Sunglass",
+    // "Adidas shoes",
+    "",
+  ]);
   const [autocompleteSuggestions, setAutocompleteSuggestions] = useState<
     string[]
   >([]);
   const [isAutocompleteLoading, setIsAutocompleteLoading] = useState(false);
+  const [maxPrice, setMaxPrice] = useState<number>();
   const [filters, setFilters] = useState<FilterState>({
     categories: [],
-    priceRange: [0, 1000],
+    priceRange: [0, maxPrice],
     colors: [],
     sizes: [],
     brands: [],
@@ -56,30 +64,44 @@ const KalifindSearchTest: React.FC<{ userId?: string; apiKey?: string }> = ({
   const debouncedSearchQuery = useDebounce(searchQuery, 500);
   const debouncedPriceRange = useDebounce(filters.priceRange, 500);
 
-  const toggleIsOpen = useIsOpen((state: any) => state.toggleIsOpen);
+  
   const searchRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const mobileFiltersRef = useRef<HTMLDivElement>(null);
 
-  const categories = [
-    { name: "Men", count: 40 },
-    { name: "Women", count: 37 },
-    { name: "Kids", count: 12 },
-  ];
   const sizes = [38, 39, 40, 41, 42, 43, 44, 45];
   const colors = ["black", "white", "red", "blue", "yellow"];
-  const brands = [
-    { name: "Nike", count: 25 },
-    { name: "Adidas", count: 18 },
-    { name: "Puma", count: 10 },
-  ];
 
   const isAnyFilterActive =
     filters.categories.length > 0 ||
     filters.brands.length > 0 ||
     filters.colors.length > 0 ||
     filters.sizes.length > 0 ||
-    filters.priceRange[1] < 1000;
+    filters.priceRange[1] < maxPrice;
+
+  // useEffect(() => {
+  //   const initMaxPrice = async () => {
+  //     try {
+  //       const response = await fetch(
+  //         `${import.meta.env.VITE_BACKEND_URL}/v1/search`,
+  //         {
+  //           headers: { "X-Api-Key": apiKey || "" },
+  //         },
+  //       );
+  //       const result = await response.json();
+  //       const max = Math.max(...result.map((p: any) => p.price));
+  //       setMaxPrice(max);
+  //       setFilters((prev: any) => ({
+  //         ...prev,
+  //         priceRange: [0, max], // sync with the new max
+  //       }));
+  //     } catch (err) {
+  //       console.error("Failed to fetch initial max price:", err);
+  //     }
+  //   };
+  //
+  //   initMaxPrice();
+  // }, [storeId, storeType]);
 
   // Click outside handler
   useEffect(() => {
@@ -109,10 +131,20 @@ const KalifindSearchTest: React.FC<{ userId?: string; apiKey?: string }> = ({
         setIsAutocompleteLoading(true);
         (async () => {
           try {
+            const params = new URLSearchParams();
+            if (debouncedSearchQuery) {
+              params.append("q", debouncedSearchQuery);
+            }
+            if (storeId) {
+              params.append("storeId", storeId.toString());
+            }
+            if (storeType) {
+              params.append("storeType", storeType);
+            }
             const response = await fetch(
               `${
                 import.meta.env.VITE_BACKEND_URL
-              }/v1/autocomplete?q=${debouncedSearchQuery}`,
+              }/v1/autocomplete?${params.toString()}`,
               {
                 headers: {
                   "X-Api-Key": apiKey || "",
@@ -156,6 +188,13 @@ const KalifindSearchTest: React.FC<{ userId?: string; apiKey?: string }> = ({
           if (debouncedSearchQuery) {
             params.append("q", debouncedSearchQuery);
           }
+          if (storeId) {
+            params.append("storeId", storeId.toString());
+          }
+          if (storeType) {
+            params.append("storeType", storeType);
+          }
+
           if (filters.categories.length > 0) {
             params.append("categories", filters.categories.join(","));
           }
@@ -168,8 +207,11 @@ const KalifindSearchTest: React.FC<{ userId?: string; apiKey?: string }> = ({
           if (filters.brands.length > 0) {
             params.append("brands", filters.brands.join(","));
           }
-          params.append("minPrice", debouncedPriceRange[0].toString());
-          params.append("maxPrice", debouncedPriceRange[1].toString());
+          // params.append("minPrice", debouncedPriceRange[0].toString());
+          // params.append(
+          //   "maxPrice",
+          //   debouncedPriceRange[1].toString() ?? "999999",
+          // );
 
           const response = await fetch(
             `${
@@ -182,6 +224,9 @@ const KalifindSearchTest: React.FC<{ userId?: string; apiKey?: string }> = ({
             },
           );
           console.log("User ID:", userId);
+          console.log(
+            `http://localhost:8000/api/v1/search?${params.toString()}`,
+          );
           if (!response.ok) {
             throw new Error("bad response");
           }
@@ -204,6 +249,7 @@ const KalifindSearchTest: React.FC<{ userId?: string; apiKey?: string }> = ({
     filters.colors,
     filters.sizes,
     filters.brands,
+    filters.priceRange,
     debouncedPriceRange,
     apiKey,
     userId,
@@ -326,7 +372,7 @@ const KalifindSearchTest: React.FC<{ userId?: string; apiKey?: string }> = ({
               <button
                 className="p-1 rounded-lg hover:bg-muted/20 transition-colors duration-200 flex-shrink-0"
                 aria-label="Close search"
-                onClick={toggleIsOpen}
+                onClick={onClose}
               >
                 <X className="w-6 h-6 text-muted-foreground hover:text-foreground transition-colors duration-200" />
               </button>
@@ -421,28 +467,24 @@ const KalifindSearchTest: React.FC<{ userId?: string; apiKey?: string }> = ({
                   <AccordionTrigger>Category</AccordionTrigger>
                   <AccordionContent>
                     <div className="!space-y-3">
-                      {categories.map((category) => (
+                      {filters.categories.map((category) => (
                         <label
-                          key={category.name}
+                          key={category}
                           className="!flex !items-center !justify-between !cursor-pointer !p-2 hover:!bg-muted !rounded-lg"
                         >
                           <div className="!flex !items-center !gap-3">
                             <input
                               type="checkbox"
-                              checked={filters.categories.includes(
-                                category.name,
-                              )}
-                              onChange={() =>
-                                handleCategoryChange(category.name)
-                              }
+                              checked={filters.categories.includes(category)}
+                              onChange={() => handleCategoryChange(category)}
                               className="!w-5 !h-5 !text-primary !bg-background !border-border !rounded "
                             />
                             <span className="!text-foreground !text-base">
-                              {category.name}
+                              {category}
                             </span>
                           </div>
                           <span className="!text-muted-foreground !text-sm !bg-muted !px-2 !py-1 !rounded">
-                            {category.count}
+                            {/* {category.length} */}
                           </span>
                         </label>
                       ))}
@@ -453,24 +495,24 @@ const KalifindSearchTest: React.FC<{ userId?: string; apiKey?: string }> = ({
                   <AccordionTrigger>Brand</AccordionTrigger>
                   <AccordionContent>
                     <div className="!space-y-3">
-                      {brands.map((brand) => (
+                      {filters.brands.map((brand) => (
                         <label
-                          key={brand.name}
+                          key={brand}
                           className="!flex !items-center !justify-between !cursor-pointer !p-2 hover:!bg-muted !rounded-lg"
                         >
                           <div className="!flex !items-center !gap-3">
                             <input
                               type="checkbox"
-                              checked={filters.brands.includes(brand.name)}
-                              onChange={() => handleBrandChange(brand.name)}
+                              checked={filters.brands.includes(brand)}
+                              onChange={() => handleBrandChange(brand)}
                               className="!w-5 !h-5 !text-primary !bg-background !border-border !rounded "
                             />
                             <span className="!text-foreground !text-base">
-                              {brand.name}
+                              {brand}
                             </span>
                           </div>
                           <span className="!text-muted-foreground !text-sm !bg-muted !px-2 !py-1 !rounded">
-                            {brand.count}
+                            {/* {brand.length} */}
                           </span>
                         </label>
                       ))}
@@ -482,20 +524,21 @@ const KalifindSearchTest: React.FC<{ userId?: string; apiKey?: string }> = ({
                   <AccordionContent>
                     <div className="!space-y-4 !pt-4">
                       <Slider
-                        value={[filters.priceRange[1]]}
-                        onValueChange={(value) =>
-                          setFilters((prev) => ({
+                        value={filters.priceRange}
+                        onValueChange={(value: any) =>
+                          setFilters((prev: any) => ({
                             ...prev,
-                            priceRange: [prev.priceRange[0], value[0]],
+                            priceRange: value,
                           }))
                         }
-                        max={1000}
+                        max={maxPrice}
                         step={10}
                         className="!w-full"
                       />
                       <div className="!flex !justify-between !text-sm !text-muted-foreground">
-                        <span>0 €</span>
-                        <span>{filters.priceRange[1]} €</span>
+                        <span>{filters.priceRange[0]} €</span>
+                        {/* <span>{filters.priceRange[1]} €</span> */}
+                        <span>{maxPrice} €</span>
                       </div>
                     </div>
                   </AccordionContent>
@@ -557,7 +600,7 @@ const KalifindSearchTest: React.FC<{ userId?: string; apiKey?: string }> = ({
                   onClick={() => {
                     setFilters({
                       categories: [],
-                      priceRange: [0, 1000],
+                      priceRange: [0, maxPrice],
                       colors: [],
                       sizes: [],
                       brands: [],
@@ -580,7 +623,7 @@ const KalifindSearchTest: React.FC<{ userId?: string; apiKey?: string }> = ({
         </div>
       )}
 
-      <div className="!flex !max-w-7xl !mx-auto">
+      <div className="!flex !w-full">
         <aside className="!w-64 !p-6 !bg-filter-bg !hidden lg:!block">
           <Accordion
             type="multiple"
@@ -592,25 +635,23 @@ const KalifindSearchTest: React.FC<{ userId?: string; apiKey?: string }> = ({
               </AccordionTrigger>
               <AccordionContent>
                 <div className="!space-y-2">
-                  {categories.map((category) => (
+                  {filters.categories.map((category) => (
                     <label
-                      key={category.name}
+                      key={category}
                       className="!flex !items-center !justify-between !cursor-pointer"
                     >
                       <div className="!flex !items-center !gap-2">
                         <input
                           type="checkbox"
-                          checked={filters.categories.includes(category.name)}
-                          onChange={() => handleCategoryChange(category.name)}
+                          checked={filters.categories.includes(category)}
+                          onChange={() => handleCategoryChange(category)}
                           className="!w-4 !h-4 !text-primary !bg-background !border-border !rounded "
                         />
-                        <span className="!text-foreground">
-                          {category.name}
-                        </span>
+                        <span className="!text-foreground">{category}</span>
                       </div>
-                      <span className="!text-muted-foreground !text-sm">
-                        {category.count}
-                      </span>
+                      {/* <span className="!text-muted-foreground !text-sm"> */}
+                      {/*   {category.length} */}
+                      {/* </span> */}
                     </label>
                   ))}
                 </div>
@@ -622,23 +663,23 @@ const KalifindSearchTest: React.FC<{ userId?: string; apiKey?: string }> = ({
               </AccordionTrigger>
               <AccordionContent>
                 <div className="!space-y-2">
-                  {brands.map((brand) => (
+                  {filters.brands.map((brand) => (
                     <label
-                      key={brand.name}
+                      key={brand}
                       className="!flex !items-center !justify-between !cursor-pointer"
                     >
                       <div className="!flex !items-center !gap-2">
                         <input
                           type="checkbox"
-                          checked={filters.brands.includes(brand.name)}
-                          onChange={() => handleBrandChange(brand.name)}
+                          checked={filters.brands.includes(brand)}
+                          onChange={() => handleBrandChange(brand)}
                           className="!w-4 !h-4 !text-primary !bg-background !border-border !rounded "
                         />
-                        <span className="!text-foreground">{brand.name}</span>
+                        <span className="!text-foreground">{brand}</span>
                       </div>
-                      <span className="!text-muted-foreground !text-sm">
-                        {brand.count}
-                      </span>
+                      {/* <span className="!text-muted-foreground !text-sm"> */}
+                      {/*   {brand.length} */}
+                      {/* </span> */}
                     </label>
                   ))}
                 </div>
@@ -657,7 +698,7 @@ const KalifindSearchTest: React.FC<{ userId?: string; apiKey?: string }> = ({
                       priceRange: [prev.priceRange[0], value[0]],
                     }))
                   }
-                  max={1000}
+                  max={maxPrice}
                   step={10}
                   className="!w-full !mb-4 !mt-2"
                 />
@@ -749,8 +790,8 @@ const KalifindSearchTest: React.FC<{ userId?: string; apiKey?: string }> = ({
 
         <main className="!flex-1">
           {recentSearches.length > 0 && (
-            <div className="!p-6">
-              <h2 className="!text-xl !font-medium !text-foreground !mb-4">
+            <div className="!pt-10 !pl-6 !pb-4">
+              <h2 className="!text-xl !font-medium !text-foreground !mb-2">
                 Recent Searches
               </h2>
               <div className="!flex !flex-wrap !gap-2">
@@ -766,7 +807,7 @@ const KalifindSearchTest: React.FC<{ userId?: string; apiKey?: string }> = ({
               </div>
             </div>
           )}
-          <div className="!p-6">
+          <div className="!px-6">
             <h2 className="!text-xl !font-medium !text-foreground !mb-6">
               Recommended products
             </h2>
@@ -820,4 +861,3 @@ const KalifindSearchTest: React.FC<{ userId?: string; apiKey?: string }> = ({
 };
 
 export default KalifindSearchTest;
-

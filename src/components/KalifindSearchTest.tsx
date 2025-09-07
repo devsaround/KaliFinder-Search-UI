@@ -51,10 +51,11 @@ const KalifindSearchTest: React.FC<{
     string[]
   >([]);
   const [isAutocompleteLoading, setIsAutocompleteLoading] = useState(false);
-  const [maxPrice, setMaxPrice] = useState<number>();
+  const [isPriceLoading, setIsPriceLoading] = useState(true);
+  const [maxPrice, setMaxPrice] = useState<number>(5000); // Default max price
   const [filters, setFilters] = useState<FilterState>({
     categories: [],
-    priceRange: [0, maxPrice],
+    priceRange: [0, 5000], // Default price range
     colors: [],
     sizes: [],
     brands: [],
@@ -64,7 +65,6 @@ const KalifindSearchTest: React.FC<{
   const debouncedSearchQuery = useDebounce(searchQuery, 500);
   const debouncedPriceRange = useDebounce(filters.priceRange, 500);
 
-  
   const searchRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const mobileFiltersRef = useRef<HTMLDivElement>(null);
@@ -79,29 +79,46 @@ const KalifindSearchTest: React.FC<{
     filters.sizes.length > 0 ||
     filters.priceRange[1] < maxPrice;
 
-  // useEffect(() => {
-  //   const initMaxPrice = async () => {
-  //     try {
-  //       const response = await fetch(
-  //         `${import.meta.env.VITE_BACKEND_URL}/v1/search`,
-  //         {
-  //           headers: { "X-Api-Key": apiKey || "" },
-  //         },
-  //       );
-  //       const result = await response.json();
-  //       const max = Math.max(...result.map((p: any) => p.price));
-  //       setMaxPrice(max);
-  //       setFilters((prev: any) => ({
-  //         ...prev,
-  //         priceRange: [0, max], // sync with the new max
-  //       }));
-  //     } catch (err) {
-  //       console.error("Failed to fetch initial max price:", err);
-  //     }
-  //   };
-  //
-  //   initMaxPrice();
-  // }, [storeId, storeType]);
+  useEffect(() => {
+    const initMaxPrice = async () => {
+      if (!storeId || !storeType) return; // Don't fetch if we don't have the required params
+      setIsPriceLoading(true);
+      try {
+        const params = new URLSearchParams();
+        params.append("storeId", storeId.toString());
+        params.append("storeType", storeType);
+
+        const response = await fetch(
+          `${import.meta.env.VITE_BACKEND_URL}/v1/search?${params.toString()}`,
+          {
+            headers: { "X-Api-Key": apiKey || "" },
+          },
+        );
+        const result = await response.json();
+        if (Array.isArray(result)) {
+          const prices = result
+            .map((p: any) => parseFloat(p.price))
+            .filter((p) => !isNaN(p));
+          if (prices.length > 0) {
+            const max = Math.max(...prices);
+            setMaxPrice(max);
+            setFilters((prev: any) => ({
+              ...prev,
+              priceRange: [0, max],
+            }));
+          }
+        } else {
+          console.error("Initial search result is not an array:", result);
+        }
+      } catch (err) {
+        console.error("Failed to fetch initial max price:", err);
+      } finally {
+        setIsPriceLoading(false);
+      }
+    };
+
+    initMaxPrice();
+  }, [apiKey, storeId, storeType]);
 
   // Click outside handler
   useEffect(() => {
@@ -177,7 +194,10 @@ const KalifindSearchTest: React.FC<{
     startTransition(() => {
       setIsLoading(true);
       const fetchProducts = async () => {
-        if (debouncedPriceRange[1] === 0) {
+        if (
+          typeof debouncedPriceRange[0] === "undefined" ||
+          typeof debouncedPriceRange[1] === "undefined"
+        ) {
           setFilteredProducts([]);
           setIsLoading(false);
           return;
@@ -207,11 +227,11 @@ const KalifindSearchTest: React.FC<{
           if (filters.brands.length > 0) {
             params.append("brands", filters.brands.join(","));
           }
-          // params.append("minPrice", debouncedPriceRange[0].toString());
-          // params.append(
-          //   "maxPrice",
-          //   debouncedPriceRange[1].toString() ?? "999999",
-          // );
+          params.append("minPrice", debouncedPriceRange[0].toString());
+          params.append(
+            "maxPrice",
+            debouncedPriceRange[1].toString() ?? "999999",
+          );
 
           const response = await fetch(
             `${
@@ -225,7 +245,7 @@ const KalifindSearchTest: React.FC<{
           );
           console.log("User ID:", userId);
           console.log(
-            `http://localhost:8000/api/v1/search?${params.toString()}`,
+            `${import.meta.env.VITE_BACKEND_URL}/v1/search?${params.toString()}`,
           );
           if (!response.ok) {
             throw new Error("bad response");
@@ -519,30 +539,31 @@ const KalifindSearchTest: React.FC<{
                     </div>
                   </AccordionContent>
                 </AccordionItem>
-                <AccordionItem value="price">
-                  <AccordionTrigger>Price</AccordionTrigger>
-                  <AccordionContent>
-                    <div className="!space-y-4 !pt-4">
-                      <Slider
-                        value={filters.priceRange}
-                        onValueChange={(value: any) =>
-                          setFilters((prev: any) => ({
-                            ...prev,
-                            priceRange: value,
-                          }))
-                        }
-                        max={maxPrice}
-                        step={10}
-                        className="!w-full"
-                      />
-                      <div className="!flex !justify-between !text-sm !text-muted-foreground">
-                        <span>{filters.priceRange[0]} €</span>
-                        {/* <span>{filters.priceRange[1]} €</span> */}
-                        <span>{maxPrice} €</span>
+                {!isPriceLoading && (
+                  <AccordionItem value="price">
+                    <AccordionTrigger>Price</AccordionTrigger>
+                    <AccordionContent>
+                      <div className="!space-y-4 !pt-4">
+                        <Slider
+                          value={[filters.priceRange[1]]}
+                          onValueChange={(value: any) =>
+                            setFilters((prev: any) => ({
+                              ...prev,
+                              priceRange: [prev.priceRange[0], value[0]],
+                            }))
+                          }
+                          max={maxPrice}
+                          step={10}
+                          className="!w-full"
+                        />
+                        <div className="!flex !justify-between !text-sm !text-muted-foreground">
+                          <span>{filters.priceRange[0]} €</span>
+                          <span>{filters.priceRange[1]} €</span>
+                        </div>
                       </div>
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
+                    </AccordionContent>
+                  </AccordionItem>
+                )}
                 <AccordionItem value="size">
                   <AccordionTrigger>Size</AccordionTrigger>
                   <AccordionContent>
@@ -685,29 +706,31 @@ const KalifindSearchTest: React.FC<{
                 </div>
               </AccordionContent>
             </AccordionItem>
-            <AccordionItem value="price">
-              <AccordionTrigger className="!font-medium !text-foreground">
-                Price
-              </AccordionTrigger>
-              <AccordionContent>
-                <Slider
-                  value={[filters.priceRange[1]]}
-                  onValueChange={(value) =>
-                    setFilters((prev) => ({
-                      ...prev,
-                      priceRange: [prev.priceRange[0], value[0]],
-                    }))
-                  }
-                  max={maxPrice}
-                  step={10}
-                  className="!w-full !mb-4 !mt-2"
-                />
-                <div className="!flex !justify-between !text-sm !text-muted-foreground">
-                  <span>0 €</span>
-                  <span>{filters.priceRange[1]} €</span>
-                </div>
-              </AccordionContent>
-            </AccordionItem>
+            {!isPriceLoading && (
+              <AccordionItem value="price">
+                <AccordionTrigger className="!font-medium !text-foreground">
+                  Price
+                </AccordionTrigger>
+                <AccordionContent>
+                  <Slider
+                    value={[filters.priceRange[1]]}
+                    onValueChange={(value) =>
+                      setFilters((prev) => ({
+                        ...prev,
+                        priceRange: [prev.priceRange[0], value[0]],
+                      }))
+                    }
+                    max={maxPrice}
+                    step={10}
+                    className="!w-full !mb-4 !mt-2"
+                  />
+                  <div className="!flex !justify-between !text-sm !text-muted-foreground">
+                    <span>{filters.priceRange[0]} €</span>
+                    <span>{filters.priceRange[1]} €</span>
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+            )}
             <AccordionItem value="size">
               <AccordionTrigger className="!font-medium !text-foreground">
                 Size
