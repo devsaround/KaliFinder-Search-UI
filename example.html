@@ -4,16 +4,38 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Kalifind Search Example</title>
+    <style>
+      header {
+        background-color: #f0f0f0;
+        padding: 1rem;
+        margin-bottom: 1rem;
+      }
+      .site-header-search {
+        padding: 0.5rem 1rem;
+        border: 1px solid #ccc;
+        background-color: #fff;
+        border-radius: 5px;
+      }
+    </style>
   </head>
   <body>
-    <h1>Kalifind Search Demo</h1>
-    <p>The search bar should appear below this text.</p>
 
-    <!-- 
-      New simplified script injection.
-      The script will automatically create the search component.
-      'storeId' and 'storeType' are passed as URL parameters.
-    -->
+    <header>
+      <nav>
+        <a href="#">Home</a>
+        <a href="#">About</a>
+        <!-- This div will become the search trigger -->
+        <div class="site-header-search" style="display: inline-block; margin-left: 20px;">Click me to search!</div>
+      </nav>
+    </header>
+
+    <h1>Kalifind Search Demo</h1>
+    <p>
+      The script will now look for a trigger inside the &lt;header&gt;. 
+      If it finds one (like the "Click me to search!" box above), it will attach to it.
+      If not, it will create a default search bar below.
+    </p>
+
     <script src="./search-cdn/kalifind-search.js?storeId=28&storeType=woocommerce" defer></script>
 
   </body>

@@ -1,6 +1,6 @@
 import React, { useState, useTransition, useRef, useEffect } from "react";
 import { Search, ShoppingCart, X, Filter } from "lucide-react";
-import { useIsOpen } from "@/hooks/zustand";
+
 import { useDebounce } from "@/hooks/use-debounce";
 import { Slider } from "@/components/ui/slider";
 import {
@@ -34,7 +34,8 @@ const KalifindSearchTest: React.FC<{
   storeType?: string;
   userId?: string;
   apiKey?: string;
-}> = ({ userId, apiKey, storeId, storeType }) => {
+  onClose?: () => void; // Add onClose to props
+}> = ({ userId, apiKey, storeId, storeType, onClose }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [showAutocomplete, setShowAutocomplete] = useState(false);
   const [showMobileFilters, setShowMobileFilters] = useState(false);
@@ -63,7 +64,7 @@ const KalifindSearchTest: React.FC<{
   const debouncedSearchQuery = useDebounce(searchQuery, 500);
   const debouncedPriceRange = useDebounce(filters.priceRange, 500);
 
-  const toggleIsOpen = useIsOpen((state: any) => state.toggleIsOpen);
+  
   const searchRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const mobileFiltersRef = useRef<HTMLDivElement>(null);
@@ -371,7 +372,7 @@ const KalifindSearchTest: React.FC<{
               <button
                 className="p-1 rounded-lg hover:bg-muted/20 transition-colors duration-200 flex-shrink-0"
                 aria-label="Close search"
-                onClick={toggleIsOpen}
+                onClick={onClose}
               >
                 <X className="w-6 h-6 text-muted-foreground hover:text-foreground transition-colors duration-200" />
               </button>

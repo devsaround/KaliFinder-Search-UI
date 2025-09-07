@@ -99,6 +99,7 @@ const SearchDropdown: React.FC<SearchDropdownProps> = ({
             apiKey={apiKey}
             storeId={storeId}
             storeType={storeType}
+            onClose={onClose} // Pass the onClose prop down
           />
         </div>
       </div>
