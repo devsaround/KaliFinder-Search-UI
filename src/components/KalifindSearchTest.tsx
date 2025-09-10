@@ -39,6 +39,7 @@ const KalifindSearchTest: React.FC<{
   const [searchQuery, setSearchQuery] = useState("");
   const [showAutocomplete, setShowAutocomplete] = useState(false);
   const [showMobileFilters, setShowMobileFilters] = useState(false);
+  const [isClosingMobileFilters, setIsClosingMobileFilters] = useState(false);
   const [filteredProducts, setFilteredProducts] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isPending, startTransition] = useTransition();
@@ -53,6 +54,8 @@ const KalifindSearchTest: React.FC<{
   const [isAutocompleteLoading, setIsAutocompleteLoading] = useState(false);
   const [isPriceLoading, setIsPriceLoading] = useState(true);
   const [maxPrice, setMaxPrice] = useState<number>(5000); // Default max price
+  const [availableCategories, setAvailableCategories] = useState<string[]>([]);
+  const [availableBrands, setAvailableBrands] = useState<string[]>([]);
   const [filters, setFilters] = useState<FilterState>({
     categories: [],
     priceRange: [0, 5000], // Default price range
@@ -79,8 +82,16 @@ const KalifindSearchTest: React.FC<{
     filters.sizes.length > 0 ||
     filters.priceRange[1] < maxPrice;
 
+  const handleCloseMobileFilters = () => {
+    setIsClosingMobileFilters(true);
+    setTimeout(() => {
+      setShowMobileFilters(false);
+      setIsClosingMobileFilters(false);
+    }, 300); // Corresponds to slide-up animation duration
+  };
+
   useEffect(() => {
-    const initMaxPrice = async () => {
+    const initFilters = async () => {
       if (!storeId || !storeType) return; // Don't fetch if we don't have the required params
       setIsPriceLoading(true);
       try {
@@ -107,17 +118,32 @@ const KalifindSearchTest: React.FC<{
               priceRange: [0, max],
             }));
           }
+
+          const allCategories = new Set<string>();
+          const allBrands = new Set<string>();
+          result.forEach((product: any) => {
+            if (product.categories) {
+              product.categories.forEach((cat: string) =>
+                allCategories.add(cat),
+              );
+            }
+            if (product.brands) {
+              product.brands.forEach((brand: string) => allBrands.add(brand));
+            }
+          });
+          setAvailableCategories(Array.from(allCategories));
+          setAvailableBrands(Array.from(allBrands));
         } else {
           console.error("Initial search result is not an array:", result);
         }
       } catch (err) {
-        console.error("Failed to fetch initial max price:", err);
+        console.error("Failed to fetch initial filter data:", err);
       } finally {
         setIsPriceLoading(false);
       }
     };
 
-    initMaxPrice();
+    initFilters();
   }, [apiKey, storeId, storeType]);
 
   // Click outside handler
@@ -133,7 +159,7 @@ const KalifindSearchTest: React.FC<{
         mobileFiltersRef.current &&
         !mobileFiltersRef.current.contains(event.target as Node)
       ) {
-        setShowMobileFilters(false);
+        handleCloseMobileFilters();
       }
     };
 
@@ -341,11 +367,11 @@ const KalifindSearchTest: React.FC<{
   };
 
   const LoadingSkeleton = () => (
-    <div className="!grid !grid-cols-1 sm:!grid-cols-2 lg:!grid-cols-3 xl:!grid-cols-4 !gap-4 !p-6">
+    <div className="!grid !grid-cols-1 sm:!grid-cols-2 lg:!grid-cols-3 xl:!grid-cols-4 !gap-6 !w-full">
       {Array.from({ length: 8 }).map((_, i) => (
         <div
           key={i}
-          className="!bg-loading !rounded-lg !p-4 !animate-pulse-slow"
+          className="!bg-loading !rounded-lg !p-4 !animate-pulse-slow !w-full"
         >
           <div className="!bg-loading-shimmer !h-48 !rounded-md !mb-4 !relative !overflow-hidden">
             <div className="!absolute !inset-0 !bg-gradient-to-r !from-transparent !via-loading-shimmer !to-transparent !animate-shimmer"></div>
@@ -358,56 +384,61 @@ const KalifindSearchTest: React.FC<{
   );
 
   return (
-    <div className="!bg-background !min-h-screen">
-      <header className="!bg-background !py-3">
-        <div className="!flex !items-center justify-between lg:!gap-24 !max-w-7xl flex-col lg:flex-row">
+    <div className="!bg-background !min-h-screen !w-full !max-w-full ">
+      <header className="!bg-background !py-3 !w-full">
+        <div className="!flex !items-center justify-center lg:!gap-24 !max-w-7xl !mx-auto flex-col lg:flex-row !w-full">
           <div className="!flex !items-center !gap-2 justify-between md:justify-normal">
             <div className="!flex !items-center">
-              <a href="/" className="!flex !items-center">
+              <a href="/" className="!s-center">
                 <img
                   src={`https://kalifinder-search.pages.dev/KalifindLogo.png`}
                   alt="Kalifind"
-                  className="!h-auto !w-full !max-w-[200px] !max-h-14 object-contain object-center"
+                  // className="!h-auto !w-full !max-w-[200px] !max-h-14 !object-contain !object-center"
+                  className="!h-auto !w-full !max-w-[200px] !max-h-14 !object-contain !object-center"
                 />
               </a>
             </div>
           </div>
 
-          <div className="!flex-1 !relative ml-2 w-full" ref={searchRef}>
+          <div
+            className="!flex-1 !relative !ml-2 !w-full !max-w-7xl"
+            ref={searchRef}
+          >
             <div
-              className="!flex !items-center !gap-2 !flex-1 w-full"
+              className="!flex !items-center !gap-2 !flex-1 !w-full"
               ref={searchRef}
             >
-              <div className="!relative !flex-1">
-                <Search className="!absolute !left-3 !top-1/2 !transform !-translate-y-1/2 !text-muted-foreground !w-5 !h-5" />
-                <input
-                  ref={inputRef}
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => handleSearch(e.target.value)}
-                  onFocus={() => setShowAutocomplete(true)}
-                  onKeyDown={handleKeyDown}
-                  placeholder="Search"
-                  className="!w-full !pl-10 !pr-4 !py-3 !border-b-2 !border-search-highlight !text-foreground !placeholder-muted-foreground focus:!outline-none focus:!border-none focus:!ring-0"
-                />
+              <div className="!w-full flex">
+                <div className="!relative !flex-1 !w-full">
+                  <Search className="!absolute !left-3 !top-1/2 !transform !-translate-y-1/2 !text-muted-foreground !w-5 !h-5" />
+                  <input
+                    ref={inputRef}
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => handleSearch(e.target.value)}
+                    onFocus={() => setShowAutocomplete(true)}
+                    onKeyDown={handleKeyDown}
+                    placeholder="Search"
+                    className="!w-full !pl-10 !pr-4 !py-3 !border-b-2 !border-search-highlight !text-foreground !placeholder-muted-foreground focus:!outline-none focus:!border-none focus:!ring-0"
+                  />
 
-                <div className="!absolute !right-3 !top-1/2 !transform !-translate-y-1/2 !flex !gap-2"></div>
+                  {/* <div className="!absolute !right-3 !top-1/2 !transform !-translate-y-1/2 !flex !gap-2"></div> */}
+                </div>
+                <button
+                  className="!rounded-lg hover:!bg-muted/20 !transition-colors !duration-200 !flex-shrink-0"
+                  aria-label="Close search"
+                  onClick={onClose}
+                >
+                  <X className="!w-6 !h-6 !text-muted-foreground hover:!text-foreground !transition-colors !duration-200" />
+                </button>
               </div>
-
-              <button
-                className="p-1 rounded-lg hover:bg-muted/20 transition-colors duration-200 flex-shrink-0"
-                aria-label="Close search"
-                onClick={onClose}
-              >
-                <X className="w-6 h-6 text-muted-foreground hover:text-foreground transition-colors duration-200" />
-              </button>
             </div>
 
             {showAutocomplete &&
               (autocompleteSuggestions.length > 0 ||
                 isAutocompleteLoading ||
                 debouncedSearchQuery) && (
-                <div className="!absolute !top-full !left-0 !right-0 !bg-background !border !border-border !rounded-lg !shadow-lg !z-50 !mt-1">
+                <div className="!absolute !top-full !left-0 !right-0 !bg-background !border !border-border !rounded-lg !shadow-lg !z-50 !mt-1 !w-full">
                   <div className="!z-[999] !p-4">
                     {isAutocompleteLoading ? (
                       <div className="!text-center !py-2 !text-muted-foreground">
@@ -448,7 +479,7 @@ const KalifindSearchTest: React.FC<{
         </div>
       </header>
 
-      <div className="!block lg:!hidden !px-4 !py-3 !bg-background ">
+      <div className="!block lg:!hidden !px-4 !py-3 !bg-background !w-full">
         <button
           onClick={() => setShowMobileFilters(true)}
           className="!flex !items-center !gap-2 !px-4 !py-2 !bg-primary !text-primary-foreground !rounded-lg !font-medium hover:!bg-primary-hover !transition-colors"
@@ -468,15 +499,17 @@ const KalifindSearchTest: React.FC<{
         <div className="!fixed !inset-0 !bg-black !bg-opacity-50 !z-50 lg:!hidden">
           <div
             ref={mobileFiltersRef}
-            className="!absolute !top-0 !left-0 !right-0 !bg-background !max-h-screen !overflow-y-auto !shadow-xl"
+            className={`!absolute !top-0 !left-0 !right-0 !bg-background !max-h-screen !overflow-y-auto !shadow-xl !w-full ${
+              isClosingMobileFilters ? "animate-slide-up" : "animate-slide-down"
+            }`}
           >
             <div className="!flex !items-center !justify-between !p-4 !border-b !border-border !bg-background !sticky !top-0 !z-10">
               <h2 className="!text-lg !font-semibold !text-foreground">
                 Filters
               </h2>
               <button
-                onClick={() => setShowMobileFilters(false)}
-                className="!p-2 !hover:bg-muted !rounded-full !transition-colors"
+                onClick={handleCloseMobileFilters}
+                className="!p-2 hover:!bg-muted !rounded-full !transition-colors"
               >
                 <X className="!w-5 !h-5 !text-foreground" />
               </button>
@@ -492,7 +525,7 @@ const KalifindSearchTest: React.FC<{
                   <AccordionTrigger>Category</AccordionTrigger>
                   <AccordionContent>
                     <div className="!space-y-3">
-                      {filters.categories.map((category) => (
+                      {availableCategories.map((category) => (
                         <label
                           key={category}
                           className="!flex !items-center !justify-between !cursor-pointer !p-2 hover:!bg-muted !rounded-lg"
@@ -520,7 +553,7 @@ const KalifindSearchTest: React.FC<{
                   <AccordionTrigger>Brand</AccordionTrigger>
                   <AccordionContent>
                     <div className="!space-y-3">
-                      {filters.brands.map((brand) => (
+                      {availableBrands.map((brand) => (
                         <label
                           key={brand}
                           className="!flex !items-center !justify-between !cursor-pointer !p-2 hover:!bg-muted !rounded-lg"
@@ -633,12 +666,12 @@ const KalifindSearchTest: React.FC<{
                       genders: [],
                     });
                   }}
-                  className="!flex-1 !py-3 !border !border-border !text-foreground !rounded-lg !font-medium  hover:!bg-muted !transition-colors"
+                  className="!flex-1 !py-3 !border !border-border !text-foreground !rounded-lg !font-medium hover:!bg-muted !transition-colors"
                 >
                   Clear All
                 </button>
                 <button
-                  onClick={() => setShowMobileFilters(false)}
+                  onClick={handleCloseMobileFilters}
                   className="!flex-1 !py-3 !bg-primary !text-primary-foreground !rounded-lg !font-medium hover:!bg-primary-hover !transition-colors"
                 >
                   Apply Filters
@@ -649,7 +682,7 @@ const KalifindSearchTest: React.FC<{
         </div>
       )}
 
-      <div className="!flex !w-full">
+      <div className="!flex !w-full !max-w-7xl !mx-auto">
         <aside className="!w-64 !p-6 !bg-filter-bg !hidden lg:!block">
           <Accordion
             type="multiple"
@@ -661,7 +694,7 @@ const KalifindSearchTest: React.FC<{
               </AccordionTrigger>
               <AccordionContent>
                 <div className="!space-y-2">
-                  {filters.categories.map((category) => (
+                  {availableCategories.map((category) => (
                     <label
                       key={category}
                       className="!flex !items-center !justify-between !cursor-pointer"
@@ -689,7 +722,7 @@ const KalifindSearchTest: React.FC<{
               </AccordionTrigger>
               <AccordionContent>
                 <div className="!space-y-2">
-                  {filters.brands.map((brand) => (
+                  {availableBrands.map((brand) => (
                     <label
                       key={brand}
                       className="!flex !items-center !justify-between !cursor-pointer"
@@ -816,9 +849,9 @@ const KalifindSearchTest: React.FC<{
           )}
         </aside>
 
-        <main className="!flex-1">
+        <main className="!flex-1 !w-full">
           {recentSearches.length > 0 && (
-            <div className="!pt-10 !pl-6 !pb-4">
+            <div className="!pt-10 !pl-6 !pb-4 !w-full">
               <h2 className="!text-xl !font-medium !text-foreground !mb-2">
                 Recent Searches
               </h2>
@@ -835,7 +868,7 @@ const KalifindSearchTest: React.FC<{
               </div>
             </div>
           )}
-          <div className="!px-6">
+          <div className="!px-6 !w-full">
             <h2 className="!text-xl !font-medium !text-foreground !mb-6">
               Recommended products
             </h2>
@@ -843,11 +876,11 @@ const KalifindSearchTest: React.FC<{
             {isLoading || isPending ? (
               <LoadingSkeleton />
             ) : (
-              <div className="!grid !grid-cols-1 sm:!grid-cols-2 lg:!grid-cols-3 xl:!grid-cols-4 !gap-6">
+              <div className="!grid !grid-cols-1 sm:!grid-cols-2 lg:!grid-cols-3 xl:!grid-cols-4 !gap-6 !w-full">
                 {filteredProducts.map((product) => (
                   <div
                     key={product.id}
-                    className="!bg-background !border !border-border !rounded-lg !p-4 hover:!shadow-lg !transition-shadow"
+                    className="!bg-background !border !border-border !rounded-lg !p-4 hover:!shadow-lg !transition-shadow !w-full"
                   >
                     <div className="!relative !mb-4">
                       <img
