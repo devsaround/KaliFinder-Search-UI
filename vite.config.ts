@@ -24,14 +24,14 @@ export default defineConfig(({ mode }) => ({
     "process.env.NODE_ENV": JSON.stringify(mode),
   },
   build: {
-    emptyOutDir: true,
-    // lib: {
-    //   entry: path.resolve(__dirname, "src/embed.tsx"),
-    //   name: "KalifindSearch",
-    //   formats: ["umd"],
-    //   fileName: (format) => `kalifind-search.js`,
-    // },
+    lib: {
+      entry: path.resolve(__dirname, "src/embed.tsx"),
+      name: "KalifindSearch",
+      formats: ["umd"],
+      fileName: (format) => `kalifind-search.js`,
+    },
     // outDir: "search-cdn",
     outDir: "dist",
+    // emptyOutDir: true,
   },
 }));

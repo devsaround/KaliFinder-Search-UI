@@ -53,9 +53,12 @@ const KalifindSearchTest: React.FC<{
   >([]);
   const [isAutocompleteLoading, setIsAutocompleteLoading] = useState(false);
   const [isPriceLoading, setIsPriceLoading] = useState(true);
-  const [maxPrice, setMaxPrice] = useState<number>(5000); // Default max price
+  const [maxPrice, setMaxPrice] = useState<number>(10000); // Default max price
   const [availableCategories, setAvailableCategories] = useState<string[]>([]);
   const [availableBrands, setAvailableBrands] = useState<string[]>([]);
+  const [categoryCounts, setCategoryCounts] = useState<{
+    [key: string]: number;
+  }>({});
   const [filters, setFilters] = useState<FilterState>({
     categories: [],
     priceRange: [0, 5000], // Default price range
@@ -98,6 +101,8 @@ const KalifindSearchTest: React.FC<{
         const params = new URLSearchParams();
         params.append("storeId", storeId.toString());
         params.append("storeType", storeType);
+        // params.append("storeId", "28");
+        // params.append("storeType", "woocommerce");
 
         const response = await fetch(
           `${import.meta.env.VITE_BACKEND_URL}/v1/search?${params.toString()}`,
@@ -121,11 +126,13 @@ const KalifindSearchTest: React.FC<{
 
           const allCategories = new Set<string>();
           const allBrands = new Set<string>();
+          const counts: { [key: string]: number } = {};
           result.forEach((product: any) => {
             if (product.categories) {
-              product.categories.forEach((cat: string) =>
-                allCategories.add(cat),
-              );
+              product.categories.forEach((cat: string) => {
+                allCategories.add(cat);
+                counts[cat] = (counts[cat] || 0) + 1;
+              });
             }
             if (product.brands) {
               product.brands.forEach((brand: string) => allBrands.add(brand));
@@ -133,6 +140,7 @@ const KalifindSearchTest: React.FC<{
           });
           setAvailableCategories(Array.from(allCategories));
           setAvailableBrands(Array.from(allBrands));
+          setCategoryCounts(counts);
         } else {
           console.error("Initial search result is not an array:", result);
         }
@@ -178,15 +186,15 @@ const KalifindSearchTest: React.FC<{
             if (debouncedSearchQuery) {
               params.append("q", debouncedSearchQuery);
             }
-            // if (storeId) {
-            //   params.append("storeId", storeId.toString());
-            // }
-            // if (storeType) {
-            //   params.append("storeType", storeType);
-            // }
+            if (storeId) {
+              params.append("storeId", storeId.toString());
+            }
+            if (storeType) {
+              params.append("storeType", storeType);
+            }
 
-            params.append("storeId", " 28");
-            params.append("storeType", " woocommerce");
+            // params.append("storeId", " 28");
+            // params.append("storeType", " woocommerce");
 
             const response = await fetch(
               `${
@@ -248,6 +256,8 @@ const KalifindSearchTest: React.FC<{
           if (storeType) {
             params.append("storeType", storeType);
           }
+          // params.append("storeId", "28");
+          // params.append("storeType", "woocommerce");
 
           if (filters.categories.length > 0) {
             params.append("categories", filters.categories.join(","));
@@ -546,7 +556,7 @@ const KalifindSearchTest: React.FC<{
                             </span>
                           </div>
                           <span className="!text-muted-foreground !text-sm !bg-muted !px-2 !py-1 !rounded">
-                            {/* {category.length} */}
+                            {categoryCounts[category] || 0}
                           </span>
                         </label>
                       ))}
@@ -712,9 +722,9 @@ const KalifindSearchTest: React.FC<{
                         />
                         <span className="!text-foreground">{category}</span>
                       </div>
-                      {/* <span className="!text-muted-foreground !text-sm"> */}
-                      {/*   {category.length} */}
-                      {/* </span> */}
+                      <span className="!text-muted-foreground !text-sm">
+                        {categoryCounts[category] || 0}
+                      </span>
                     </label>
                   ))}
                 </div>
@@ -926,4 +936,3 @@ const KalifindSearchTest: React.FC<{
 };
 
 export default KalifindSearchTest;
-
