@@ -178,12 +178,16 @@ const KalifindSearchTest: React.FC<{
             if (debouncedSearchQuery) {
               params.append("q", debouncedSearchQuery);
             }
-            if (storeId) {
-              params.append("storeId", storeId.toString());
-            }
-            if (storeType) {
-              params.append("storeType", storeType);
-            }
+            // if (storeId) {
+            //   params.append("storeId", storeId.toString());
+            // }
+            // if (storeType) {
+            //   params.append("storeType", storeType);
+            // }
+
+            params.append("storeId", " 28");
+            params.append("storeType", " woocommerce");
+
             const response = await fetch(
               `${
                 import.meta.env.VITE_BACKEND_URL
@@ -922,3 +926,4 @@ const KalifindSearchTest: React.FC<{
 };
 
 export default KalifindSearchTest;
+
