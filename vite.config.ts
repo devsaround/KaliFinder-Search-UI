@@ -30,6 +30,7 @@ export default defineConfig(({ mode }) => ({
       formats: ["umd"],
       fileName: (format) => `kalifind-search.js`,
     },
-    outDir: "search-cdn",
+    // outDir: "search-cdn",
+    outDir: "dist",
   },
 }));
