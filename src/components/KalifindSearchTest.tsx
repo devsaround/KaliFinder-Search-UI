@@ -48,9 +48,19 @@ const KalifindSearchTest: React.FC<{
   storeType?: string;
   userId?: string;
   apiKey?: string;
-  onClose?: () => void; // Add onClose to props
-}> = ({ userId, apiKey, storeId, storeType, onClose }) => {
-  const [searchQuery, setSearchQuery] = useState("");
+  onClose?: () => void;
+  searchQuery?: string; // Accept search query from parent
+  hideHeader?: boolean; // Hide header for mobile/tablet
+}> = ({
+  userId,
+  apiKey,
+  storeId,
+  storeType,
+  onClose,
+  searchQuery: initialSearchQuery,
+  hideHeader = false,
+}) => {
+  const [searchQuery, setSearchQuery] = useState(initialSearchQuery || "");
   const [showAutocomplete, setShowAutocomplete] = useState(false);
   const [showMobileFilters, setShowMobileFilters] = useState(false);
   const [isClosingMobileFilters, setIsClosingMobileFilters] = useState(false);
@@ -79,6 +89,16 @@ const KalifindSearchTest: React.FC<{
     brands: [],
     genders: [],
   });
+
+  // Sync search query from parent (for mobile/tablet)
+  useEffect(() => {
+    if (
+      initialSearchQuery !== undefined &&
+      initialSearchQuery !== searchQuery
+    ) {
+      setSearchQuery(initialSearchQuery);
+    }
+  }, [initialSearchQuery]);
 
   const debouncedSearchQuery = useDebounce(searchQuery, 500);
   const debouncedPriceRange = useDebounce(filters.priceRange, 500);
@@ -433,99 +453,103 @@ const KalifindSearchTest: React.FC<{
 
   return (
     <div className="!bg-background !min-h-screen !w-full !max-w-full ">
-      <header className="!bg-background !py-3 !w-full">
-        <div className="!flex !items-center justify-center lg:!gap-24 !max-w-7xl !mx-auto flex-col lg:flex-row !w-full">
-          <div className="!flex !items-center !gap-2 justify-between md:justify-normal">
-            <div className="lg:!flex !items-center !hidden">
-              <a href="/" className="!s-center">
-                <img
-                  src={`https://kalifinder-search.pages.dev/KalifindLogo.png`}
-                  alt="Kalifind"
-                  // className="!h-auto !w-full !max-w-[200px] !max-h-14 !object-contain !object-center"
-                  className="!h-auto !w-full !max-w-[200px] !max-h-14 !object-contain !object-center"
-                />
-              </a>
-            </div>
-          </div>
-
-          <div
-            className="!flex-1 !relative !ml-2 !w-full !max-w-7xl"
-            ref={searchRef}
-          >
-            <div
-              className="!flex !items-center !gap-2 !flex-1 !w-full"
-              ref={searchRef}
-            >
-              <div className="!w-full flex">
-                <div className="!relative !flex-1 !w-full">
-                  <Search className="!absolute !left-3 !top-1/2 !transform !-translate-y-1/2 !text-muted-foreground !w-5 !h-5" />
-                  <input
-                    ref={inputRef}
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => handleSearch(e.target.value)}
-                    onFocus={() => setShowAutocomplete(true)}
-                    onKeyDown={handleKeyDown}
-                    placeholder="Search"
-                    className="!w-full !pl-10 !pr-4 !py-3 !border-b-2 !border-search-highlight !text-foreground !placeholder-muted-foreground focus:!outline-none focus:!border-none focus:!ring-0"
+      {!hideHeader && (
+        <header className="!bg-background !py-3 !w-full">
+          <div className="!flex !items-center justify-center lg:!gap-24 !max-w-7xl !mx-auto flex-col lg:flex-row !w-full">
+            <div className="!flex !items-center !gap-2 justify-between md:justify-normal">
+              <div className="lg:!flex !items-center !hidden">
+                <a href="/" className="!s-center">
+                  <img
+                    src={`https://kalifinder-search.pages.dev/KalifindLogo.png`}
+                    alt="Kalifind"
+                    // className="!h-auto !w-full !max-w-[200px] !max-h-14 !object-contain !object-center"
+                    className="!h-auto !w-full !max-w-[200px] !max-h-14 !object-contain !object-center"
                   />
-
-                  {/* <div className="!absolute !right-3 !top-1/2 !transform !-translate-y-1/2 !flex !gap-2"></div> */}
-                </div>
-                <button
-                  className="!rounded-lg hover:!bg-muted/20 !transition-colors !duration-200 !flex-shrink-0"
-                  aria-label="Close search"
-                  onClick={onClose}
-                >
-                  <X className="!w-6 !h-6 !text-muted-foreground hover:!text-foreground !transition-colors !duration-200" />
-                </button>
+                </a>
               </div>
             </div>
 
-            {showAutocomplete &&
-              (autocompleteSuggestions.length > 0 ||
-                isAutocompleteLoading ||
-                debouncedSearchQuery) && (
-                <div className="!absolute !top-full !left-0 !right-0 !bg-background !border !border-border !rounded-lg !shadow-lg !z-50 !mt-1 !w-full">
-                  <div className="!z-[999] !p-4">
-                    {isAutocompleteLoading ? (
-                      <div className="!text-center !py-2 !text-muted-foreground">
-                        Loading suggestions...
-                      </div>
-                    ) : autocompleteSuggestions.length > 0 ? (
-                      <>
-                        <h3 className="!text-sm !font-medium !text-foreground !mb-3">
-                          Suggestions
-                        </h3>
-                        <div className="!space-y-2">
-                          {autocompleteSuggestions.map((suggestion, index) => (
-                            <div
-                              key={index}
-                              className="!flex !items-center !gap-2 !cursor-pointer hover:!bg-muted !p-2 !rounded"
-                              onClick={() => {
-                                handleSearch(suggestion);
-                                setShowAutocomplete(false);
-                              }}
-                            >
-                              <Search className="!w-4 !h-4 !text-muted-foreground" />
-                              <span className="!text-muted-foreground">
-                                {suggestion}
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                      </>
-                    ) : debouncedSearchQuery && !isAutocompleteLoading ? (
-                      <div className="!text-center !py-2 !text-muted-foreground">
-                        No suggestions found.
-                      </div>
-                    ) : null}
+            <div
+              className="!flex-1 !relative !ml-2 !w-full !max-w-7xl"
+              ref={searchRef}
+            >
+              <div
+                className="!flex !items-center !gap-2 !flex-1 !w-full"
+                ref={searchRef}
+              >
+                <div className="!w-full flex">
+                  <div className="!relative !flex-1 !w-full">
+                    <Search className="!absolute !left-3 !top-1/2 !transform !-translate-y-1/2 !text-muted-foreground !w-5 !h-5" />
+                    <input
+                      ref={inputRef}
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => handleSearch(e.target.value)}
+                      onFocus={() => setShowAutocomplete(true)}
+                      onKeyDown={handleKeyDown}
+                      placeholder="Search"
+                      className="!w-full !pl-10 !pr-4 !py-3 !border-b-2 !border-search-highlight !text-foreground !placeholder-muted-foreground focus:!outline-none focus:!border-none focus:!ring-0"
+                    />
+
+                    {/* <div className="!absolute !right-3 !top-1/2 !transform !-translate-y-1/2 !flex !gap-2"></div> */}
                   </div>
+                  <button
+                    className="!rounded-lg hover:!bg-muted/20 !transition-colors !duration-200 !flex-shrink-0"
+                    aria-label="Close search"
+                    onClick={onClose}
+                  >
+                    <X className="!w-6 !h-6 !text-muted-foreground hover:!text-foreground !transition-colors !duration-200 pr-2" />
+                  </button>
                 </div>
-              )}
+              </div>
+
+              {showAutocomplete &&
+                (autocompleteSuggestions.length > 0 ||
+                  isAutocompleteLoading ||
+                  debouncedSearchQuery) && (
+                  <div className="!absolute !top-full !left-0 !right-0 !bg-background !border !border-border !rounded-lg !shadow-lg !z-50 !mt-1 !w-full">
+                    <div className="!z-[999] !p-4">
+                      {isAutocompleteLoading ? (
+                        <div className="!text-center !py-2 !text-muted-foreground">
+                          Loading suggestions...
+                        </div>
+                      ) : autocompleteSuggestions.length > 0 ? (
+                        <>
+                          <h3 className="!text-sm !font-medium !text-foreground !mb-3">
+                            Suggestions
+                          </h3>
+                          <div className="!space-y-2">
+                            {autocompleteSuggestions.map(
+                              (suggestion, index) => (
+                                <div
+                                  key={index}
+                                  className="!flex !items-center !gap-2 !cursor-pointer hover:!bg-muted !p-2 !rounded"
+                                  onClick={() => {
+                                    handleSearch(suggestion);
+                                    setShowAutocomplete(false);
+                                  }}
+                                >
+                                  <Search className="!w-4 !h-4 !text-muted-foreground" />
+                                  <span className="!text-muted-foreground">
+                                    {suggestion}
+                                  </span>
+                                </div>
+                              ),
+                            )}
+                          </div>
+                        </>
+                      ) : debouncedSearchQuery && !isAutocompleteLoading ? (
+                        <div className="!text-center !py-2 !text-muted-foreground">
+                          No suggestions found.
+                        </div>
+                      ) : null}
+                    </div>
+                  </div>
+                )}
+            </div>
           </div>
-        </div>
-      </header>
+        </header>
+      )}
 
       <div className="!block lg:!hidden !px-4 !py-3 !bg-background !w-full">
         <button
@@ -941,7 +965,7 @@ const KalifindSearchTest: React.FC<{
                   </DropdownMenuTrigger>
                   <DropdownMenuContent
                     align="end"
-                    className="!z-[10000]"
+                    className="!z-[100000]"
                     container={document.body}
                   >
                     <DropdownMenuLabel>Sort by</DropdownMenuLabel>
