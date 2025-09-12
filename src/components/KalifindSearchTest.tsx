@@ -551,10 +551,10 @@ const KalifindSearchTest: React.FC<{
         </header>
       )}
 
-      <div className="!block lg:!hidden !px-4 !py-3 !bg-background !w-full">
+      <div className="!fixed !bottom-4 !left-1/2 !-translate-x-1/2 !z-50 !block lg:!hidden">
         <button
           onClick={() => setShowMobileFilters(true)}
-          className="!flex !items-center !gap-2 !px-4 !py-2 !bg-primary !text-primary-foreground !rounded-lg !font-medium hover:!bg-primary-hover !transition-colors"
+          className="!flex !items-center !gap-2 !px-4 !py-3 !bg-primary !text-primary-foreground !rounded-full !font-medium !shadow-lg !hover:!bg-primary-hover !transition-all !duration-300 !transform !hover:!scale-105"
         >
           <Filter className="!w-4 !h-4" />
           Filters
