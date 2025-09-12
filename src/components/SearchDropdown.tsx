@@ -35,9 +35,9 @@ const SearchDropdown: React.FC<SearchDropdownProps> = ({
     };
 
     checkScreenSize();
-    window.addEventListener('resize', checkScreenSize);
+    window.addEventListener("resize", checkScreenSize);
 
-    return () => window.removeEventListener('resize', checkScreenSize);
+    return () => window.removeEventListener("resize", checkScreenSize);
   }, []);
 
   useEffect(() => {
@@ -154,7 +154,7 @@ const SearchDropdown: React.FC<SearchDropdownProps> = ({
                   aria-label="Close search"
                   onClick={onClose}
                 >
-                  <X className="!w-6 !h-6 !text-muted-foreground hover:!text-foreground !transition-colors !duration-200" />
+                  <X className="!w-6 !h-6 !text-muted-foreground hover:!text-foreground !transition-colors !duration-200 mr-2" />
                 </button>
               </div>
             </div>
@@ -185,22 +185,27 @@ const SearchDropdown: React.FC<SearchDropdownProps> = ({
     <div className="!fixed !inset-0 !z-[999] !min-h-screen">
       {/* Backdrop */}
       <div
-        className={`!fixed !inset-0 !bg-foreground/20 !backdrop-blur-sm !transition-opacity !duration-300 ${isOpen ? "!opacity-100" : "!opacity-0"
-          }`}
+        className={`!fixed !inset-0 !bg-foreground/20 !backdrop-blur-sm !transition-opacity !duration-300 ${
+          isOpen ? "!opacity-100" : "!opacity-0"
+        }`}
         onClick={onClose}
       />
 
       {/* Dropdown Panel */}
       <div
         ref={dropdownRef}
-        className={`!fixed !inset-0 !bg-background !shadow-xl !transition-all !duration-500 !overflow-y-auto ${isOpen ? "!animate-slide-down" : "!animate-slide-up"
-          }`}
+        className={`!fixed !inset-0 !bg-background !shadow-xl !transition-all !duration-500 !overflow-y-auto ${
+          isOpen ? "!animate-slide-down" : "!animate-slide-up"
+        }`}
         style={{
           maxHeight: "100vh",
           overflowY: "auto",
         }}
       >
-        <div ref={scrollContainerRef} className="!w-full !h-full !overflow-y-auto">
+        <div
+          ref={scrollContainerRef}
+          className="!w-full !h-full !overflow-y-auto"
+        >
           {isMobileOrTablet ? (
             // Mobile/Tablet: Search-first UI
             <div className="!w-full !h-full">
@@ -213,24 +218,48 @@ const SearchDropdown: React.FC<SearchDropdownProps> = ({
                   // Show loading state below search
                   <div className="!flex !flex-col !items-center !justify-center !py-12">
                     <div className="!flex !space-x-2 !mb-4">
-                      <div className="!w-2 !h-2 !bg-gray-400 !rounded-full !animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                      <div className="!w-2 !h-2 !bg-gray-400 !rounded-full !animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                      <div className="!w-2 !h-2 !bg-gray-400 !rounded-full !animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                      <div
+                        className="!w-2 !h-2 !bg-gray-400 !rounded-full !animate-bounce"
+                        style={{ animationDelay: "0ms" }}
+                      ></div>
+                      <div
+                        className="!w-2 !h-2 !bg-gray-400 !rounded-full !animate-bounce"
+                        style={{ animationDelay: "150ms" }}
+                      ></div>
+                      <div
+                        className="!w-2 !h-2 !bg-gray-400 !rounded-full !animate-bounce"
+                        style={{ animationDelay: "300ms" }}
+                      ></div>
                     </div>
-                    <p className="!text-muted-foreground !text-sm">Loading products...</p>
+                    <p className="!text-muted-foreground !text-sm">
+                      Loading products...
+                    </p>
                   </div>
                 ) : (
                   // Show products below search once loaded
-                  <Suspense fallback={
-                    <div className="!flex !flex-col !items-center !justify-center !py-12">
-                      <div className="!flex !space-x-2 !mb-4">
-                        <div className="!w-2 !h-2 !bg-gray-400 !rounded-full !animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                        <div className="!w-2 !h-2 !bg-gray-400 !rounded-full !animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                        <div className="!w-2 !h-2 !bg-gray-400 !rounded-full !animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                  <Suspense
+                    fallback={
+                      <div className="!flex !flex-col !items-center !justify-center !py-12">
+                        <div className="!flex !space-x-2 !mb-4">
+                          <div
+                            className="!w-2 !h-2 !bg-gray-400 !rounded-full !animate-bounce"
+                            style={{ animationDelay: "0ms" }}
+                          ></div>
+                          <div
+                            className="!w-2 !h-2 !bg-gray-400 !rounded-full !animate-bounce"
+                            style={{ animationDelay: "150ms" }}
+                          ></div>
+                          <div
+                            className="!w-2 !h-2 !bg-gray-400 !rounded-full !animate-bounce"
+                            style={{ animationDelay: "300ms" }}
+                          ></div>
+                        </div>
+                        <p className="!text-muted-foreground !text-sm">
+                          Loading products...
+                        </p>
                       </div>
-                      <p className="!text-muted-foreground !text-sm">Loading products...</p>
-                    </div>
-                  }>
+                    }
+                  >
                     <EcommerceSearchWrapper />
                   </Suspense>
                 )}

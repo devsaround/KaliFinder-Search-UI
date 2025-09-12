@@ -498,7 +498,7 @@ const KalifindSearchTest: React.FC<{
                     aria-label="Close search"
                     onClick={onClose}
                   >
-                    <X className="!w-6 !h-6 !text-muted-foreground hover:!text-foreground !transition-colors !duration-200 pr-2" />
+                    <X className="!w-6 !h-6 !text-muted-foreground hover:!text-foreground !transition-colors !duration-200" />
                   </button>
                 </div>
               </div>
