@@ -9,6 +9,7 @@ export default {
     "./app/**/*.{ts,tsx}",
     "./src/**/*.{ts,tsx}",
   ],
+  // prefix: "kalifind",
   prefix: "",
   theme: {
     container: {
