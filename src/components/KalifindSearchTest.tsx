@@ -1,5 +1,11 @@
-import React, { useState, useTransition, useRef, useEffect } from "react";
-import { Search, ShoppingCart, X, Filter } from "lucide-react";
+import React, {
+  useState,
+  useTransition,
+  useRef,
+  useEffect,
+  useMemo,
+} from "react";
+import { Search, ShoppingCart, X, Filter, ChevronDown } from "lucide-react";
 
 import { useDebounce } from "@/hooks/use-debounce";
 import { Slider } from "@/components/ui/slider";
@@ -10,6 +16,14 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface Product {
   id: string;
@@ -43,11 +57,7 @@ const KalifindSearchTest: React.FC<{
   const [filteredProducts, setFilteredProducts] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isPending, startTransition] = useTransition();
-  const [recentSearches, setRecentSearches] = useState([
-    // "Sunglass",
-    // "Adidas shoes",
-    "",
-  ]);
+  const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const [autocompleteSuggestions, setAutocompleteSuggestions] = useState<
     string[]
   >([]);
@@ -56,9 +66,11 @@ const KalifindSearchTest: React.FC<{
   const [maxPrice, setMaxPrice] = useState<number>(10000); // Default max price
   const [availableCategories, setAvailableCategories] = useState<string[]>([]);
   const [availableBrands, setAvailableBrands] = useState<string[]>([]);
+  const [totalProducts, setTotalProducts] = useState(0);
   const [categoryCounts, setCategoryCounts] = useState<{
     [key: string]: number;
   }>({});
+  const [sortOption, setSortOption] = useState("default");
   const [filters, setFilters] = useState<FilterState>({
     categories: [],
     priceRange: [0, 5000], // Default price range
@@ -79,6 +91,7 @@ const KalifindSearchTest: React.FC<{
   const colors = ["black", "white", "red", "blue", "yellow"];
 
   const isAnyFilterActive =
+    !!debouncedSearchQuery ||
     filters.categories.length > 0 ||
     filters.brands.length > 0 ||
     filters.colors.length > 0 ||
@@ -95,14 +108,14 @@ const KalifindSearchTest: React.FC<{
 
   useEffect(() => {
     const initFilters = async () => {
-      if (!storeId || !storeType) return; // Don't fetch if we don't have the required params
+      // if (!storeId || !storeType) return; // Don't fetch if we don't have the required params
       setIsPriceLoading(true);
       try {
         const params = new URLSearchParams();
-        params.append("storeId", storeId.toString());
-        params.append("storeType", storeType);
-        // params.append("storeId", "28");
-        // params.append("storeType", "woocommerce");
+        // params.append("storeId", storeId.toString());
+        // params.append("storeType", storeType);
+        params.append("storeId", "28");
+        params.append("storeType", "woocommerce");
 
         const response = await fetch(
           `${import.meta.env.VITE_BACKEND_URL}/v1/search?${params.toString()}`,
@@ -112,6 +125,7 @@ const KalifindSearchTest: React.FC<{
         );
         const result = await response.json();
         if (Array.isArray(result)) {
+          setTotalProducts(result.length);
           const prices = result
             .map((p: any) => parseFloat(p.price))
             .filter((p) => !isNaN(p));
@@ -186,15 +200,15 @@ const KalifindSearchTest: React.FC<{
             if (debouncedSearchQuery) {
               params.append("q", debouncedSearchQuery);
             }
-            if (storeId) {
-              params.append("storeId", storeId.toString());
-            }
-            if (storeType) {
-              params.append("storeType", storeType);
-            }
+            // if (storeId) {
+            //   params.append("storeId", storeId.toString());
+            // }
+            // if (storeType) {
+            //   params.append("storeType", storeType);
+            // }
 
-            // params.append("storeId", " 28");
-            // params.append("storeType", " woocommerce");
+            params.append("storeId", "28");
+            params.append("storeType", "woocommerce");
 
             const response = await fetch(
               `${
@@ -250,14 +264,14 @@ const KalifindSearchTest: React.FC<{
           if (debouncedSearchQuery) {
             params.append("q", debouncedSearchQuery);
           }
-          if (storeId) {
-            params.append("storeId", storeId.toString());
-          }
-          if (storeType) {
-            params.append("storeType", storeType);
-          }
-          // params.append("storeId", "28");
-          // params.append("storeType", "woocommerce");
+          // if (storeId) {
+          //   params.append("storeId", storeId.toString());
+          // }
+          // if (storeType) {
+          //   params.append("storeType", storeType);
+          // }
+          params.append("storeId", "28");
+          params.append("storeType", "woocommerce");
 
           if (filters.categories.length > 0) {
             params.append("categories", filters.categories.join(","));
@@ -319,6 +333,26 @@ const KalifindSearchTest: React.FC<{
     apiKey,
     userId,
   ]);
+
+  const sortedProducts = useMemo(() => {
+    const productsToSort = [...filteredProducts];
+    switch (sortOption) {
+      case "a-z":
+        return productsToSort.sort((a, b) => a.title.localeCompare(b.title));
+      case "z-a":
+        return productsToSort.sort((a, b) => b.title.localeCompare(a.title));
+      case "price-asc":
+        return productsToSort.sort(
+          (a, b) => parseFloat(a.price) - parseFloat(b.price),
+        );
+      case "price-desc":
+        return productsToSort.sort(
+          (a, b) => parseFloat(b.price) - parseFloat(a.price),
+        );
+      default:
+        return productsToSort;
+    }
+  }, [filteredProducts, sortOption]);
 
   const handleSearch = (query: string) => {
     setSearchQuery(query);
@@ -402,7 +436,7 @@ const KalifindSearchTest: React.FC<{
       <header className="!bg-background !py-3 !w-full">
         <div className="!flex !items-center justify-center lg:!gap-24 !max-w-7xl !mx-auto flex-col lg:flex-row !w-full">
           <div className="!flex !items-center !gap-2 justify-between md:justify-normal">
-            <div className="!flex !items-center">
+            <div className="lg:!flex !items-center !hidden">
               <a href="/" className="!s-center">
                 <img
                   src={`https://kalifinder-search.pages.dev/KalifindLogo.png`}
@@ -697,7 +731,7 @@ const KalifindSearchTest: React.FC<{
       )}
 
       <div className="!flex !w-full !max-w-7xl !mx-auto">
-        <aside className="!w-64 !p-6 !bg-filter-bg !hidden lg:!block">
+        <aside className="!w-64 !p-4 !bg-filter-bg !hidden lg:!block">
           <Accordion
             type="multiple"
             defaultValue={["category", "price", "size", "color", "brand"]}
@@ -864,8 +898,9 @@ const KalifindSearchTest: React.FC<{
         </aside>
 
         <main className="!flex-1 !w-full">
-          {recentSearches.length > 0 && (
-            <div className="!pt-10 !pl-6 !pb-4 !w-full">
+          {/* {recentSearches.length > 0 && ( */}
+          {true && (
+            <div className="!pt-8 !pl-6 !pb-4 !w-full">
               <h2 className="!text-xl !font-medium !text-foreground !mb-2">
                 Recent Searches
               </h2>
@@ -883,15 +918,84 @@ const KalifindSearchTest: React.FC<{
             </div>
           )}
           <div className="!px-6 !w-full">
-            <h2 className="!text-xl !font-medium !text-foreground !mb-6">
-              Recommended products
+            <h2 className="!text-xl !font-medium !text-foreground !mb-2">
+              {isAnyFilterActive ? "Search Results" : "Recommended products"}
             </h2>
+            <div className="!mb-4 flex justify-between items-center text-sm !text-muted-foreground">
+              {isAnyFilterActive ? (
+                <div>
+                  <b>{filteredProducts.length}</b> products found
+                </div>
+              ) : (
+                <div>
+                  <b>{totalProducts}</b> products found
+                </div>
+              )}
+              <div onClick={(e) => e.stopPropagation()}>
+                <DropdownMenu>
+                  <DropdownMenuTrigger>
+                    <div className="!flex !items-center !border !border-border !px-3 !py-2 !rounded-md">
+                      Sort By
+                      <ChevronDown className="!w-4 !h-4 !ml-2" />
+                    </div>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent
+                    align="end"
+                    className="!z-[10000]"
+                    container={document.body}
+                  >
+                    <DropdownMenuLabel>Sort by</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onSelect={(e) => {
+                        e.preventDefault();
+                        setSortOption("default");
+                      }}
+                    >
+                      Default
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onSelect={(e) => {
+                        e.preventDefault();
+                        setSortOption("a-z");
+                      }}
+                    >
+                      Name: A-Z
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onSelect={(e) => {
+                        e.preventDefault();
+                        setSortOption("z-a");
+                      }}
+                    >
+                      Name: Z-A
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onSelect={(e) => {
+                        e.preventDefault();
+                        setSortOption("price-asc");
+                      }}
+                    >
+                      Price: Low to High
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onSelect={(e) => {
+                        e.preventDefault();
+                        setSortOption("price-desc");
+                      }}
+                    >
+                      Price: High to Low
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            </div>
 
             {isLoading || isPending ? (
               <LoadingSkeleton />
             ) : (
               <div className="!grid !grid-cols-1 sm:!grid-cols-2 lg:!grid-cols-3 xl:!grid-cols-4 !gap-6 !w-full">
-                {filteredProducts.map((product) => (
+                {sortedProducts.map((product) => (
                   <div
                     key={product.id}
                     className="!bg-background !border !border-border !rounded-lg !p-4 hover:!shadow-lg !transition-shadow !w-full"
@@ -921,7 +1025,7 @@ const KalifindSearchTest: React.FC<{
               </div>
             )}
 
-            {!isLoading && !isPending && filteredProducts.length === 0 && (
+            {!isLoading && !isPending && sortedProducts.length === 0 && (
               <div className="!text-center !py-12">
                 <p className="!text-muted-foreground">
                   No products found matching your criteria.

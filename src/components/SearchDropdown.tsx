@@ -71,7 +71,7 @@ const SearchDropdown: React.FC<SearchDropdownProps> = ({
   if (!isOpen && !isAnimating) return null;
 
   return (
-    <div className="!fixed !inset-0 !z-[9999] !min-h-screen">
+    <div className="!fixed !inset-0 !z-[999] !min-h-screen">
       {/* Backdrop */}
       <div
         className={`!fixed !inset-0 !bg-foreground/20 !backdrop-blur-sm !transition-opacity !duration-300 ${
@@ -85,7 +85,7 @@ const SearchDropdown: React.FC<SearchDropdownProps> = ({
         ref={dropdownRef} // Re-enable ref for click outside
         className={`!fixed !inset-0 !bg-background !shadow-xl !transition-all !duration-500 !overflow-y-auto ${
           isOpen ? "!animate-slide-down" : "!animate-slide-up"
-        } !pt-8 !pb-4 !px-4`} // Add padding here
+        } lg:!pt-2 !pb-4 !px-4`} // Add padding here
         style={{
           maxHeight: "92vh",
           overflowY: "auto",
