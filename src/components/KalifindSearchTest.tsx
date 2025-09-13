@@ -578,7 +578,7 @@ const KalifindSearchTest: React.FC<{
                 </button>
               </DrawerClose>
             </div>
-            <div className="!px-4 sm:!p-4 overflow-y-auto h-[89vh]">
+            <div className="!px-4 sm:!p-4 overflow-y-auto h-[89svh]">
               <Accordion
                 type="multiple"
                 defaultValue={["category", "price", "size", "color", "brand"]}
@@ -762,7 +762,7 @@ const KalifindSearchTest: React.FC<{
             defaultValue={["category", "price", "size", "color", "brand"]}
           >
             <AccordionItem value="category">
-              <AccordionTrigger className="lg:text-3xl !text-foreground">
+              <AccordionTrigger className="lg:text-[18px] !text-foreground">
                 <b>Category</b>
               </AccordionTrigger>
               <AccordionContent>
@@ -792,7 +792,7 @@ const KalifindSearchTest: React.FC<{
               </AccordionContent>
             </AccordionItem>
             <AccordionItem value="brand">
-              <AccordionTrigger className="lg:text-3xl !font-extrabold !text-foreground">
+              <AccordionTrigger className="lg:text-[18px] !font-extrabold !text-foreground">
                 <b>Brand</b>
               </AccordionTrigger>
               <AccordionContent>
@@ -820,7 +820,7 @@ const KalifindSearchTest: React.FC<{
             </AccordionItem>
             {!isPriceLoading && (
               <AccordionItem value="price">
-                <AccordionTrigger className="lg:text-3xl !font-[800] !text-foreground">
+                <AccordionTrigger className="lg:text-[18px] !font-[800] !text-foreground">
                   <b className="font-extrabold">Price</b>
                 </AccordionTrigger>
                 <AccordionContent>
@@ -844,7 +844,7 @@ const KalifindSearchTest: React.FC<{
               </AccordionItem>
             )}
             <AccordionItem value="size">
-              <AccordionTrigger className="lg:text-3xl !font-[700] !text-foreground">
+              <AccordionTrigger className="lg:text-[18px] !font-[700] !text-foreground">
                 <b className="font-extrabold">Size</b>
               </AccordionTrigger>
               <AccordionContent>
@@ -866,7 +866,7 @@ const KalifindSearchTest: React.FC<{
               </AccordionContent>
             </AccordionItem>
             <AccordionItem value="color">
-              <AccordionTrigger className="lg:text-3xl !font-[700] !text-foreground">
+              <AccordionTrigger className="lg:text-[18px] !font-[700] !text-foreground">
                 <b className="font-extrabold">Color</b>
               </AccordionTrigger>
               <AccordionContent>
@@ -946,10 +946,10 @@ const KalifindSearchTest: React.FC<{
           )}
           <div className="!pr-4 sm:!pr-4 lg:!pr-8 lg:pl-4 !w-full">
             {/* <div className=""> */}
-            <h2 className="py-5 !text-[10px] sm:!text-[14px] lg:text-[24px] !font-bold !text-foreground !mb-2 mt-2">
+            <div className="hidden lg:flex py-5 !text-[10px] sm:!text-[14px] lg:text-[24px] !font-bold !text-foreground !mb-2 mt-2">
               {isAnyFilterActive ? "Search Results" : "Recommended products"}
-            </h2>
-            <div className="!mb-4 flex justify-between items-center text-xs lg:text-[20px] !text-muted-foreground">
+            </div>
+            <div className="pt-[16px] lg:pt-[0px] !mb-4 flex justify-between items-center text-xs lg:text-[20px] !text-muted-foreground">
               {isAnyFilterActive ? (
                 <div className="!ml-2 lg:text-[16px]">
                   <b className="!font-extrabold">{filteredProducts.length}</b>{" "}
