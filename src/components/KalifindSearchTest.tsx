@@ -448,7 +448,7 @@ const KalifindSearchTest: React.FC<{
     <div className="!bg-background !min-h-screen">
       {!hideHeader && (
         <header className="!bg-background !py-3 !w-screen">
-          <div className="!flex !items-center justify-center lg:!gap-24 !max-w-7xl !mx-auto flex-col lg:flex-row !w-full">
+          <div className="!flex !items-center justify-center lg:!gap-24 !mx-auto flex-col lg:flex-row !w-full">
             <div className="!flex !items-center !gap-2 justify-between md:justify-normal">
               <div className="lg:!flex !items-center !hidden">
                 <a href="/" className="!s-center">
@@ -468,8 +468,8 @@ const KalifindSearchTest: React.FC<{
                 ref={searchRef}
               >
                 <div className="!w-full flex">
-                  <div className="!relative !flex-1 !w-full">
-                    <Search className="!absolute !left-3 !top-1/2 !transform !-translate-y-1/2 !text-muted-foreground !w-5 !h-5" />
+                  <div className="pl-4 !relative !flex-1 !w-full">
+                    <Search className="!absolute !left-5 !top-1/2 !transform !-translate-y-1/2 !text-muted-foreground !w-5 !h-5" />
                     <input
                       ref={inputRef}
                       type="text"
@@ -478,7 +478,7 @@ const KalifindSearchTest: React.FC<{
                       onFocus={() => setShowAutocomplete(true)}
                       onKeyDown={handleKeyDown}
                       placeholder="Search"
-                      className="!w-full !pl-10 !pr-4 !py-3 !border-b-2 !border-search-highlight !text-foreground !placeholder-muted-foreground focus:!outline-none focus:!border-none focus:!ring-0"
+                      className="!w-full !pl-8 !pr-4 !py-3 !border-b-2 !border-search-highlight !text-foreground !placeholder-muted-foreground focus:!outline-none focus:!border-none focus:!ring-0"
                     />
 
                     {/* <div className="!absolute !right-3 !top-1/2 !transform !-translate-y-1/2 !flex !gap-2"></div> */}
@@ -743,7 +743,8 @@ const KalifindSearchTest: React.FC<{
         </Drawer>
       </div>
 
-      <div className="!flex !w-full !max-w-7xl !mx-auto">
+      {/* <div className="!flex !w-full !max-w-7xl !mx-auto"> */}
+      <div className="!flex !w-full pl-4 !mx-auto">
         <aside className="!w-64 !p-4 !bg-filter-bg !hidden lg:!block">
           <Accordion
             type="multiple"
