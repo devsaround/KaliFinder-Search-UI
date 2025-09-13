@@ -447,7 +447,7 @@ const KalifindSearchTest: React.FC<{
   return (
     <div className="box-border !bg-background !min-h-screen w-screen lg:pt-1 lg:px-24">
       {!hideHeader && (
-        <header className="!bg-background !py-3 !w-full">
+        <div className="!bg-background !py-3 !w-full">
           <div className="!flex !items-center justify-center lg:!gap-[88px] !mx-auto flex-col lg:flex-row !w-full">
             <div className="!flex !items-center !gap-2 justify-between md:justify-normal">
               <div className="lg:!flex !items-center !hidden">
@@ -538,7 +538,7 @@ const KalifindSearchTest: React.FC<{
                 )}
             </div>
           </div>
-        </header>
+        </div>
       )}
 
       <div className="!fixed !bottom-4 !left-1/2 !-translate-x-1/2 !z-50 !block lg:!hidden">
