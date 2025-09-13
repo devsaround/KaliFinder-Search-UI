@@ -445,10 +445,10 @@ const KalifindSearchTest: React.FC<{
   );
 
   return (
-    <div className="!bg-background !min-h-screen">
+    <div className="!bg-background !min-h-screen lg:px-24 lg:pt-1">
       {!hideHeader && (
         <header className="!bg-background !py-3 !w-screen">
-          <div className="!flex !items-center justify-center lg:!gap-24 !mx-auto flex-col lg:flex-row !w-full">
+          <div className="!flex !items-center justify-center lg:!gap-[88px] !mx-auto flex-col lg:flex-row !w-full">
             <div className="!flex !items-center !gap-2 justify-between md:justify-normal">
               <div className="lg:!flex !items-center !hidden">
                 <a href="/" className="!s-center">
@@ -456,7 +456,7 @@ const KalifindSearchTest: React.FC<{
                     src={`https://kalifinder-search.pages.dev/KalifindLogo.png`}
                     alt="Kalifind"
                     // className="!h-auto !w-full !max-w-[200px] !max-h-14 !object-contain !object-center"
-                    className="!h-auto !w-full !max-w-[200px] !max-h-14 !object-contain !object-center"
+                    className="!h-auto !w-full !max-w-[200px] !max-h-16 !object-contain !object-center"
                   />
                 </a>
               </div>
@@ -751,7 +751,7 @@ const KalifindSearchTest: React.FC<{
             defaultValue={["category", "price", "size", "color", "brand"]}
           >
             <AccordionItem value="category">
-              <AccordionTrigger className="!font-bold !text-foreground">
+              <AccordionTrigger className="lg:text-lg !font-bold !text-foreground">
                 Category
               </AccordionTrigger>
               <AccordionContent>
@@ -779,7 +779,7 @@ const KalifindSearchTest: React.FC<{
               </AccordionContent>
             </AccordionItem>
             <AccordionItem value="brand">
-              <AccordionTrigger className="!font-bold !text-foreground">
+              <AccordionTrigger className="lg:text-lg !font-bold !text-foreground">
                 Brand
               </AccordionTrigger>
               <AccordionContent>
@@ -808,7 +808,7 @@ const KalifindSearchTest: React.FC<{
             </AccordionItem>
             {!isPriceLoading && (
               <AccordionItem value="price">
-                <AccordionTrigger className="!font-bold !text-foreground">
+                <AccordionTrigger className="lg:text-lg !font-bold !text-foreground">
                   Price
                 </AccordionTrigger>
                 <AccordionContent>
@@ -832,7 +832,7 @@ const KalifindSearchTest: React.FC<{
               </AccordionItem>
             )}
             <AccordionItem value="size">
-              <AccordionTrigger className="!font-bold !text-foreground">
+              <AccordionTrigger className="lg:text-lg !font-bold !text-foreground">
                 Size
               </AccordionTrigger>
               <AccordionContent>
@@ -854,7 +854,7 @@ const KalifindSearchTest: React.FC<{
               </AccordionContent>
             </AccordionItem>
             <AccordionItem value="color">
-              <AccordionTrigger className="!font-bold !text-foreground">
+              <AccordionTrigger className="lg:text-lg !font-bold !text-foreground">
                 Color
               </AccordionTrigger>
               <AccordionContent>
@@ -930,9 +930,9 @@ const KalifindSearchTest: React.FC<{
               </div>
             </div>
           )}
-          <div className="!pr-4 sm:!pr-4 lg:!pr-8 !w-full">
+          <div className="!pr-4 sm:!pr-4 lg:!pr-8 lg:pl-4 !w-full">
             {/* <div className=""> */}
-            <h2 className="py-5 !text-base sm:!text-xl !font-medium !text-foreground !mb-2 mt-2">
+            <h2 className="py-5 !text-base sm:!text-xl lg:text-2xl  !font-medium !text-foreground !mb-2 mt-2">
               {isAnyFilterActive ? "Search Results" : "Recommended products"}
             </h2>
             <div className="!mb-4 flex justify-between items-center text-xs !text-muted-foreground">
@@ -1021,12 +1021,12 @@ const KalifindSearchTest: React.FC<{
                         className="!w-full !h-36 sm:!h-48 !object-cover !rounded-md"
                       />
                     </div>
-                    <h3 className="!text-sm sm:!text-base !font-medium !text-foreground !mb-2">
+                    <h3 className="!text-sm sm:!text-base lg:!text-lg !font-medium !text-foreground !mb-2">
                       {product.title}
                     </h3>
                     <div className="!flex !items-center !justify-between">
                       <div className="!flex !items-center !gap-2">
-                        <span className="!text-muted-foreground !text-sm">
+                        <span className="!text-muted-foreground !text-sm lg:!text-base">
                           {product.price}
                         </span>
                       </div>
