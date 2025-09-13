@@ -24,6 +24,16 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from "@/components/ui/drawer";
 
 interface Product {
   id: string;
@@ -62,8 +72,6 @@ const KalifindSearchTest: React.FC<{
 }) => {
   const [searchQuery, setSearchQuery] = useState(initialSearchQuery || "");
   const [showAutocomplete, setShowAutocomplete] = useState(false);
-  const [showMobileFilters, setShowMobileFilters] = useState(false);
-  const [isClosingMobileFilters, setIsClosingMobileFilters] = useState(false);
   const [filteredProducts, setFilteredProducts] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isPending, startTransition] = useTransition();
@@ -105,7 +113,6 @@ const KalifindSearchTest: React.FC<{
 
   const searchRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const mobileFiltersRef = useRef<HTMLDivElement>(null);
 
   const sizes = [38, 39, 40, 41, 42, 43, 44, 45];
   const colors = ["black", "white", "red", "blue", "yellow"];
@@ -117,14 +124,6 @@ const KalifindSearchTest: React.FC<{
     filters.colors.length > 0 ||
     filters.sizes.length > 0 ||
     filters.priceRange[1] < maxPrice;
-
-  const handleCloseMobileFilters = () => {
-    setIsClosingMobileFilters(true);
-    setTimeout(() => {
-      setShowMobileFilters(false);
-      setIsClosingMobileFilters(false);
-    }, 300); // Corresponds to slide-up animation duration
-  };
 
   useEffect(() => {
     const initFilters = async () => {
@@ -196,12 +195,6 @@ const KalifindSearchTest: React.FC<{
         !searchRef.current.contains(event.target as Node)
       ) {
         setShowAutocomplete(false);
-      }
-      if (
-        mobileFiltersRef.current &&
-        !mobileFiltersRef.current.contains(event.target as Node)
-      ) {
-        handleCloseMobileFilters();
       }
     };
 
@@ -454,7 +447,7 @@ const KalifindSearchTest: React.FC<{
   return (
     <div className="!bg-background !min-h-screen !w-full !max-w-full ">
       {!hideHeader && (
-        <header className="!bg-background !py-3 !w-full">
+        <header className="!bg-background !py-3 !w-screen">
           <div className="!flex !items-center justify-center lg:!gap-24 !max-w-7xl !mx-auto flex-col lg:flex-row !w-full">
             <div className="!flex !items-center !gap-2 justify-between md:justify-normal">
               <div className="lg:!flex !items-center !hidden">
@@ -552,64 +545,56 @@ const KalifindSearchTest: React.FC<{
       )}
 
       <div className="!fixed !bottom-4 !left-1/2 !-translate-x-1/2 !z-50 !block lg:!hidden">
-        <button
-          onClick={() => setShowMobileFilters(true)}
-          className="!flex !items-center !gap-2 !px-4 !py-3 !bg-primary !text-primary-foreground !rounded-full !font-medium !shadow-lg !hover:!bg-primary-hover !transition-all !duration-300 !transform !hover:!scale-105"
-        >
-          <Filter className="!w-4 !h-4" />
-          Filters
-          <span className="!bg-primary-foreground !text-primary !px-2 !py-1 !rounded !text-xs !font-bold">
-            {filters.categories.length +
-              filters.colors.length +
-              filters.sizes.length +
-              filters.brands.length}
-          </span>
-        </button>
-      </div>
-
-      {showMobileFilters && (
-        <div className="!fixed !inset-0 !bg-black !bg-opacity-50 !z-50 lg:!hidden">
-          <div
-            ref={mobileFiltersRef}
-            className={`!absolute !top-0 !left-0 !right-0 !bg-background !max-h-screen !overflow-y-auto !shadow-xl !w-full ${
-              isClosingMobileFilters ? "animate-slide-up" : "animate-slide-down"
-            }`}
-          >
-            <div className="!flex !items-center !justify-between !p-4 !border-b !border-border !bg-background !sticky !top-0 !z-10">
-              <h2 className="!text-lg !font-semibold !text-foreground">
-                Filters
+        <Drawer>
+          <DrawerTrigger asChild>
+            <button className="!flex !items-center !gap-2 !px-4 !py-3 !bg-primary !text-primary-foreground !rounded-full !font-medium !shadow-lg !hover:!bg-primary-hover !transition-all !duration-300 !transform !hover:!scale-105">
+              <Filter className="!w-4 !h-4" />
+              Filters
+              <span className="!bg-primary-foreground !text-primary !px-2 !py-1 !rounded !text-xs !font-bold">
+                {filters.categories.length +
+                  filters.colors.length +
+                  filters.sizes.length +
+                  filters.brands.length}
+              </span>
+            </button>
+          </DrawerTrigger>
+          <DrawerContent className="z-[1000]">
+            <div className=" !flex !items-center !justify-between p-4 !bg-background !sticky !top-0 !z-10">
+              <h2 className="pl-2 text-xs !text-foreground">
+                <b>{totalProducts}</b> products found
               </h2>
-              <button
-                onClick={handleCloseMobileFilters}
-                className="!p-2 hover:!bg-muted !rounded-full !transition-colors"
-              >
-                <X className="!w-5 !h-5 !text-foreground" />
-              </button>
+              <DrawerClose asChild>
+                <button className="!pr-1 hover:!bg-muted !rounded-full !transition-colors">
+                  <X className="!w-5 !h-5 !text-foreground" />
+                </button>
+              </DrawerClose>
             </div>
 
-            <div className="!p-4">
+            <div className="!px-4 sm:!p-4 overflow-y-auto max-h-[87vh]">
               <Accordion
                 type="multiple"
                 defaultValue={["category", "price", "size", "color", "brand"]}
                 className="!w-full"
               >
                 <AccordionItem value="category">
-                  <AccordionTrigger>Category</AccordionTrigger>
+                  <AccordionTrigger className="!font-extrabold">
+                    Categories
+                  </AccordionTrigger>
                   <AccordionContent>
-                    <div className="!space-y-3">
+                    <div className="!space-y-2">
                       {availableCategories.map((category) => (
                         <label
                           key={category}
-                          className="!flex !items-center !justify-between !cursor-pointer !p-2 hover:!bg-muted !rounded-lg"
+                          className="!flex !items-center !justify-between !cursor-pointer !p-1 sm:!p-2 hover:!bg-muted !rounded-lg"
                         >
                           <div className="!flex !items-center !gap-3">
                             <input
                               type="checkbox"
                               checked={filters.categories.includes(category)}
                               onChange={() => handleCategoryChange(category)}
-                              className="!w-5 !h-5 !text-primary !bg-background !border-border !rounded "
+                              className="!w-4 !h-4 sm:!w-5 sm:!h-5 !text-primary !bg-background !border-border !rounded "
                             />
-                            <span className="!text-foreground !text-base">
+                            <span className="!text-foreground !text-sm sm:!text-base">
                               {category}
                             </span>
                           </div>
@@ -622,22 +607,24 @@ const KalifindSearchTest: React.FC<{
                   </AccordionContent>
                 </AccordionItem>
                 <AccordionItem value="brand">
-                  <AccordionTrigger>Brand</AccordionTrigger>
+                  <AccordionTrigger className="!font-extrabold">
+                    Brand
+                  </AccordionTrigger>
                   <AccordionContent>
-                    <div className="!space-y-3">
+                    <div className="!space-y-2">
                       {availableBrands.map((brand) => (
                         <label
                           key={brand}
-                          className="!flex !items-center !justify-between !cursor-pointer !p-2 hover:!bg-muted !rounded-lg"
+                          className="!flex !items-center !justify-between !cursor-pointer !p-1 sm:!p-2 hover:!bg-muted !rounded-lg"
                         >
                           <div className="!flex !items-center !gap-3">
                             <input
                               type="checkbox"
                               checked={filters.brands.includes(brand)}
                               onChange={() => handleBrandChange(brand)}
-                              className="!w-5 !h-5 !text-primary !bg-background !border-border !rounded "
+                              className="!w-4 !h-4 sm:!w-5 sm:!h-5 !text-primary !bg-background !border-border !rounded "
                             />
-                            <span className="!text-foreground !text-base">
+                            <span className="!text-foreground !text-sm sm:!text-base">
                               {brand}
                             </span>
                           </div>
@@ -651,7 +638,9 @@ const KalifindSearchTest: React.FC<{
                 </AccordionItem>
                 {!isPriceLoading && (
                   <AccordionItem value="price">
-                    <AccordionTrigger>Price</AccordionTrigger>
+                    <AccordionTrigger className="!font-extrabold">
+                      Price
+                    </AccordionTrigger>
                     <AccordionContent>
                       <div className="!space-y-4 !pt-4">
                         <Slider
@@ -675,14 +664,16 @@ const KalifindSearchTest: React.FC<{
                   </AccordionItem>
                 )}
                 <AccordionItem value="size">
-                  <AccordionTrigger>Size</AccordionTrigger>
+                  <AccordionTrigger className="!font-extrabold">
+                    Size
+                  </AccordionTrigger>
                   <AccordionContent>
-                    <div className="!grid !grid-cols-4 !gap-3 !pt-4">
+                    <div className="!grid !grid-cols-4 !gap-2 !pt-4">
                       {sizes.map((size) => (
                         <button
                           key={size}
                           onClick={() => handleSizeChange(size)}
-                          className={`!border !border-border !rounded-lg !py-3 !text-base !font-medium ${
+                          className={`!border !border-border !rounded-lg !py-2 !text-sm sm:!py-3 sm:!text-base !font-medium ${
                             filters.sizes.includes(size)
                               ? "!bg-primary !text-primary-foreground !border-primary"
                               : "!bg-background !text-foreground hover:!bg-muted"
@@ -695,14 +686,16 @@ const KalifindSearchTest: React.FC<{
                   </AccordionContent>
                 </AccordionItem>
                 <AccordionItem value="color">
-                  <AccordionTrigger>Color</AccordionTrigger>
+                  <AccordionTrigger className="!font-extrabold">
+                    Color
+                  </AccordionTrigger>
                   <AccordionContent>
-                    <div className="!flex !gap-4 !flex-wrap !pt-4">
+                    <div className="!flex !gap-2 !flex-wrap !pt-4">
                       {colors.map((color) => (
                         <button
                           key={color}
                           onClick={() => handleColorChange(color)}
-                          className={`!w-12 !h-12 !rounded-full !border-4 !transition-all ${
+                          className={`!w-10 !h-10 sm:!w-12 sm:!h-12 !rounded-full !border-4 !transition-all ${
                             filters.colors.includes(color)
                               ? "!border-primary !scale-110 !shadow-lg"
                               : "!border-border hover:!border-muted-foreground"
@@ -726,7 +719,7 @@ const KalifindSearchTest: React.FC<{
                 </AccordionItem>
               </Accordion>
 
-              <div className="!flex !gap-3 !pt-4 !border-t !border-border">
+              <div className="!flex !gap-2 !py-4 !border-t !border-border">
                 <button
                   onClick={() => {
                     setFilters({
@@ -738,21 +731,20 @@ const KalifindSearchTest: React.FC<{
                       genders: [],
                     });
                   }}
-                  className="!flex-1 !py-3 !border !border-border !text-foreground !rounded-lg !font-medium hover:!bg-muted !transition-colors"
+                  className="!flex-1 !py-2 sm:!py-3 !border !border-border !text-foreground !rounded-lg !font-medium hover:!bg-muted !transition-colors"
                 >
                   Clear All
                 </button>
-                <button
-                  onClick={handleCloseMobileFilters}
-                  className="!flex-1 !py-3 !bg-primary !text-primary-foreground !rounded-lg !font-medium hover:!bg-primary-hover !transition-colors"
-                >
-                  Apply Filters
-                </button>
+                <DrawerClose asChild>
+                  <button className="!flex-1 !py-2 sm:!py-3 !bg-primary !text-primary-foreground !rounded-lg !font-medium hover:!bg-primary-hover !transition-colors">
+                    Apply Filters
+                  </button>
+                </DrawerClose>
               </div>
             </div>
-          </div>
-        </div>
-      )}
+          </DrawerContent>
+        </Drawer>
+      </div>
 
       <div className="!flex !w-full !max-w-7xl !mx-auto">
         <aside className="!w-64 !p-4 !bg-filter-bg !hidden lg:!block">
@@ -761,7 +753,7 @@ const KalifindSearchTest: React.FC<{
             defaultValue={["category", "price", "size", "color", "brand"]}
           >
             <AccordionItem value="category">
-              <AccordionTrigger className="!font-medium !text-foreground">
+              <AccordionTrigger className="!font-bold !text-foreground">
                 Category
               </AccordionTrigger>
               <AccordionContent>
@@ -789,7 +781,7 @@ const KalifindSearchTest: React.FC<{
               </AccordionContent>
             </AccordionItem>
             <AccordionItem value="brand">
-              <AccordionTrigger className="!font-medium !text-foreground">
+              <AccordionTrigger className="!font-bold !text-foreground">
                 Brand
               </AccordionTrigger>
               <AccordionContent>
@@ -818,7 +810,7 @@ const KalifindSearchTest: React.FC<{
             </AccordionItem>
             {!isPriceLoading && (
               <AccordionItem value="price">
-                <AccordionTrigger className="!font-medium !text-foreground">
+                <AccordionTrigger className="!font-bold !text-foreground">
                   Price
                 </AccordionTrigger>
                 <AccordionContent>
@@ -842,7 +834,7 @@ const KalifindSearchTest: React.FC<{
               </AccordionItem>
             )}
             <AccordionItem value="size">
-              <AccordionTrigger className="!font-medium !text-foreground">
+              <AccordionTrigger className="!font-bold !text-foreground">
                 Size
               </AccordionTrigger>
               <AccordionContent>
@@ -864,7 +856,7 @@ const KalifindSearchTest: React.FC<{
               </AccordionContent>
             </AccordionItem>
             <AccordionItem value="color">
-              <AccordionTrigger className="!font-medium !text-foreground">
+              <AccordionTrigger className="!font-bold !text-foreground">
                 Color
               </AccordionTrigger>
               <AccordionContent>
@@ -924,8 +916,8 @@ const KalifindSearchTest: React.FC<{
         <main className="!flex-1 !w-full">
           {/* {recentSearches.length > 0 && ( */}
           {true && (
-            <div className="!pt-8 !pl-6 !pb-4 !w-full">
-              <h2 className="!text-xl !font-medium !text-foreground !mb-2">
+            <div className="!pt-2 sm:!pt-8 !px-4 sm:!px-0 sm:!pl-6 !pb-4 !w-full">
+              <h2 className="!text-base sm:!text-xl !font-medium !text-foreground !mb-2">
                 Recent Searches
               </h2>
               <div className="!flex !flex-wrap !gap-2">
@@ -941,11 +933,11 @@ const KalifindSearchTest: React.FC<{
               </div>
             </div>
           )}
-          <div className="!px-6 !w-full">
-            <h2 className="!text-xl !font-medium !text-foreground !mb-2">
+          <div className="!px-4 sm:!px-6 !w-full">
+            <h2 className="!text-base sm:!text-xl !font-medium !text-foreground !mb-2">
               {isAnyFilterActive ? "Search Results" : "Recommended products"}
             </h2>
-            <div className="!mb-4 flex justify-between items-center text-sm !text-muted-foreground">
+            <div className="!mb-4 flex justify-between items-center text-xs !text-muted-foreground">
               {isAnyFilterActive ? (
                 <div>
                   <b>{filteredProducts.length}</b> products found
@@ -965,7 +957,7 @@ const KalifindSearchTest: React.FC<{
                   </DropdownMenuTrigger>
                   <DropdownMenuContent
                     align="end"
-                    className="!z-[100000]"
+                    className="z-[100000]"
                     container={document.body}
                   >
                     <DropdownMenuLabel>Sort by</DropdownMenuLabel>
@@ -1018,20 +1010,20 @@ const KalifindSearchTest: React.FC<{
             {isLoading || isPending ? (
               <LoadingSkeleton />
             ) : (
-              <div className="!grid !grid-cols-1 sm:!grid-cols-2 lg:!grid-cols-3 xl:!grid-cols-4 !gap-6 !w-full">
+              <div className="!grid !grid-cols-1 sm:!grid-cols-2 lg:!grid-cols-3 xl:!grid-cols-4 !gap-4 sm:!gap-6 !w-full">
                 {sortedProducts.map((product) => (
                   <div
                     key={product.id}
-                    className="!bg-background !border !border-border !rounded-lg !p-4 hover:!shadow-lg !transition-shadow !w-full"
+                    className="!bg-background !border !border-border !rounded-lg !p-2 sm:!p-4 hover:!shadow-lg !transition-shadow !w-full"
                   >
                     <div className="!relative !mb-4">
                       <img
                         src={product.imageUrl}
                         alt={product.title}
-                        className="!w-full !h-48 !object-cover !rounded-md"
+                        className="!w-full !h-36 sm:!h-48 !object-cover !rounded-md"
                       />
                     </div>
-                    <h3 className="!font-medium !text-foreground !mb-2">
+                    <h3 className="!text-sm sm:!text-base !font-medium !text-foreground !mb-2">
                       {product.title}
                     </h3>
                     <div className="!flex !items-center !justify-between">
