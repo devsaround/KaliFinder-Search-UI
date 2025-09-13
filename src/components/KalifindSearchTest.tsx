@@ -555,7 +555,7 @@ const KalifindSearchTest: React.FC<{
               </span>
             </button>
           </DrawerTrigger>
-          <DrawerContent className="z-[1000]">
+          <DrawerContent className="!z-[100000]">
             <div className=" !flex !items-center !justify-between p-4 !bg-background !sticky !top-0 !z-10">
               <h2 className="pl-2 text-xs !text-foreground">
                 <b>{totalProducts}</b> products found
@@ -932,7 +932,7 @@ const KalifindSearchTest: React.FC<{
           )}
           <div className="!pr-4 sm:!pr-4 lg:!pr-8 !w-full">
             {/* <div className=""> */}
-            <h2 className="!text-base sm:!text-xl !font-medium !text-foreground !mb-2">
+            <h2 className="py-5 !text-base sm:!text-xl !font-medium !text-foreground !mb-2 mt-2">
               {isAnyFilterActive ? "Search Results" : "Recommended products"}
             </h2>
             <div className="!mb-4 flex justify-between items-center text-xs !text-muted-foreground">
