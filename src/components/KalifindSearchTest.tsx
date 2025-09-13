@@ -428,7 +428,7 @@ const KalifindSearchTest: React.FC<{
   };
 
   const LoadingSkeleton = () => (
-    <div className="!grid !grid-cols-1 sm:!grid-cols-2 lg:!grid-cols-3 xl:!grid-cols-4 !gap-6 !w-full">
+    <div className="!grid !grid-cols-1 sm:!grid-cols-2 lg:!grid-cols-2 xl:!grid-cols-3 !gap-6 !w-full">
       {Array.from({ length: 8 }).map((_, i) => (
         <div
           key={i}
@@ -752,13 +752,13 @@ const KalifindSearchTest: React.FC<{
 
       {/* <div className="!flex !w-full !max-w-7xl !mx-auto"> */}
       <div className="!flex !w-full pl-4 !mx-auto">
-        <aside className="!w-64 !p-4 !bg-filter-bg !hidden lg:!block">
+        <aside className="!w-72 !p-4 !bg-filter-bg !hidden lg:!block">
           <Accordion
             type="multiple"
             defaultValue={["category", "price", "size", "color", "brand"]}
           >
             <AccordionItem value="category">
-              <AccordionTrigger className="lg:text-lg !font-bold !text-foreground">
+              <AccordionTrigger className="lg:text-xl !font-bold !text-foreground">
                 Category
               </AccordionTrigger>
               <AccordionContent>
@@ -775,9 +775,11 @@ const KalifindSearchTest: React.FC<{
                           onChange={() => handleCategoryChange(category)}
                           className="!w-4 !h-4 !text-primary !bg-background !border-border !rounded "
                         />
-                        <span className="!text-foreground">{category}</span>
+                        <span className="!text-foreground lg:text-base">
+                          {category}
+                        </span>
                       </div>
-                      <span className="!text-muted-foreground !text-sm mr-2">
+                      <span className="!text-muted-foreground !text-sm lg:text-base mr-2">
                         {categoryCounts[category] || 0}
                       </span>
                     </label>
@@ -786,7 +788,7 @@ const KalifindSearchTest: React.FC<{
               </AccordionContent>
             </AccordionItem>
             <AccordionItem value="brand">
-              <AccordionTrigger className="lg:text-lg !font-bold !text-foreground">
+              <AccordionTrigger className="lg:text-xl !font-bold !text-foreground">
                 Brand
               </AccordionTrigger>
               <AccordionContent>
@@ -803,7 +805,9 @@ const KalifindSearchTest: React.FC<{
                           onChange={() => handleBrandChange(brand)}
                           className="!w-4 !h-4 !text-primary !bg-background !border-border !rounded "
                         />
-                        <span className="!text-foreground">{brand}</span>
+                        <span className="!text-foreground lg:text-base">
+                          {brand}
+                        </span>
                       </div>
                       {/* <span className="!text-muted-foreground !text-sm"> */}
                       {/*   {brand.length} */}
@@ -815,7 +819,7 @@ const KalifindSearchTest: React.FC<{
             </AccordionItem>
             {!isPriceLoading && (
               <AccordionItem value="price">
-                <AccordionTrigger className="lg:text-lg !font-bold !text-foreground">
+                <AccordionTrigger className="lg:text-xl !font-bold !text-foreground">
                   Price
                 </AccordionTrigger>
                 <AccordionContent>
@@ -831,7 +835,7 @@ const KalifindSearchTest: React.FC<{
                     step={10}
                     className="!w-full !mb-4 !mt-2"
                   />
-                  <div className="!flex !justify-between !text-sm !text-muted-foreground">
+                  <div className="!flex !justify-between !text-sm lg:text-base !text-muted-foreground">
                     <span>{filters.priceRange[0]} €</span>
                     <span>{filters.priceRange[1]} €</span>
                   </div>
@@ -839,7 +843,7 @@ const KalifindSearchTest: React.FC<{
               </AccordionItem>
             )}
             <AccordionItem value="size">
-              <AccordionTrigger className="lg:text-lg !font-bold !text-foreground">
+              <AccordionTrigger className="lg:text-xl !font-bold !text-foreground">
                 Size
               </AccordionTrigger>
               <AccordionContent>
@@ -848,7 +852,7 @@ const KalifindSearchTest: React.FC<{
                     <button
                       key={size}
                       onClick={() => handleSizeChange(size)}
-                      className={`!border !border-border !rounded !py-2 !text-sm ${
+                      className={`!border !border-border !rounded !py-2 !text-sm lg:text-base ${
                         filters.sizes.includes(size)
                           ? "!bg-primary !text-primary-foreground !border-primary"
                           : "!bg-background !text-foreground hover:!bg-muted"
@@ -861,7 +865,7 @@ const KalifindSearchTest: React.FC<{
               </AccordionContent>
             </AccordionItem>
             <AccordionItem value="color">
-              <AccordionTrigger className="lg:text-lg !font-bold !text-foreground">
+              <AccordionTrigger className="lg:text-xl !font-bold !text-foreground">
                 Color
               </AccordionTrigger>
               <AccordionContent>
@@ -921,7 +925,7 @@ const KalifindSearchTest: React.FC<{
         <main className="!flex-1 !w-full">
           {recentSearches.length > 0 && (
             <div className="!pt-2 sm:!pt-8 !px-4 sm:!px-0 sm:!pl-6 !pb-4 !w-full">
-              <h2 className="!text-base sm:!text-xl !font-medium !text-foreground !mb-2">
+              <h2 className="!text-base sm:!text-xl lg:text-2xl !font-medium !text-foreground !mb-2">
                 Recent Searches
               </h2>
               <div className="!flex !flex-wrap !gap-2">
@@ -939,7 +943,7 @@ const KalifindSearchTest: React.FC<{
           )}
           <div className="!pr-4 sm:!pr-4 lg:!pr-8 lg:pl-4 !w-full">
             {/* <div className=""> */}
-            <h2 className="py-5 !text-base sm:!text-xl lg:text-2xl  !font-medium !text-foreground !mb-2 mt-2">
+            <h2 className="py-5 !text-base sm:!text-xl lg:text-3xl  !font-medium !text-foreground !mb-2 mt-2">
               {isAnyFilterActive ? "Search Results" : "Recommended products"}
             </h2>
             <div className="!mb-4 flex justify-between items-center text-xs !text-muted-foreground">
@@ -1015,7 +1019,7 @@ const KalifindSearchTest: React.FC<{
             {isLoading || isPending ? (
               <LoadingSkeleton />
             ) : (
-              <div className="!grid !grid-cols-1 sm:!grid-cols-2 lg:!grid-cols-3 xl:!grid-cols-4 !gap-4 sm:!gap-6 !w-full">
+              <div className="!grid !grid-cols-1 sm:!grid-cols-2 lg:!grid-cols-2 xl:!grid-cols-3 !gap-4 sm:!gap-6 !w-full">
                 {sortedProducts.map((product) => (
                   <div
                     key={product.id}
@@ -1028,12 +1032,12 @@ const KalifindSearchTest: React.FC<{
                         className="!w-full !h-36 sm:!h-48 !object-cover !rounded-md"
                       />
                     </div>
-                    <h3 className="!text-sm sm:!text-base lg:!text-lg !font-medium !text-foreground !mb-2">
+                    <h3 className="!text-sm sm:!text-base lg:!text-xl !font-medium !text-foreground !mb-2">
                       {product.title}
                     </h3>
                     <div className="!flex !items-center !justify-between">
                       <div className="!flex !items-center !gap-2">
-                        <span className="!text-muted-foreground !text-sm lg:!text-base">
+                        <span className="!text-muted-foreground !text-sm lg:!text-lg">
                           {product.price}
                         </span>
                       </div>
