@@ -912,8 +912,7 @@ const KalifindSearchTest: React.FC<{
         </aside>
 
         <main className="!flex-1 !w-full">
-          {/* {recentSearches.length > 0 && ( */}
-          {true && (
+          {recentSearches.length > 0 && (
             <div className="!pt-2 sm:!pt-8 !px-4 sm:!px-0 sm:!pl-6 !pb-4 !w-full">
               <h2 className="!text-base sm:!text-xl !font-medium !text-foreground !mb-2">
                 Recent Searches
@@ -931,7 +930,8 @@ const KalifindSearchTest: React.FC<{
               </div>
             </div>
           )}
-          <div className="!px-4 sm:!px-6 !w-full">
+          <div className="!pr-4 sm:!pr-4 lg:!pr-8 !w-full">
+            {/* <div className=""> */}
             <h2 className="!text-base sm:!text-xl !font-medium !text-foreground !mb-2">
               {isAnyFilterActive ? "Search Results" : "Recommended products"}
             </h2>
