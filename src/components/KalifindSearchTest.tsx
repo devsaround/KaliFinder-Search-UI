@@ -448,9 +448,10 @@ const KalifindSearchTest: React.FC<{
     <div className="box-border !bg-background !min-h-screen w-screen lg:pt-1 lg:px-24">
       {!hideHeader && (
         <div className="!bg-background !py-3 !w-full">
-          <div className="!flex !items-center justify-center lg:!gap-[88px] !mx-auto flex-col lg:flex-row !w-full">
+          {/* <div className="!flex !items-center justify-center lg:!gap-[88px] !mx-auto flex-col lg:flex-row !w-full"> */}
+          <div className="!flex !items-center justify-center !mx-auto flex-col lg:flex-row !w-full">
             <div className="!flex !items-center !gap-2 justify-between md:justify-normal">
-              <div className="lg:!flex !items-center !hidden">
+              <div className="lg:!flex !items-center !hidden w-72">
                 <a href="/" className="!s-center">
                   <img
                     src={`https://kalifinder-search.pages.dev/KalifindLogo.png`}
@@ -478,6 +479,7 @@ const KalifindSearchTest: React.FC<{
                       onFocus={() => setShowAutocomplete(true)}
                       onKeyDown={handleKeyDown}
                       placeholder="Search"
+                      style={{ all: "unset" }}
                       className="!w-full !pl-9 !pr-4 !py-3 !border-b-2 !border-search-highlight !text-foreground !placeholder-muted-foreground focus:!outline-none focus:!border-none focus:!ring-0"
                     />
 
