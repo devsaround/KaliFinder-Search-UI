@@ -154,7 +154,7 @@ const SearchDropdown: React.FC<SearchDropdownProps> = ({
                   aria-label="Close search"
                   onClick={onClose}
                 >
-                  <X className="!w-6 !h-6 !text-muted-foreground hover:!text-foreground !transition-colors !duration-200 mr-3" />
+                  <X className="!w-6 !h-6 !text-muted-foreground hover:!text-foreground !transition-colors !duration-200 mr-4" />
                 </button>
               </div>
             </div>
@@ -260,7 +260,7 @@ const SearchDropdown: React.FC<SearchDropdownProps> = ({
                       </div>
                     }
                   >
-                    <EcommerceSearchWrapper/>
+                    <EcommerceSearchWrapper />
                   </Suspense>
                 )}
               </div>

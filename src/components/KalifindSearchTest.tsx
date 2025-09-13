@@ -462,14 +462,14 @@ const KalifindSearchTest: React.FC<{
               </div>
             </div>
 
-            <div className="!flex-1 !relative !ml-2 !w-full" ref={searchRef}>
+            <div className="!flex-1 !relative !w-full" ref={searchRef}>
               <div
                 className="!flex !items-center !gap-2 !flex-1 !w-full"
                 ref={searchRef}
               >
                 <div className="!w-full flex">
-                  <div className="pl-4 !relative !flex-1 !w-full">
-                    <Search className="!absolute !left-5 !top-1/2 !transform !-translate-y-1/2 !text-muted-foreground !w-5 !h-5" />
+                  <div className="!relative !flex-1 !w-full">
+                    <Search className="!absolute !left-2 !top-1/2 !transform !-translate-y-1/2 !text-muted-foreground !w-5 !h-5" />
                     <input
                       ref={inputRef}
                       type="text"
@@ -478,7 +478,7 @@ const KalifindSearchTest: React.FC<{
                       onFocus={() => setShowAutocomplete(true)}
                       onKeyDown={handleKeyDown}
                       placeholder="Search"
-                      className="!w-full !pl-8 !pr-4 !py-3 !border-b-2 !border-search-highlight !text-foreground !placeholder-muted-foreground focus:!outline-none focus:!border-none focus:!ring-0"
+                      className="!w-full !pl-9 !pr-4 !py-3 !border-b-2 !border-search-highlight !text-foreground !placeholder-muted-foreground focus:!outline-none focus:!border-none focus:!ring-0"
                     />
 
                     {/* <div className="!absolute !right-3 !top-1/2 !transform !-translate-y-1/2 !flex !gap-2"></div> */}
