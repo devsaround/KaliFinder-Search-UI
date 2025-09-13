@@ -5,6 +5,10 @@
   text-align: center;
 }
 
+html {
+  font-size: 16px !important; /* forces 1rem = 16px */
+}
+
 .logo {
   height: 6em;
   padding: 1.5em;

@@ -182,7 +182,7 @@ const SearchDropdown: React.FC<SearchDropdownProps> = ({
   if (!isOpen && !isAnimating) return null;
 
   return (
-    <div className="!fixed !inset-0 !z-[999] !min-h-screen">
+    <div className="!fixed !inset-0 !z-[999] !min-h-screen" id="my-ui">
       {/* Backdrop */}
       <div
         className={`!fixed !inset-0 !bg-foreground/20 !backdrop-blur-sm !transition-opacity !duration-300 ${

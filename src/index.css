@@ -3,6 +3,9 @@
 @tailwind utilities;
 
 /* Kalifind-inspired design system with purple branding */
+#my-ui :where(*) {
+  font-family: "Inter", sans-serif !important;
+}
 
 @layer base {
   :root {
