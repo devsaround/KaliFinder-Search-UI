@@ -260,7 +260,7 @@ const SearchDropdown: React.FC<SearchDropdownProps> = ({
                       </div>
                     }
                   >
-                    <EcommerceSearchWrapper />
+                    <EcommerceSearchWrapper/>
                   </Suspense>
                 )}
               </div>

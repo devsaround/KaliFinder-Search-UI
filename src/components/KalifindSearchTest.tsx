@@ -445,7 +445,7 @@ const KalifindSearchTest: React.FC<{
   );
 
   return (
-    <div className="!bg-background !min-h-screen !w-full !max-w-full ">
+    <div className="!bg-background !min-h-screen">
       {!hideHeader && (
         <header className="!bg-background !py-3 !w-screen">
           <div className="!flex !items-center justify-center lg:!gap-24 !max-w-7xl !mx-auto flex-col lg:flex-row !w-full">
@@ -462,10 +462,7 @@ const KalifindSearchTest: React.FC<{
               </div>
             </div>
 
-            <div
-              className="!flex-1 !relative !ml-2 !w-full !max-w-7xl"
-              ref={searchRef}
-            >
+            <div className="!flex-1 !relative !ml-2 !w-full" ref={searchRef}>
               <div
                 className="!flex !items-center !gap-2 !flex-1 !w-full"
                 ref={searchRef}
@@ -491,7 +488,7 @@ const KalifindSearchTest: React.FC<{
                     aria-label="Close search"
                     onClick={onClose}
                   >
-                    <X className="!w-6 !h-6 !text-muted-foreground hover:!text-foreground !transition-colors !duration-200" />
+                    <X className="!mr-6 !w-6 !h-6 !text-muted-foreground hover:!text-foreground !transition-colors !duration-200" />
                   </button>
                 </div>
               </div>
@@ -772,7 +769,7 @@ const KalifindSearchTest: React.FC<{
                         />
                         <span className="!text-foreground">{category}</span>
                       </div>
-                      <span className="!text-muted-foreground !text-sm">
+                      <span className="!text-muted-foreground !text-sm mr-2">
                         {categoryCounts[category] || 0}
                       </span>
                     </label>
