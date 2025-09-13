@@ -115,7 +115,7 @@ const SearchDropdown: React.FC<SearchDropdownProps> = ({
   // Fixed search header for mobile/tablet - stays at top
   const FixedSearchHeader = () => (
     <div className="!sticky !top-0 !z-50 !bg-background !w-full !border-b !border-border">
-      <header className="!bg-background !py-2 !w-full">
+      <div className="!bg-background !py-2 !w-full">
         <div className="!flex !items-center justify-center lg:!gap-24 !max-w-7xl !mx-auto flex-col lg:flex-row !w-full">
           <div className="!flex !items-center !gap-2 justify-between md:justify-normal">
             <div className="lg:!flex !items-center !hidden">
@@ -130,12 +130,12 @@ const SearchDropdown: React.FC<SearchDropdownProps> = ({
           </div>
 
           <div
-            className="!flex-1 !relative !ml-2 !w-full !max-w-7xl"
+            className="!flex-1 !h-full !relative !w-full !max-w-7xl"
             ref={searchRef}
           >
-            <div className="!flex !items-center !gap-2 !flex-1 !w-full">
-              <div className="!w-full flex">
-                <div className="!relative !flex-1 !w-full">
+            <div className="!flex !items-center !gap-2 !flex-1 !w-full !h-full">
+              <div className="!w-full flex h-full">
+                <div className="!relative !flex-1 !w-full h-full">
                   <Search className="!absolute !left-3 !top-1/2 !transform !-translate-y-1/2 !text-muted-foreground !w-5 !h-5" />
                   <input
                     ref={inputRef}
@@ -145,7 +145,7 @@ const SearchDropdown: React.FC<SearchDropdownProps> = ({
                     onFocus={() => setShowAutocomplete(true)}
                     onKeyDown={handleKeyDown}
                     placeholder="Search"
-                    className="!w-full !pl-10 !pr-4 !py-2 !border-b-2 !border-search-highlight !text-foreground !placeholder-muted-foreground focus:!outline-none focus:!border-none focus:!ring-0"
+                    className="h-full !w-full !pl-10 !pr-4 !py-2 !text-foreground !placeholder-muted-foreground focus:!outline-none !border-none !ring-0"
                     autoFocus
                   />
                 </div>
@@ -154,13 +154,13 @@ const SearchDropdown: React.FC<SearchDropdownProps> = ({
                   aria-label="Close search"
                   onClick={onClose}
                 >
-                  <X className="!w-6 !h-6 !text-muted-foreground hover:!text-foreground !transition-colors !duration-200 mr-4" />
+                  <X className="!w-6 !h-6 !text-muted-foreground hover:!text-foreground !transition-colors !duration-200 mr-3" />
                 </button>
               </div>
             </div>
           </div>
         </div>
-      </header>
+      </div>
     </div>
   );
 

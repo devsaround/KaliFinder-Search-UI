@@ -937,11 +937,11 @@ const KalifindSearchTest: React.FC<{
             </h2>
             <div className="!mb-4 flex justify-between items-center text-xs !text-muted-foreground">
               {isAnyFilterActive ? (
-                <div>
+                <div className="!ml-2">
                   <b>{filteredProducts.length}</b> products found
                 </div>
               ) : (
-                <div>
+                <div className="!ml-2">
                   <b>{totalProducts}</b> products found
                 </div>
               )}
