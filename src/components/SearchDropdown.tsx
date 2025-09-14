@@ -116,7 +116,7 @@ const SearchDropdown: React.FC<SearchDropdownProps> = ({
   const FixedSearchHeader = () => (
     <div className="!sticky !top-0 !z-50 !bg-background !w-full !border-b !border-border">
       <div className="!bg-background !py-2 !w-full">
-        <div className="!flex !items-center justify-center lg:!gap-24 !max-w-7xl !mx-auto flex-col lg:flex-row !w-full">
+        <div className="!flex !items-center justify-center lg:!gap-24 !mx-auto flex-col lg:flex-row !w-full">
           <div className="!flex !items-center !gap-2 justify-between md:justify-normal">
             <div className="lg:!flex !items-center !hidden">
               <a href="/" className="!s-center">
