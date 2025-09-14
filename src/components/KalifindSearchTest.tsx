@@ -686,38 +686,38 @@ const KalifindSearchTest: React.FC<{
                     </div>
                   </AccordionContent>
                 </AccordionItem>
-                <AccordionItem value="color">
-                  <AccordionTrigger className="!font-extrabold text-[16px]">
-                    <b className="!font-extrabold">Color</b>
-                  </AccordionTrigger>
-                  <AccordionContent>
-                    <div className="!flex !gap-[8px] !flex-wrap !pt-[16px]">
-                      {colors.map((color) => (
-                        <button
-                          key={color}
-                          onClick={() => handleColorChange(color)}
-                          className={`!w-[32px] !h-[32px] sm:!w-[40px] sm:!h-[40px] !rounded-full !border-4 !transition-all ${
-                            filters.colors.includes(color)
-                              ? "!border-primary !scale-110 !shadow-lg"
-                              : "!border-border hover:!border-muted-foreground"
-                          } ${
-                            color === "black"
-                              ? "!bg-black"
-                              : color === "white"
-                                ? "!bg-white !border-gray-300"
-                                : color === "red"
-                                  ? "!bg-red-500"
-                                  : color === "blue"
-                                    ? "!bg-blue-500"
-                                    : color === "yellow"
-                                      ? "!bg-yellow-500"
-                                      : ""
-                          }`}
-                        />
-                      ))}
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
+                {/* <AccordionItem value="color"> */}
+                {/*   <AccordionTrigger className="!font-extrabold text-[16px]"> */}
+                {/*     <b className="!font-extrabold">Color</b> */}
+                {/*   </AccordionTrigger> */}
+                {/*   <AccordionContent> */}
+                {/*     <div className="!flex !gap-[8px] !flex-wrap !pt-[16px]"> */}
+                {/*       {colors.map((color) => ( */}
+                {/*         <button */}
+                {/*           key={color} */}
+                {/*           onClick={() => handleColorChange(color)} */}
+                {/*           className={`!w-[32px] !h-[32px] sm:!w-[40px] sm:!h-[40px] !rounded-full !border-4 !transition-all ${ */}
+                {/*             filters.colors.includes(color) */}
+                {/*               ? "!border-primary !scale-110 !shadow-lg" */}
+                {/*               : "!border-border hover:!border-muted-foreground" */}
+                {/*           } ${ */}
+                {/*             color === "black" */}
+                {/*               ? "!bg-black" */}
+                {/*               : color === "white" */}
+                {/*                 ? "!bg-white !border-gray-300" */}
+                {/*                 : color === "red" */}
+                {/*                   ? "!bg-red-500" */}
+                {/*                   : color === "blue" */}
+                {/*                     ? "!bg-blue-500" */}
+                {/*                     : color === "yellow" */}
+                {/*                       ? "!bg-yellow-500" */}
+                {/*                       : "" */}
+                {/*           }`} */}
+                {/*         /> */}
+                {/*       ))} */}
+                {/*     </div> */}
+                {/*   </AccordionContent> */}
+                {/* </AccordionItem> */}
               </Accordion>
 
               <div className="!flex !gap-[8px] !py-[16px] !border-t !border-border">
