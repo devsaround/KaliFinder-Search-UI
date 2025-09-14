@@ -712,13 +712,13 @@ const KalifindSearchTest: React.FC<{
             </div>
 
             <div className="!mt-auto !bg-background">
-              <div className="!flex !items-center !justify-between !p-[12px] !bg-background">
+              <div className="!flex !items-center !justify-between !p-[12px] !bg-gray-50">
                 <div className="pl-[8px] text-[14px] !text-foreground">
                   <b>{totalProducts}</b> products found
                 </div>
                 <DrawerClose asChild>
                   <button className="!pr-[4px] hover:!bg-muted !rounded-full !transition-colors">
-                    <X className="!w-5 !h-5 !text-foreground" />
+                    <X className="!w-[20px] !h-[20px] border bg-[#823BED] rounded-[9999px] !text-white" />
                   </button>
                 </DrawerClose>
               </div>
