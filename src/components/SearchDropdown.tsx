@@ -116,22 +116,25 @@ const SearchDropdown: React.FC<SearchDropdownProps> = ({
   const FixedSearchHeader = () => (
     <div className="!sticky !top-0 !z-50 !bg-background !w-full !border-b !border-border">
       <div className="!bg-background !py-2 !w-full">
-        <div className="!flex !items-center justify-center lg:!gap-24 !max-full !mx-auto flex-col lg:flex-row !w-full">
+        <div className="!flex !items-center justify-center lg:!gap-24 !max-w-7xl !mx-auto flex-col lg:flex-row !w-full">
           <div className="!flex !items-center !gap-2 justify-between md:justify-normal">
             <div className="lg:!flex !items-center !hidden">
               <a href="/" className="!s-center">
                 <img
                   src={`https://kalifinder-search.pages.dev/KalifindLogo.png`}
                   alt="Kalifind"
-                  className="!h-auto !w-full !max-w-[200px] !max-h-14 !object-contain !object-center"
+                  className="!h-auto !w-full !max-w-[150px] !max-h-12 !object-contain !object-center"
                 />
               </a>
             </div>
           </div>
 
-          <div className="!flex-1 !h-full !relative !w-full" ref={searchRef}>
+          <div
+            className="!flex-1 !h-full !relative !w-full !max-w-7xl px-4"
+            ref={searchRef}
+          >
             <div className="!flex !items-center !gap-2 !flex-1 !w-full !h-full">
-              <div className="!w-full flex h-full px-[2px] sm:px-[4px] md:px-[6px]">
+              <div className="!w-full flex h-full">
                 <div className="!relative !flex-1 !w-full h-full">
                   <Search className="!absolute !left-3 !top-1/2 !transform !-translate-y-1/2 !text-muted-foreground !w-[20px] !h-[20px]" />
                   <input
@@ -142,7 +145,7 @@ const SearchDropdown: React.FC<SearchDropdownProps> = ({
                     onFocus={() => setShowAutocomplete(true)}
                     onKeyDown={handleKeyDown}
                     placeholder="Search"
-                    className="h-full !w-full !pl-[30px] !pr-4 !py-2 !text-foreground !placeholder-muted-foreground focus:!outline-none !border-none !ring-0"
+                    className="h-full !w-full !pl-[30px] !pr-4 !py-2 !text-[16px] !text-foreground !placeholder-muted-foreground focus:!outline-none !border-none !ring-0"
                     autoFocus
                   />
                 </div>
@@ -151,7 +154,7 @@ const SearchDropdown: React.FC<SearchDropdownProps> = ({
                   aria-label="Close search"
                   onClick={onClose}
                 >
-                  <X className="!w-[20px] !h-20px !text-muted-foreground hover:!text-foreground !transition-colors !duration-200 mr-3" />
+                  <X className="!w-5 !h-5 !text-muted-foreground hover:!text-foreground !transition-colors !duration-200 mr-3" />
                 </button>
               </div>
             </div>
@@ -163,7 +166,7 @@ const SearchDropdown: React.FC<SearchDropdownProps> = ({
 
   // Custom EcommerceSearch wrapper that hides header on mobile/tablet
   const EcommerceSearchWrapper = () => (
-    <div className="!w-full">
+    <div className="!w-full !px-2 sm:!px-4">
       <EcommerceSearch
         userId={userId}
         apiKey={apiKey}
