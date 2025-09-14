@@ -23,7 +23,6 @@ const SearchDropdown: React.FC<SearchDropdownProps> = ({
   storeId,
 }) => {
   const [isAnimating, setIsAnimating] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
   const [isMobileOrTablet, setIsMobileOrTablet] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -43,18 +42,7 @@ const SearchDropdown: React.FC<SearchDropdownProps> = ({
   useEffect(() => {
     if (isOpen) {
       setIsAnimating(true);
-      // Only set loading state for mobile/tablet
-      setIsLoading(isMobileOrTablet);
       document.body.style.overflow = "hidden";
-
-      // Only simulate loading time for mobile/tablet
-      if (isMobileOrTablet) {
-        const loadingTimer = setTimeout(() => {
-          setIsLoading(false);
-        }, 800);
-
-        return () => clearTimeout(loadingTimer);
-      }
     } else {
       const timer = setTimeout(() => {
         setIsAnimating(false);
@@ -66,7 +54,7 @@ const SearchDropdown: React.FC<SearchDropdownProps> = ({
     return () => {
       document.body.style.overflow = "unset";
     };
-  }, [isOpen, isMobileOrTablet]);
+  }, [isOpen]);
 
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
@@ -216,55 +204,31 @@ const SearchDropdown: React.FC<SearchDropdownProps> = ({
 
               {/* Content area below search */}
               <div className="!w-full !min-h-[calc(100vh-80px)]">
-                {isLoading ? (
-                  // Show loading state below search
-                  <div className="!flex !flex-col !items-center !justify-center !py-[48px]">
-                    <div className="!flex !space-x-[8px] !mb-[16px]">
-                      <div
-                        className="!w-[8px] !h-[8px] !bg-gray-400 !rounded-full !animate-bounce"
-                        style={{ animationDelay: "0ms" }}
-                      ></div>
-                      <div
-                        className="!w-[8px] !h-[8px] !bg-gray-400 !rounded-full !animate-bounce"
-                        style={{ animationDelay: "150ms" }}
-                      ></div>
-                      <div
-                        className="!w-[8px] !h-[8px] !bg-gray-400 !rounded-full !animate-bounce"
-                        style={{ animationDelay: "300ms" }}
-                      ></div>
-                    </div>
-                    <p className="!text-muted-foreground !text-[14px]">
-                      Loading products...
-                    </p>
-                  </div>
-                ) : (
-                  // Show products below search once loaded
-                  <Suspense
-                    fallback={
-                      <div className="!flex !flex-col !items-center !justify-center !py-[48px]">
-                        <div className="!flex !space-x-[8px] !mb-[16px]">
-                          <div
-                            className="!w-[8px] !h-[8px] !bg-gray-400 !rounded-full !animate-bounce"
-                            style={{ animationDelay: "0ms" }}
-                          ></div>
-                          <div
-                            className="!w-[8px] !h-[8px] !bg-gray-400 !rounded-full !animate-bounce"
-                            style={{ animationDelay: "150ms" }}
-                          ></div>
-                          <div
-                            className="!w-[8px] !h-[8px] !bg-gray-400 !rounded-full !animate-bounce"
-                            style={{ animationDelay: "300ms" }}
-                          ></div>
-                        </div>
-                        <p className="!text-muted-foreground !text-[14px]">
-                          Loading products...
-                        </p>
+                <Suspense
+                  fallback={
+                    <div className="!flex !flex-col !items-center !justify-center !py-[48px]">
+                      <div className="!flex !space-x-[8px] !mb-[16px]">
+                        <div
+                          className="!w-[8px] !h-[8px] !bg-gray-400 !rounded-full !animate-bounce"
+                          style={{ animationDelay: "0ms" }}
+                        ></div>
+                        <div
+                          className="!w-[8px] !h-[8px] !bg-gray-400 !rounded-full !animate-bounce"
+                          style={{ animationDelay: "150ms" }}
+                        ></div>
+                        <div
+                          className="!w-[8px] !h-[8px] !bg-gray-400 !rounded-full !animate-bounce"
+                          style={{ animationDelay: "300ms" }}
+                        ></div>
                       </div>
-                    }
-                  >
-                    <EcommerceSearchWrapper />
-                  </Suspense>
-                )}
+                      <p className="!text-muted-foreground !text-[14px]">
+                        Loading products...
+                      </p>
+                    </div>
+                  }
+                >
+                  <EcommerceSearchWrapper />
+                </Suspense>
               </div>
             </div>
           ) : (

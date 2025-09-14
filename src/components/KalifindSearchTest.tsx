@@ -108,8 +108,8 @@ const KalifindSearchTest: React.FC<{
     }
   }, [initialSearchQuery]);
 
-  const debouncedSearchQuery = useDebounce(searchQuery, 500);
-  const debouncedPriceRange = useDebounce(filters.priceRange, 500);
+  const debouncedSearchQuery = useDebounce(searchQuery, 300);
+  const debouncedPriceRange = useDebounce(filters.priceRange, 300);
 
   const searchRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
