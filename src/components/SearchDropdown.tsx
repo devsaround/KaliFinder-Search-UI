@@ -115,30 +115,30 @@ const SearchDropdown: React.FC<SearchDropdownProps> = ({
   // Fixed search header for mobile/tablet - stays at top
   const FixedSearchHeader = () => (
     <div className="!sticky !top-0 !z-50 !bg-background !w-full !border-b !border-border">
-      <div className="!bg-background !py-2 !w-full">
-        <div className="!flex justify-center lg:!gap-24 !mx-auto flex-col lg:flex-row !w-full">
-          {/* <div className="!flex !items-center !gap-2 justify-between md:justify-normal"> */}
-          <div className="!flex !items-center !gap-2 justify-between md:justify-normal">
+      <div className="!bg-background !py-[8px] !w-full">
+        <div className="!flex justify-center lg:!gap-[96px] !mx-auto flex-col lg:flex-row !w-full">
+          {/* <div className="!flex !items-center !gap-[8px] justify-between md:justify-normal"> */}
+          <div className="!flex !items-center !gap-[8px] justify-between md:justify-normal">
             {/* <div className="lg:!flex !items-center !hidden"> */}
             <div className="lg:!flex !items-center !hidden">
               <a href="/" className="!s-center">
                 <img
                   src={`https://kalifinder-search.pages.dev/KalifindLogo.png`}
                   alt="Kalifind"
-                  className="!h-auto !w-full !max-w-[150px] !max-h-12 !object-contain !object-center"
+                  className="!h-auto !w-full !max-w-[150px] !max-h-[48px] !object-contain !object-center"
                 />
               </a>
             </div>
           </div>
 
           <div
-            className="!flex-1 !h-full !relative !w-full !max-w-7xl px-4"
+            className="!flex-1 !h-full !relative !w-full px-[16px]"
             ref={searchRef}
           >
-            <div className="!flex !items-center !gap-2 !flex-1 !w-full !h-full">
+            <div className="!flex !items-center !gap-[8px] !flex-1 !w-full !h-full">
               <div className="!w-full flex h-full">
                 <div className="!relative !flex-1 !w-full h-full">
-                  <Search className="!absolute !left-3 !top-1/2 !transform !-translate-y-1/2 !text-muted-foreground !w-[20px] !h-[20px]" />
+                  <Search className="!absolute !left-[12px] !top-1/2 !transform !-translate-y-1/2 !text-muted-foreground !w-[20px] !h-[20px]" />
                   <input
                     ref={inputRef}
                     type="text"
@@ -147,7 +147,7 @@ const SearchDropdown: React.FC<SearchDropdownProps> = ({
                     onFocus={() => setShowAutocomplete(true)}
                     onKeyDown={handleKeyDown}
                     placeholder="Search"
-                    className="h-full !w-full !pl-[30px] !pr-4 !py-[8px] !text-[16px] !text-foreground !placeholder-muted-foreground focus:!outline-none !border-none !ring-0"
+                    className="h-full !w-full !pl-[38px] !pr-[16px] !py-[8px] !text-[16px] !text-foreground !placeholder-muted-foreground focus:!outline-none !border-none !ring-0"
                     autoFocus
                   />
                 </div>
@@ -156,7 +156,7 @@ const SearchDropdown: React.FC<SearchDropdownProps> = ({
                   aria-label="Close search"
                   onClick={onClose}
                 >
-                  <X className="!w-5 !h-5 !text-muted-foreground hover:!text-foreground !transition-colors !duration-200 mr-3" />
+                  <X className="!w-[20px] !h-[20x] !text-muted-foreground hover:!text-foreground !transition-colors !duration-200 mr-[12px]" />
                 </button>
               </div>
             </div>
@@ -218,22 +218,22 @@ const SearchDropdown: React.FC<SearchDropdownProps> = ({
               <div className="!w-full !min-h-[calc(100vh-80px)]">
                 {isLoading ? (
                   // Show loading state below search
-                  <div className="!flex !flex-col !items-center !justify-center !py-12">
-                    <div className="!flex !space-x-2 !mb-4">
+                  <div className="!flex !flex-col !items-center !justify-center !py-[48px]">
+                    <div className="!flex !space-x-[8px] !mb-[16px]">
                       <div
-                        className="!w-2 !h-2 !bg-gray-400 !rounded-full !animate-bounce"
+                        className="!w-[8px] !h-[8px] !bg-gray-400 !rounded-full !animate-bounce"
                         style={{ animationDelay: "0ms" }}
                       ></div>
                       <div
-                        className="!w-2 !h-2 !bg-gray-400 !rounded-full !animate-bounce"
+                        className="!w-[8px] !h-[8px] !bg-gray-400 !rounded-full !animate-bounce"
                         style={{ animationDelay: "150ms" }}
                       ></div>
                       <div
-                        className="!w-2 !h-2 !bg-gray-400 !rounded-full !animate-bounce"
+                        className="!w-[8px] !h-[8px] !bg-gray-400 !rounded-full !animate-bounce"
                         style={{ animationDelay: "300ms" }}
                       ></div>
                     </div>
-                    <p className="!text-muted-foreground !text-sm">
+                    <p className="!text-muted-foreground !text-[14px]">
                       Loading products...
                     </p>
                   </div>
@@ -241,22 +241,22 @@ const SearchDropdown: React.FC<SearchDropdownProps> = ({
                   // Show products below search once loaded
                   <Suspense
                     fallback={
-                      <div className="!flex !flex-col !items-center !justify-center !py-12">
-                        <div className="!flex !space-x-2 !mb-4">
+                      <div className="!flex !flex-col !items-center !justify-center !py-[48px]">
+                        <div className="!flex !space-x-[8px] !mb-[16px]">
                           <div
-                            className="!w-2 !h-2 !bg-gray-400 !rounded-full !animate-bounce"
+                            className="!w-[8px] !h-[8px] !bg-gray-400 !rounded-full !animate-bounce"
                             style={{ animationDelay: "0ms" }}
                           ></div>
                           <div
-                            className="!w-2 !h-2 !bg-gray-400 !rounded-full !animate-bounce"
+                            className="!w-[8px] !h-[8px] !bg-gray-400 !rounded-full !animate-bounce"
                             style={{ animationDelay: "150ms" }}
                           ></div>
                           <div
-                            className="!w-2 !h-2 !bg-gray-400 !rounded-full !animate-bounce"
+                            className="!w-[8px] !h-[8px] !bg-gray-400 !rounded-full !animate-bounce"
                             style={{ animationDelay: "300ms" }}
                           ></div>
                         </div>
-                        <p className="!text-muted-foreground !text-sm">
+                        <p className="!text-muted-foreground !text-[14px]">
                           Loading products...
                         </p>
                       </div>
@@ -293,3 +293,4 @@ const SearchDropdown: React.FC<SearchDropdownProps> = ({
 };
 
 export default SearchDropdown;
+
