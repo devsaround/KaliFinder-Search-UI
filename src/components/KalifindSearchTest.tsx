@@ -915,7 +915,7 @@ const KalifindSearchTest: React.FC<{
 
         <main className="!flex-1 !w-full !px-2 sm:!px-4">
           <div className="!pr-4 sm:!pr-4 lg:!pr-8 lg:pl-4 !w-full">
-            <div className="hidden lg:flex pt-[21px] pb-[8px]  !text-[14px] sm:!text-[16px] lg:text-[18px] !font-bold !text-foreground !mb-2 mt-2">
+            <div className="hidden lg:flex pt-[14px] pb-[8px]  !text-[14px] sm:!text-[16px] lg:text-[18px] !font-bold !text-foreground !mb-2 mt-2">
               {/* {isAnyFilterActive ? "Search Results" : ""} */}
               Search Results
             </div>
