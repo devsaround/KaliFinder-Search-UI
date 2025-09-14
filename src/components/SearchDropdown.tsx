@@ -132,7 +132,7 @@ const SearchDropdown: React.FC<SearchDropdownProps> = ({
           </div>
 
           <div
-            className="!flex-1 !h-full !relative !w-full px-[16px]"
+            className="!flex-1 !h-full !relative !w-full px-[2px] sm:px-[16px]"
             ref={searchRef}
           >
             <div className="!flex !items-center !gap-[8px] !flex-1 !w-full !h-full">
@@ -293,4 +293,3 @@ const SearchDropdown: React.FC<SearchDropdownProps> = ({
 };
 
 export default SearchDropdown;
-
