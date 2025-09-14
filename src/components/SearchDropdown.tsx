@@ -116,8 +116,10 @@ const SearchDropdown: React.FC<SearchDropdownProps> = ({
   const FixedSearchHeader = () => (
     <div className="!sticky !top-0 !z-50 !bg-background !w-full !border-b !border-border">
       <div className="!bg-background !py-2 !w-full">
-        <div className="!flex !items-center justify-center lg:!gap-24 !mx-auto flex-col lg:flex-row !w-full">
+        <div className="!flex justify-center lg:!gap-24 !mx-auto flex-col lg:flex-row !w-full">
+          {/* <div className="!flex !items-center !gap-2 justify-between md:justify-normal"> */}
           <div className="!flex !items-center !gap-2 justify-between md:justify-normal">
+            {/* <div className="lg:!flex !items-center !hidden"> */}
             <div className="lg:!flex !items-center !hidden">
               <a href="/" className="!s-center">
                 <img
@@ -145,7 +147,7 @@ const SearchDropdown: React.FC<SearchDropdownProps> = ({
                     onFocus={() => setShowAutocomplete(true)}
                     onKeyDown={handleKeyDown}
                     placeholder="Search"
-                    className="h-full !w-full !pl-[30px] !pr-4 !py-2 !text-[16px] !text-foreground !placeholder-muted-foreground focus:!outline-none !border-none !ring-0"
+                    className="h-full !w-full !pl-[30px] !pr-4 !py-[8px] !text-[16px] !text-foreground !placeholder-muted-foreground focus:!outline-none !border-none !ring-0"
                     autoFocus
                   />
                 </div>
@@ -166,7 +168,7 @@ const SearchDropdown: React.FC<SearchDropdownProps> = ({
 
   // Custom EcommerceSearch wrapper that hides header on mobile/tablet
   const EcommerceSearchWrapper = () => (
-    <div className="!w-full !px-2 sm:!px-4">
+    <div className="!w-full !px-[8px] sm:!px-[16px]">
       <EcommerceSearch
         userId={userId}
         apiKey={apiKey}

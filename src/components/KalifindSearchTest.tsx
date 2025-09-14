@@ -463,7 +463,7 @@ const KalifindSearchTest: React.FC<{
             </div>
 
             <div
-              className="lg:pl-[0px] !flex-1 !relative !w-full px-4 md:px-0"
+              className="lg:pl-[0px] !flex-1 !relative !w-full px-[16px] md:px-0"
               ref={searchRef}
             >
               <div
@@ -553,10 +553,10 @@ const KalifindSearchTest: React.FC<{
       <div className="!fixed !bottom-4 !left-1/2 !-translate-x-1/2 !z-50 !block lg:!hidden">
         <Drawer>
           <DrawerTrigger asChild>
-            <button className="!flex !items-center !gap-2 !px-4 !py-3 !bg-primary !text-primary-foreground !rounded-full !font-medium !shadow-lg !hover:!bg-primary-hover !transition-all !duration-300 !transform !hover:!scale-105">
+            <button className="!flex !items-center !gap-2 !px-[16px] !py-[12px] !bg-primary !text-primary-foreground !rounded-full !font-medium !shadow-lg !hover:!bg-primary-hover !transition-all !duration-300 !transform !hover:!scale-105">
               <Filter className="!w-4 !h-4" />
               Filters
-              <span className="!bg-primary-foreground !text-primary !px-2 !py-1 !rounded-full !text-xs !font-bold">
+              <span className="!bg-primary-foreground !text-primary !px-[8px] !py-[4px] !rounded-full !text-xs !font-bold">
                 {filters.categories.length +
                   filters.colors.length +
                   filters.sizes.length +
@@ -565,7 +565,7 @@ const KalifindSearchTest: React.FC<{
             </button>
           </DrawerTrigger>
           <DrawerContent className="!z-[100000]">
-            <div className=" !flex !items-center !justify-between p-3 !bg-background !sticky !top-0 !z-10">
+            <div className=" !flex !items-center !justify-between p-[12px] !bg-background !sticky !top-0 !z-10">
               <div className="pl-[8px] text-[14px] !text-foreground">
                 <b>{totalProducts}</b> products found
               </div>
@@ -575,7 +575,7 @@ const KalifindSearchTest: React.FC<{
                 </button>
               </DrawerClose>
             </div>
-            <div className="!px-4 sm:!p-4 overflow-y-auto h-[89svh]">
+            <div className="!px-[16px] sm:!p-[16px] overflow-y-auto h-[89svh]">
               <Accordion
                 type="multiple"
                 defaultValue={["category", "price", "size", "color", "brand"]}
@@ -590,7 +590,7 @@ const KalifindSearchTest: React.FC<{
                       {availableCategories.map((category) => (
                         <label
                           key={category}
-                          className="!flex !items-center !justify-between !cursor-pointer !p-1 sm:!p-2 hover:!bg-muted !rounded-lg"
+                          className="!flex !items-center !justify-between !cursor-pointer !p-[4px] sm:!p-2 hover:!bg-muted !rounded-lg"
                         >
                           <div className="!flex !items-center !gap-3">
                             <input
@@ -913,8 +913,8 @@ const KalifindSearchTest: React.FC<{
           )}
         </aside>
 
-        <main className="!flex-1 !w-full !px-2 sm:!px-4">
-          <div className="!pr-4 sm:!pr-4 lg:pr-0 !w-full">
+        <main className="!flex-1 !w-full !px-[8px] sm:!px-[16px]">
+          <div className="!pr-[16px] sm:!pr-[32px] lg:pr-0 !w-full">
             <div className="hidden lg:flex pt-[14px] pb-[8px]  !text-[14px] sm:!text-[16px] lg:text-[18px] !font-bold !text-foreground !mb-2 mt-2">
               {/* {isAnyFilterActive ? "Search Results" : ""} */}
               Search Results
