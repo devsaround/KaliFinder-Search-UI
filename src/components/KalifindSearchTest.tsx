@@ -564,18 +564,8 @@ const KalifindSearchTest: React.FC<{
               </span>
             </button>
           </DrawerTrigger>
-          <DrawerContent className="!z-[100000]">
-            <div className=" !flex !items-center !justify-between p-[12px] !bg-background !sticky !top-0 !z-10">
-              <div className="pl-[8px] text-[14px] !text-foreground">
-                <b>{totalProducts}</b> products found
-              </div>
-              <DrawerClose asChild>
-                <button className="!pr-[4px] hover:!bg-muted !rounded-full !transition-colors">
-                  <X className="!w-5 !h-5 !text-foreground" />
-                </button>
-              </DrawerClose>
-            </div>
-            <div className="!px-[16px] sm:!p-[16px] overflow-y-auto h-[89svh]">
+          <DrawerContent className="!z-[100000] !flex !flex-col max-h-[93vh]">
+            <div className="!px-[16px] sm:!p-[16px] !overflow-y-auto !flex-1">
               <Accordion
                 type="multiple"
                 defaultValue={["category", "price", "size", "color", "brand"]}
@@ -719,8 +709,20 @@ const KalifindSearchTest: React.FC<{
                 {/*   </AccordionContent> */}
                 {/* </AccordionItem> */}
               </Accordion>
+            </div>
 
-              <div className="!flex !gap-[8px] !py-[16px] !border-t !border-border">
+            <div className="!mt-auto !bg-background">
+              <div className="!flex !items-center !justify-between !p-[12px] !bg-background">
+                <div className="pl-[8px] text-[14px] !text-foreground">
+                  <b>{totalProducts}</b> products found
+                </div>
+                <DrawerClose asChild>
+                  <button className="!pr-[4px] hover:!bg-muted !rounded-full !transition-colors">
+                    <X className="!w-5 !h-5 !text-foreground" />
+                  </button>
+                </DrawerClose>
+              </div>
+              <div className="!flex !gap-[8px] !p-[16px] !border-t !border-border">
                 <button
                   onClick={() => {
                     setFilters({
