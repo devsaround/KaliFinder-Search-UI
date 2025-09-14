@@ -64,8 +64,8 @@ const KalifindSearchTest: React.FC<{
 }> = ({
   userId,
   apiKey,
-  storeId,
-  storeType,
+  storeId = "1",
+  storeType = "woocommerce",
   onClose,
   searchQuery: initialSearchQuery,
   hideHeader = false,
@@ -127,14 +127,14 @@ const KalifindSearchTest: React.FC<{
 
   useEffect(() => {
     const initFilters = async () => {
-      // if (!storeId || !storeType) return; // Don't fetch if we don't have the required params
+      if (!storeId || !storeType) return; // Don't fetch if we don't have the required params
       setIsPriceLoading(true);
       try {
         const params = new URLSearchParams();
-        // params.append("storeId", storeId.toString());
-        // params.append("storeType", storeType);
-        params.append("storeId", "28");
-        params.append("storeType", "woocommerce");
+        params.append("storeId", storeId.toString());
+        params.append("storeType", storeType);
+        // params.append("storeId", "28");
+        // params.append("storeType", "woocommerce");
 
         const response = await fetch(
           `${import.meta.env.VITE_BACKEND_URL}/v1/search?${params.toString()}`,
@@ -213,15 +213,15 @@ const KalifindSearchTest: React.FC<{
             if (debouncedSearchQuery) {
               params.append("q", debouncedSearchQuery);
             }
-            // if (storeId) {
-            //   params.append("storeId", storeId.toString());
-            // }
-            // if (storeType) {
-            //   params.append("storeType", storeType);
-            // }
+            if (storeId) {
+              params.append("storeId", storeId.toString());
+            }
+            if (storeType) {
+              params.append("storeType", storeType);
+            }
 
-            params.append("storeId", "28");
-            params.append("storeType", "woocommerce");
+            // params.append("storeId", "28");
+            // params.append("storeType", "woocommerce");
 
             const response = await fetch(
               `${
@@ -277,14 +277,14 @@ const KalifindSearchTest: React.FC<{
           if (debouncedSearchQuery) {
             params.append("q", debouncedSearchQuery);
           }
-          // if (storeId) {
-          //   params.append("storeId", storeId.toString());
-          // }
-          // if (storeType) {
-          //   params.append("storeType", storeType);
-          // }
-          params.append("storeId", "28");
-          params.append("storeType", "woocommerce");
+          if (storeId) {
+            params.append("storeId", storeId.toString());
+          }
+          if (storeType) {
+            params.append("storeType", storeType);
+          }
+          // params.append("storeId", "28");
+          // params.append("storeType", "woocommerce");
 
           if (filters.categories.length > 0) {
             params.append("categories", filters.categories.join(","));
@@ -428,7 +428,7 @@ const KalifindSearchTest: React.FC<{
   };
 
   const LoadingSkeleton = () => (
-    <div className="!grid !grid-cols-2 sm:!grid-cols-3 md:!grid-cols-4 !gap-4 !w-full">
+    <div className="!grid !grid-cols-2 sm:!grid-cols-3 2xl:!grid-cols-4 !gap-4 !w-full">
       {Array.from({ length: 8 }).map((_, i) => (
         <div
           key={i}
@@ -451,7 +451,7 @@ const KalifindSearchTest: React.FC<{
         <div className="!bg-background !w-full pt-3 lg:px-[48px]">
           <div className="!flex !items-center justify-center !mx-auto flex-col lg:flex-row !w-full ">
             <div className="!flex !items-center !gap-2 justify-between md:justify-normal">
-              <div className="lg:!flex !items-center !hidden w-[347px]">
+              <div className="lg:!flex !items-center !hidden w-[340px]">
                 <a href="/" className="!s-center">
                   <img
                     src={`https://kalifinder-search.pages.dev/KalifindLogo.png`}
@@ -514,7 +514,7 @@ const KalifindSearchTest: React.FC<{
                         </div>
                       ) : autocompleteSuggestions.length > 0 ? (
                         <>
-                          <h3 className="!text-sm !font-medium !text-foreground !mb-3">
+                          <h3 className="!text-[14px] leading-[6px] !font-medium !text-foreground !mb-3">
                             Suggestions
                           </h3>
                           <div className="!space-y-2">
@@ -599,7 +599,7 @@ const KalifindSearchTest: React.FC<{
                               onChange={() => handleCategoryChange(category)}
                               className="!w-4 !h-4 sm:!w-5 sm:!h-5 !text-primary !bg-background !border-border !rounded "
                             />
-                            <span className="!text-foreground !text-[14px] sm:!text-[16px]">
+                            <span className="!text-foreground !text-[14px] sm:!text-[16px] lg:leading-[24px]">
                               {category}
                             </span>
                           </div>
@@ -629,7 +629,7 @@ const KalifindSearchTest: React.FC<{
                               onChange={() => handleBrandChange(brand)}
                               className="!w-4 !h-4 sm:!w-5 sm:!h-5 !text-primary !bg-background !border-border !rounded "
                             />
-                            <span className="!text-foreground !text-[14px] sm:!text-[16px]">
+                            <span className="!text-foreground !text-[14px] sm:!text-[16px] lg:leading-[16px]">
                               {brand}
                             </span>
                           </div>
@@ -764,12 +764,12 @@ const KalifindSearchTest: React.FC<{
                       key={category}
                       className="!flex !items-center !justify-between !cursor-pointer"
                     >
-                      <div className="!flex !items-center !gap-2">
+                      <div className="!flex !items-center !gap-[10px]">
                         <input
                           type="checkbox"
                           checked={filters.categories.includes(category)}
                           onChange={() => handleCategoryChange(category)}
-                          className="!w-4 !h-4 lg:!w-5 lg:!h-5 !text-primary !bg-background !border-border !rounded "
+                          className="!w-4 !h-4 lg:!w-5 lg:!h-5 top-0 !text-primary !bg-background !border-border !rounded "
                         />
                         <span className="!text-foreground text-[14px] lg:text-[16px]">
                           {category}
@@ -914,7 +914,7 @@ const KalifindSearchTest: React.FC<{
         </aside>
 
         <main className="!flex-1 !w-full !px-2 sm:!px-4">
-          <div className="!pr-4 sm:!pr-4 lg:!pr-8 lg:pl-4 !w-full">
+          <div className="!pr-4 sm:!pr-4 lg:pr-0 !w-full">
             <div className="hidden lg:flex pt-[14px] pb-[8px]  !text-[14px] sm:!text-[16px] lg:text-[18px] !font-bold !text-foreground !mb-2 mt-2">
               {/* {isAnyFilterActive ? "Search Results" : ""} */}
               Search Results
@@ -1005,7 +1005,7 @@ const KalifindSearchTest: React.FC<{
             {isLoading || isPending ? (
               <LoadingSkeleton />
             ) : (
-              <div className="!grid !grid-cols-2 sm:!grid-cols-3 md:!grid-cols-4 !gap-2 sm:!gap-4 !w-full">
+              <div className="!grid !grid-cols-2 sm:!grid-cols-3 2xl:!grid-cols-4 !gap-2 sm:!gap-4 !w-full">
                 {sortedProducts.map((product) => (
                   <div
                     key={product.id}
