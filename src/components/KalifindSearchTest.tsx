@@ -98,6 +98,32 @@ const KalifindSearchTest: React.FC<{
     genders: [],
   });
 
+  // Load recent searches from localStorage on mount
+  useEffect(() => {
+    try {
+      const storedSearches = localStorage.getItem("recentSearches");
+      if (storedSearches) {
+        setRecentSearches(JSON.parse(storedSearches));
+      }
+    } catch (error) {
+      console.error("Failed to parse recent searches from localStorage", error);
+      setRecentSearches([]);
+    }
+  }, []);
+
+  // Save recent searches to localStorage
+  useEffect(() => {
+    try {
+      if (recentSearches.length > 0) {
+        localStorage.setItem("recentSearches", JSON.stringify(recentSearches));
+      } else {
+        localStorage.removeItem("recentSearches");
+      }
+    } catch (error) {
+      console.error("Failed to save recent searches to localStorage", error);
+    }
+  }, [recentSearches]);
+
   // Sync search query from parent (for mobile/tablet)
   useEffect(() => {
     if (
@@ -377,18 +403,24 @@ const KalifindSearchTest: React.FC<{
       const query = event.currentTarget.value;
       if (query) {
         setRecentSearches((prev) => {
-          if (prev.includes(query)) {
-            return [query, ...prev.filter((item) => item !== query)].slice(
-              0,
-              10,
-            );
-          }
-          return [query, ...prev].slice(0, 10);
+          const newSearches = [
+            query,
+            ...prev.filter((item) => item !== query),
+          ].slice(0, 10);
+          return newSearches;
         });
         setShowAutocomplete(false);
         inputRef.current?.blur();
       }
     }
+  };
+
+  const handleRemoveRecentSearch = (search: string) => {
+    setRecentSearches((prev) => prev.filter((item) => item !== search));
+  };
+
+  const handleClearRecentSearches = () => {
+    setRecentSearches([]);
   };
 
   const handleCategoryChange = (category: string) => {
@@ -917,7 +949,48 @@ const KalifindSearchTest: React.FC<{
 
         <main className="!flex-1 pb-[16px] sm:pb-[32px] !w-full !px-[8px] sm:!px-[16px]">
           <div className="!pr-[16px] sm:!pr-[32px] lg:pr-0 !w-full">
-            <div className="hidden lg:flex pt-[14px] pb-[8px]  !text-[14px] sm:!text-[16px] lg:text-[18px] !font-bold !text-foreground !mb-[8px] mt-[8px]">
+            {recentSearches.length > 0 && (
+              <div className="!mt-8">
+                <div className="!flex !justify-between !items-center !mb-[12px]">
+                  <h3 className="!text-[16px] !font-bold !text-foreground">
+                    Recent Searches
+                  </h3>
+                  <button
+                    onClick={handleClearRecentSearches}
+                    className="!text-sm !text-muted-foreground hover:!text-foreground"
+                  >
+                    Clear all
+                  </button>
+                </div>
+                <div className="!flex !flex-wrap !gap-[8px]">
+                  {recentSearches.map((search, index) => (
+                    <div
+                      key={index}
+                      className="!flex !items-center !gap-[4px] !bg-muted !rounded-full !px-[12px] !py-[6px]"
+                    >
+                      <span
+                        className="!text-sm !text-foreground !cursor-pointer"
+                        onClick={() => {
+                          handleSearch(search);
+                        }}
+                      >
+                        {search}
+                      </span>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleRemoveRecentSearch(search);
+                        }}
+                        className="!rounded-full hover:!bg-background !p-1"
+                      >
+                        <X className="!w-[12px] !h-[12px] !text-muted-foreground" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            <div className="hidden lg:flex pt-[22px] pb-[4px]  !text-[14px] sm:!text-[16px] lg:text-[18px] !font-bold !text-foreground !mb-[8px] mt-[8px]">
               {/* {isAnyFilterActive ? "Search Results" : ""} */}
               Search Results
             </div>
@@ -961,7 +1034,7 @@ const KalifindSearchTest: React.FC<{
                       }}
                       className="text-[14px]"
                     >
-                      Default
+                      Relevance
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       onSelect={(e) => {
