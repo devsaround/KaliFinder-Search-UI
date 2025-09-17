@@ -3,7 +3,8 @@ import { X, Search } from "lucide-react";
 import ScrollToTop from "./ScrollToTop";
 
 // Lazy load the EcommerceSearch component
-const EcommerceSearch = lazy(() => import("./KalifindSearchTest.tsx"));
+// const EcommerceSearch = lazy(() => import("./KalifindSearch.tsx"));
+import EcommerceSearch from "./KalifindSearch";
 
 interface SearchDropdownProps {
   isOpen: boolean;
@@ -12,6 +13,7 @@ interface SearchDropdownProps {
   apiKey?: string;
   storeId?: string;
   storeType?: string;
+  storeUrl?: string;
 }
 
 const SearchDropdown: React.FC<SearchDropdownProps> = ({
@@ -21,6 +23,7 @@ const SearchDropdown: React.FC<SearchDropdownProps> = ({
   apiKey,
   storeType,
   storeId,
+  storeUrl,
 }) => {
   const [isAnimating, setIsAnimating] = useState(false);
   const [isMobileOrTablet, setIsMobileOrTablet] = useState(false);
@@ -239,6 +242,7 @@ const SearchDropdown: React.FC<SearchDropdownProps> = ({
                 apiKey={apiKey}
                 storeId={storeId}
                 storeType={storeType}
+                storeUrl={storeUrl}
                 onClose={onClose}
               />
             </Suspense>

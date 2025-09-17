@@ -13,11 +13,13 @@ const App = ({
   apiKey,
   storeId,
   storeType,
+  storeUrl,
 }: {
   storeId?: string;
   storeType?: string;
   userId?: string;
   apiKey?: string;
+  storeUrl?: string;
 }) => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
@@ -33,6 +35,7 @@ const App = ({
                 storeType={storeType}
                 userId={userId}
                 apiKey={apiKey}
+                storeUrl={storeUrl}
               />
             }
           />

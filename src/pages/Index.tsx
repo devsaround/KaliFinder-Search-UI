@@ -7,11 +7,13 @@ const Index = ({
   apiKey,
   storeId,
   storeType,
+  storeUrl,
 }: {
   storeId?: string;
   storeType?: string;
   userId?: string;
   apiKey?: string;
+  storeUrl?: string;
 }) => {
   console.log(userId);
   console.log(apiKey);
@@ -30,6 +32,7 @@ const Index = ({
         storeType={storeType}
         userId={userId}
         apiKey={apiKey}
+        storeUrl={storeUrl}
       />
       {/* <button className="!p-2 !rounded-full !hover:bg-gray-100 !transition-colors !duration-200"> */}
       {/*   <div className="!w-6 !h-6 !border-2 !border-gray-700 !rounded"></div> */}

@@ -8,7 +8,8 @@ const SearchIcon: React.FC<{
   storeType?: string;
   userId?: string;
   apiKey?: string;
-}> = ({ userId, apiKey, storeId, storeType }) => {
+  storeUrl?: string;
+}> = ({ userId, apiKey, storeId, storeType,storeUrl  }) => {
   // const [isOpen, setIsOpen] = useState(false);
   const isOpen = useIsOpen((state: any) => state.isOpen);
   const toggleIsOpen = useIsOpen((state: any) => state.toggleIsOpen);
@@ -43,6 +44,7 @@ const SearchIcon: React.FC<{
         apiKey={apiKey}
         storeId={storeId}
         storeType={storeType}
+        storeUrl={storeUrl}
       />
     </>
   );

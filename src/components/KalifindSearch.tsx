@@ -61,14 +61,16 @@ const KalifindSearchTest: React.FC<{
   onClose?: () => void;
   searchQuery?: string; // Accept search query from parent
   hideHeader?: boolean; // Hide header for mobile/tablet
+  storeUrl?: string;
 }> = ({
   userId,
   apiKey,
-  storeId = "1",
+  storeId = "2",
   storeType = "woocommerce",
   onClose,
   searchQuery: initialSearchQuery,
   hideHeader = false,
+  storeUrl = "https://findifly.kinsta.cloud",
 }) => {
   const [searchQuery, setSearchQuery] = useState(initialSearchQuery || "");
   const [showAutocomplete, setShowAutocomplete] = useState(false);
@@ -153,12 +155,13 @@ const KalifindSearchTest: React.FC<{
 
   useEffect(() => {
     const initFilters = async () => {
-      if (!storeId || !storeType) return; // Don't fetch if we don't have the required params
+      // if (!storeId || !storeType) return; // Don't fetch if we don't have the required params
+      if (!storeUrl) return;
       setIsPriceLoading(true);
       try {
         const params = new URLSearchParams();
-        params.append("storeId", storeId.toString());
-        params.append("storeType", storeType);
+        // params.append("storeId", storeId.toString());
+        params.append("storeUrl", storeUrl);
         // params.append("storeId", "28");
         // params.append("storeType", "woocommerce");
 
@@ -211,7 +214,7 @@ const KalifindSearchTest: React.FC<{
     };
 
     initFilters();
-  }, [apiKey, storeId, storeType]);
+  }, [apiKey, storeUrl]);
 
   // Click outside handler
   useEffect(() => {
@@ -239,11 +242,14 @@ const KalifindSearchTest: React.FC<{
             if (debouncedSearchQuery) {
               params.append("q", debouncedSearchQuery);
             }
-            if (storeId) {
-              params.append("storeId", storeId.toString());
-            }
-            if (storeType) {
-              params.append("storeType", storeType);
+            // if (storeId) {
+            //   params.append("storeId", storeId.toString());
+            // }
+            // if (storeType) {
+            //   params.append("storeType", storeType);
+            // }
+            if (storeUrl) {
+              params.append("storeUrl", storeUrl);
             }
 
             // params.append("storeId", "28");
@@ -303,11 +309,14 @@ const KalifindSearchTest: React.FC<{
           if (debouncedSearchQuery) {
             params.append("q", debouncedSearchQuery);
           }
-          if (storeId) {
-            params.append("storeId", storeId.toString());
-          }
-          if (storeType) {
-            params.append("storeType", storeType);
+          // if (storeId) {
+          //   params.append("storeId", storeId.toString());
+          // }
+          // if (storeType) {
+          //   params.append("storeType", storeType);
+          // }
+          if (storeUrl) {
+            params.append("storeUrl", storeUrl);
           }
           // params.append("storeId", "28");
           // params.append("storeType", "woocommerce");
