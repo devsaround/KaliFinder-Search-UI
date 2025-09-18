@@ -1,31 +1,77 @@
 import React, { useState } from "react";
 import ReactDOM from "react-dom/client";
-import App from "./App.tsx";
-import "./index.css";
 import SearchDropdown from "./components/SearchDropdown.tsx";
+import "./index.css";
+import { createCache } from "./lib/cache";
 
-interface KalifindSearchConfig {
-  containerId: string;
-  userId?: string;
-  apiKey?: string;
+interface InitialData {
+  totalProducts: number;
+  maxPrice: number;
+  availableCategories: string[];
+  availableBrands: string[];
+  categoryCounts: { [key: string]: number };
+  brandCounts: { [key: string]: number };
 }
 
-const init = (config: KalifindSearchConfig) => {
-  const container = document.getElementById(config.containerId);
-  if (container) {
-    const root = ReactDOM.createRoot(container);
-    root.render(
-      <React.StrictMode>
-        <App userId={config.userId} apiKey={config.apiKey} />
-      </React.StrictMode>,
-    );
-  } else {
-    console.error(`Could not find element with id "${config.containerId}"`);
-  }
-};
+export const cache = createCache<InitialData>();
 
-(window as any).KalifindSearch = {
-  init,
+const prefetchData = async (storeUrl: string) => {
+  const cacheKey = `initialData-${storeUrl}`;
+  if (cache.get(cacheKey)) {
+    return;
+  }
+
+  try {
+    const params = new URLSearchParams();
+    params.append("storeUrl", storeUrl);
+
+    const response = await fetch(
+      `${import.meta.env.VITE_BACKEND_URL}/v1/search?${params.toString()}`,
+      {
+        
+      },
+    );
+    const result = await response.json();
+
+    if (Array.isArray(result)) {
+      const prices = result
+        .map((p: any) => parseFloat(p.price))
+        .filter((p) => !isNaN(p));
+      const maxPrice = prices.length > 0 ? Math.max(...prices) : 10000;
+
+      const allCategories = new Set<string>();
+      const allBrands = new Set<string>();
+      const categoryCounts: { [key: string]: number } = {};
+      const brandCounts: { [key: string]: number } = {};
+      result.forEach((product: any) => {
+        if (product.categories) {
+          product.categories.forEach((cat: string) => {
+            allCategories.add(cat);
+            categoryCounts[cat] = (categoryCounts[cat] || 0) + 1;
+          });
+        }
+        if (product.brands) {
+          product.brands.forEach((brand: string) => {
+            allBrands.add(brand);
+            brandCounts[brand] = (brandCounts[brand] || 0) + 1;
+          });
+        }
+      });
+
+      const initialData: InitialData = {
+        totalProducts: result.length,
+        maxPrice,
+        availableCategories: Array.from(allCategories),
+        availableBrands: Array.from(allBrands),
+        categoryCounts,
+        brandCounts,
+      };
+
+      cache.set(cacheKey, initialData);
+    }
+  } catch (err) {
+    console.error("Failed to prefetch initial data:", err);
+  }
 };
 
 // --- Animation Manager Component ---
@@ -52,34 +98,21 @@ const findSearchTriggerElements = (): Element[] => {
     return [];
   }
 
-  // Find all elements in header with class or id containing "search"
-  // Case-insensitive match for "search" as a word or part of a word with separators
   const elements: Element[] = [];
-
-  // Check all elements in header
   const allElements = header.querySelectorAll("*");
-  console.log(
-    "Kalifind Search: Checking",
-    allElements.length,
-    "elements in header",
-  );
 
   allElements.forEach((element) => {
-    // Check ID
     const id = element.id;
     if (id && id.toLowerCase().includes("search")) {
-      console.log("Kalifind Search: Found search element by ID", id);
       elements.push(element);
       return;
     }
 
-    // Check classes
     const className = element.className;
     if (typeof className === "string" && className) {
       const classes = className.split(/\s+/);
       for (const cls of classes) {
         if (cls.toLowerCase().includes("search")) {
-          console.log("Kalifind Search: Found search element by class", cls);
           elements.push(element);
           return;
         }
@@ -93,7 +126,6 @@ const findSearchTriggerElements = (): Element[] => {
 // Function to remove existing search functionality from elements
 const removeExistingSearch = (elements: Element[]): void => {
   elements.forEach((element) => {
-    // Remove inline event handlers
     const eventAttributes = [
       "onclick",
       "ondblclick",
@@ -111,54 +143,22 @@ const removeExistingSearch = (elements: Element[]): void => {
         element.removeAttribute(attr);
       }
     });
-
-    // Remove existing event listeners by cloning (this removes listeners but keeps properties)
-    // const clone = element.cloneNode(true) as Element;
-    // element.parentNode?.replaceChild(clone, element);
-  });
-};
-
-// Function to apply !important to all Tailwind classes in the component
-const applyImportantStyles = (htmlString: string): string => {
-  return htmlString.replace(/class="([^"]*)"/g, (match, classes) => {
-    const importantClasses = classes
-      .split(" ")
-      .map((cls) => {
-        if (cls.startsWith("!")) return cls; // Already has !important
-        if (cls.startsWith("data-")) return cls; // Skip data attributes
-        if (cls.includes(":")) {
-          // Handle responsive classes like sm:!text-red
-          const parts = cls.split(":");
-          const lastPart = parts[parts.length - 1];
-          if (!lastPart.startsWith("!")) {
-            parts[parts.length - 1] = "!" + lastPart;
-            return parts.join(":");
-          }
-          return cls;
-        }
-        return "!" + cls;
-      })
-      .join(" ");
-    return `class="${importantClasses}"`;
   });
 };
 
 (function () {
   // Function to open the search modal
   const openSearchModal = (config: any) => {
-    // Check if a modal is already open by looking for the container
     const existingModal = document.getElementById("kalifind-modal-container");
     if (existingModal) {
-      return; // Do nothing if modal is already open
+      return;
     }
 
     const modalContainer = document.createElement("div");
     modalContainer.id = "kalifind-modal-container";
-    // Ensure the modal takes full width and aligns properly
     modalContainer.style.cssText = `
-      /* Aggressive reset for the modal container itself */
-      all: initial !important; /* Reset all inherited properties */
-      box-sizing: border-box !important; /* Ensure consistent box model */
+      all: initial !important;
+      box-sizing: border-box !important;
       position: fixed !important;
       top: 0 !important;
       left: 0 !important;
@@ -167,8 +167,8 @@ const applyImportantStyles = (htmlString: string): string => {
       width: 100% !important;
       height: 100% !important;
       z-index: 10000 !important;
-      background-color: transparent !important; /* Ensure no background from host */
-      overflow: hidden !important; /* Prevent scrollbars on the container itself */
+      background-color: transparent !important;
+      overflow: hidden !important;
     `;
     document.body.appendChild(modalContainer);
 
@@ -210,43 +210,33 @@ const applyImportantStyles = (htmlString: string): string => {
       return;
     }
 
+    prefetchData(storeUrl);
+
     const triggerElements = findSearchTriggerElements();
-    console.log(
-      "Kalifind Search: Found",
-      triggerElements.length,
-      "search trigger elements",
-    );
-    console.log("Kalifind Search: Trigger elements", triggerElements);
 
     if (triggerElements.length > 0) {
-      // Remove existing search functionality from the specific elements found
       removeExistingSearch(triggerElements);
 
       triggerElements.forEach((element: any) => {
-        // Ensure the element is focusable and has a pointer cursor
         element.style.cursor = "pointer";
-        element.setAttribute("tabindex", "0"); // Make it focusable if it isn't already
-        element.setAttribute("role", "button"); // Semantically indicate it's a button
-        element.setAttribute("aria-label", "Open search"); // Accessibility
+        element.setAttribute("tabindex", "0");
+        element.setAttribute("role", "button");
+        element.setAttribute("aria-label", "Open search");
 
-        // Add click event listener to open our custom search modal
         element.addEventListener(
           "click",
           (e) => {
             e.preventDefault();
-            e.stopPropagation(); // Prevent bubbling up
-            e.stopImmediatePropagation(); // Prevent other listeners on the same element
+            e.stopPropagation();
+            e.stopImmediatePropagation();
             openSearchModal(configFromUrl);
           },
           true,
-        ); // Add listener in capture phase
+        );
       });
     } else {
-      // Fallback logic: Inject a search icon/component
-      // Find the first header element
       const firstHeader = document.querySelector("header");
       if (firstHeader) {
-        // Create a container for the search icon
         const searchIconContainer = document.createElement("div");
         searchIconContainer.id = "kalifind-fallback-search-icon";
         searchIconContainer.style.cssText = `
@@ -256,7 +246,6 @@ const applyImportantStyles = (htmlString: string): string => {
           align-items: center;
           justify-content: center;
         `;
-        // Simple search icon using SVG or text (you can replace this with a React component later)
         searchIconContainer.innerHTML = `
           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="search-icon">
             <circle cx="11" cy="11" r="8"></circle>
@@ -264,10 +253,8 @@ const applyImportantStyles = (htmlString: string): string => {
           </svg>
         `;
 
-        // Append the icon to the end of the first header
         firstHeader.appendChild(searchIconContainer);
 
-        // Add click event listener to the icon to open the modal
         searchIconContainer.addEventListener("click", (e) => {
           e.preventDefault();
           openSearchModal(configFromUrl);

@@ -9,16 +9,8 @@ import NotFound from "./pages/NotFound";
 const queryClient = new QueryClient();
 
 const App = ({
-  userId,
-  apiKey,
-  storeId,
-  storeType,
   storeUrl,
 }: {
-  storeId?: string;
-  storeType?: string;
-  userId?: string;
-  apiKey?: string;
   storeUrl?: string;
 }) => (
   <QueryClientProvider client={queryClient}>
@@ -31,10 +23,6 @@ const App = ({
             path="/"
             element={
               <Index
-                storeId={storeId}
-                storeType={storeType}
-                userId={userId}
-                apiKey={apiKey}
                 storeUrl={storeUrl}
               />
             }

@@ -1,3 +1,4 @@
+import { cache } from "../embed-search.tsx";
 import React, {
   useState,
   useTransition,
@@ -53,20 +54,12 @@ interface FilterState {
   genders: string[];
 }
 
-const KalifindSearchTest: React.FC<{
-  storeId?: string;
-  storeType?: string;
-  userId?: string;
-  apiKey?: string;
-  onClose?: () => void;
-  searchQuery?: string; // Accept search query from parent
-  hideHeader?: boolean; // Hide header for mobile/tablet
+const KalifindSearch: React.FC<{
   storeUrl?: string;
+  onClose?: () => void;
+  searchQuery?: string;
+  hideHeader?: boolean;
 }> = ({
-  userId,
-  apiKey,
-  storeId = "2",
-  storeType = "woocommerce",
   onClose,
   searchQuery: initialSearchQuery,
   hideHeader = false,
@@ -90,10 +83,13 @@ const KalifindSearchTest: React.FC<{
   const [categoryCounts, setCategoryCounts] = useState<{
     [key: string]: number;
   }>({});
+  const [brandCounts, setBrandCounts] = useState<{
+    [key: string]: number;
+  }>({});
   const [sortOption, setSortOption] = useState("default");
   const [filters, setFilters] = useState<FilterState>({
     categories: [],
-    priceRange: [0, 5000], // Default price range
+    priceRange: [0, 10000], // Default price range
     colors: [],
     sizes: [],
     brands: [],
@@ -153,68 +149,112 @@ const KalifindSearchTest: React.FC<{
     filters.sizes.length > 0 ||
     filters.priceRange[1] < maxPrice;
 
+  // ... (rest of the imports)
+
+  // ... (rest of the component)
+
   useEffect(() => {
     const initFilters = async () => {
-      // if (!storeId || !storeType) return; // Don't fetch if we don't have the required params
       if (!storeUrl) return;
-      setIsPriceLoading(true);
-      try {
-        const params = new URLSearchParams();
-        // params.append("storeId", storeId.toString());
-        params.append("storeUrl", storeUrl);
-        // params.append("storeId", "28");
-        // params.append("storeType", "woocommerce");
 
-        const response = await fetch(
-          `${import.meta.env.VITE_BACKEND_URL}/v1/search?${params.toString()}`,
-          {
-            headers: { "X-Api-Key": apiKey || "" },
-          },
-        );
-        const result = await response.json();
-        if (Array.isArray(result)) {
-          setTotalProducts(result.length);
-          const prices = result
-            .map((p: any) => parseFloat(p.price))
-            .filter((p) => !isNaN(p));
-          if (prices.length > 0) {
-            const max = Math.max(...prices);
-            setMaxPrice(max);
-            setFilters((prev: any) => ({
-              ...prev,
-              priceRange: [0, max],
-            }));
+      const cacheKey = `initialData-${storeUrl}`;
+      const cachedData = cache.get(cacheKey);
+
+      if (cachedData) {
+        setTotalProducts(cachedData.totalProducts);
+        setMaxPrice(cachedData.maxPrice);
+        setFilters((prev: any) => ({
+          ...prev,
+          priceRange: [0, cachedData.maxPrice],
+        }));
+        setAvailableCategories(cachedData.availableCategories);
+        setAvailableBrands(cachedData.availableBrands);
+        setCategoryCounts(cachedData.categoryCounts);
+        setBrandCounts(cachedData.brandCounts);
+        setIsPriceLoading(false);
+        return;
+      }
+
+      const fetchWithRetry = async (retries = 3) => {
+        try {
+          const params = new URLSearchParams();
+          params.append("storeUrl", storeUrl);
+
+          const response = await fetch(
+            `${import.meta.env.VITE_BACKEND_URL}/v1/search?${params.toString()}`,
+            {},
+          );
+
+          if (!response.ok) {
+            throw new Error("bad response");
           }
 
-          const allCategories = new Set<string>();
-          const allBrands = new Set<string>();
-          const counts: { [key: string]: number } = {};
-          result.forEach((product: any) => {
-            if (product.categories) {
-              product.categories.forEach((cat: string) => {
-                allCategories.add(cat);
-                counts[cat] = (counts[cat] || 0) + 1;
-              });
+          const result = await response.json();
+          if (Array.isArray(result)) {
+            setTotalProducts(result.length);
+            const prices = result
+              .map((p: any) => parseFloat(p.price))
+              .filter((p) => !isNaN(p));
+            if (prices.length > 0) {
+              const max = Math.max(...prices);
+              setMaxPrice(max);
+              setFilters((prev: any) => ({
+                ...prev,
+                priceRange: [0, max],
+              }));
             }
-            if (product.brands) {
-              product.brands.forEach((brand: string) => allBrands.add(brand));
-            }
-          });
-          setAvailableCategories(Array.from(allCategories));
-          setAvailableBrands(Array.from(allBrands));
-          setCategoryCounts(counts);
-        } else {
-          console.error("Initial search result is not an array:", result);
+
+            const allCategories = new Set<string>();
+            const allBrands = new Set<string>();
+            const categoryCounts: { [key: string]: number } = {};
+            const brandCounts: { [key: string]: number } = {};
+            result.forEach((product: any) => {
+              if (product.categories) {
+                product.categories.forEach((cat: string) => {
+                  allCategories.add(cat);
+                  categoryCounts[cat] = (categoryCounts[cat] || 0) + 1;
+                });
+              }
+              if (product.brands) {
+                product.brands.forEach((brand: string) => {
+                  allBrands.add(brand);
+                  brandCounts[brand] = (brandCounts[brand] || 0) + 1;
+                });
+              }
+            });
+            setAvailableCategories(Array.from(allCategories));
+            setAvailableBrands(Array.from(allBrands));
+            setCategoryCounts(categoryCounts);
+            setBrandCounts(brandCounts);
+
+            const initialData = {
+              totalProducts: result.length,
+              maxPrice: maxPrice,
+              availableCategories: Array.from(allCategories),
+              availableBrands: Array.from(allBrands),
+              categoryCounts: categoryCounts,
+              brandCounts: brandCounts,
+            };
+            cache.set(cacheKey, initialData);
+          } else {
+            console.error("Initial search result is not an array:", result);
+          }
+        } catch (err) {
+          if (retries > 0) {
+            setTimeout(() => fetchWithRetry(retries - 1), 1000);
+          } else {
+            console.error("Failed to fetch initial filter data:", err);
+          }
+        } finally {
+          setIsPriceLoading(false);
         }
-      } catch (err) {
-        console.error("Failed to fetch initial filter data:", err);
-      } finally {
-        setIsPriceLoading(false);
-      }
+      };
+
+      fetchWithRetry();
     };
 
     initFilters();
-  }, [apiKey, storeUrl]);
+  }, [storeUrl]);
 
   // Click outside handler
   useEffect(() => {
@@ -233,6 +273,7 @@ const KalifindSearchTest: React.FC<{
 
   // Autocomplete search
   useEffect(() => {
+    if (!storeUrl) return;
     if (debouncedSearchQuery) {
       startTransition(() => {
         setIsAutocompleteLoading(true);
@@ -259,11 +300,7 @@ const KalifindSearchTest: React.FC<{
               `${
                 import.meta.env.VITE_BACKEND_URL
               }/v1/autocomplete?${params.toString()}`,
-              {
-                headers: {
-                  "X-Api-Key": apiKey || "",
-                },
-              },
+              {},
             );
 
             if (!response.ok) {
@@ -284,11 +321,11 @@ const KalifindSearchTest: React.FC<{
     } else {
       setAutocompleteSuggestions([]);
     }
-  }, [debouncedSearchQuery, apiKey]);
+  }, [debouncedSearchQuery, storeUrl]);
 
   // search products
   useEffect(() => {
-    if (isPriceLoading) {
+    if (isPriceLoading || !storeUrl) {
       return; // Wait for the initial price to be loaded
     }
 
@@ -343,13 +380,9 @@ const KalifindSearchTest: React.FC<{
             `${
               import.meta.env.VITE_BACKEND_URL
             }/v1/search?${params.toString()}`,
-            {
-              headers: {
-                "X-Api-Key": apiKey || "",
-              },
-            },
+            {},
           );
-          console.log("User ID:", userId);
+
           console.log(
             `${import.meta.env.VITE_BACKEND_URL}/v1/search?${params.toString()}`,
           );
@@ -378,8 +411,7 @@ const KalifindSearchTest: React.FC<{
     filters.brands,
     filters.priceRange,
     debouncedPriceRange,
-    apiKey,
-    userId,
+    storeUrl,
   ]);
 
   const sortedProducts = useMemo(() => {
@@ -665,7 +697,7 @@ const KalifindSearchTest: React.FC<{
                             </span>
                           </div>
                           <span className="!text-muted-foreground !text-[12px] sm:!text-[14px] !bg-muted !px-[8px] !py-[4px] !rounded">
-                            {/* {brand.length} */}
+                            {brandCounts[brand] || 0}
                           </span>
                         </label>
                       ))}
@@ -1134,4 +1166,4 @@ const KalifindSearchTest: React.FC<{
   );
 };
 
-export default KalifindSearchTest;
+export default KalifindSearch;

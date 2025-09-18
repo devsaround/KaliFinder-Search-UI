@@ -24,8 +24,9 @@ export default defineConfig(({ mode }) => ({
     "process.env.NODE_ENV": JSON.stringify(mode),
   },
   build: {
+    sourcemap: false,
     lib: {
-      entry: path.resolve(__dirname, "src/embed.tsx"),
+      entry: path.resolve(__dirname, "src/embed-search.tsx"),
       name: "KalifindSearch",
       formats: ["umd"],
       fileName: (format) => `kalifind-search.js`,

@@ -3,26 +3,17 @@ import { X, Search } from "lucide-react";
 import ScrollToTop from "./ScrollToTop";
 
 // Lazy load the EcommerceSearch component
-// const EcommerceSearch = lazy(() => import("./KalifindSearch.tsx"));
-import EcommerceSearch from "./KalifindSearch";
+const EcommerceSearch = lazy(() => import("./KalifindSearch.tsx"));
 
 interface SearchDropdownProps {
   isOpen: boolean;
   onClose: () => void;
-  userId?: string;
-  apiKey?: string;
-  storeId?: string;
-  storeType?: string;
   storeUrl?: string;
 }
 
 const SearchDropdown: React.FC<SearchDropdownProps> = ({
   isOpen,
   onClose,
-  userId,
-  apiKey,
-  storeType,
-  storeId,
   storeUrl,
 }) => {
   const [isAnimating, setIsAnimating] = useState(false);
@@ -161,10 +152,7 @@ const SearchDropdown: React.FC<SearchDropdownProps> = ({
   const EcommerceSearchWrapper = () => (
     <div className="!w-full !px-[8px] sm:!px-[16px]">
       <EcommerceSearch
-        userId={userId}
-        apiKey={apiKey}
-        storeId={storeId}
-        storeType={storeType}
+        storeUrl={storeUrl}
         onClose={onClose}
         searchQuery={searchQuery}
         hideHeader={isMobileOrTablet} // Pass flag to hide header on mobile/tablet
@@ -237,14 +225,7 @@ const SearchDropdown: React.FC<SearchDropdownProps> = ({
           ) : (
             // Desktop: Normal layout
             <Suspense fallback={null}>
-              <EcommerceSearch
-                userId={userId}
-                apiKey={apiKey}
-                storeId={storeId}
-                storeType={storeType}
-                storeUrl={storeUrl}
-                onClose={onClose}
-              />
+              <EcommerceSearch storeUrl={storeUrl} onClose={onClose} />
             </Suspense>
           )}
         </div>

@@ -3,22 +3,10 @@ import SearchIcon from "../components/SearchIcon.tsx";
 import { Search } from "lucide-react";
 
 const Index = ({
-  userId,
-  apiKey,
-  storeId,
-  storeType,
   storeUrl,
 }: {
-  storeId?: string;
-  storeType?: string;
-  userId?: string;
-  apiKey?: string;
   storeUrl?: string;
 }) => {
-  console.log(userId);
-  console.log(apiKey);
-  console.log(storeId);
-  console.log(storeType);
   return (
     <div>
       {/* <div className="!min-h-screen !bg-gray-50 !flex !items-center !justify-center "> */}
@@ -27,13 +15,7 @@ const Index = ({
       {/* <div className="!flex !items-center !justify-between !max-w-7xl !mx-auto"> */}
       {/* <div className="!flex !items-center !justify-between !max-w-7xl !mx-auto"> */}
       {/* <div className="!flex !items-center !space-x-4"> */}
-      <SearchIcon
-        storeId={storeId}
-        storeType={storeType}
-        userId={userId}
-        apiKey={apiKey}
-        storeUrl={storeUrl}
-      />
+      <SearchIcon storeUrl={storeUrl} />
       {/* <button className="!p-2 !rounded-full !hover:bg-gray-100 !transition-colors !duration-200"> */}
       {/*   <div className="!w-6 !h-6 !border-2 !border-gray-700 !rounded"></div> */}
       {/* </button> */}
