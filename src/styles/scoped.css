@@ -1,0 +1,93 @@
+/* Scoped CSS for WordPress integration */
+.kalifind-search-widget {
+  /* Reset all inherited styles */
+  all: initial !important;
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    sans-serif !important;
+  line-height: 1.5 !important;
+  color: #1f2937 !important;
+  background-color: #ffffff !important;
+  box-sizing: border-box !important;
+  display: block !important;
+  position: relative !important;
+  z-index: 999999 !important;
+}
+
+/* Reset all child elements */
+.kalifind-search-widget *,
+.kalifind-search-widget *::before,
+.kalifind-search-widget *::after {
+  all: unset !important;
+  display: revert !important;
+  box-sizing: border-box !important;
+  font-family: inherit !important;
+  line-height: inherit !important;
+  color: inherit !important;
+  background: transparent !important;
+  border: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  text-decoration: none !important;
+  list-style: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+  filter: none !important;
+  transform: none !important;
+  transition: none !important;
+  animation: none !important;
+}
+
+/* Restore necessary display properties */
+.kalifind-search-widget div {
+  display: block !important;
+}
+
+.kalifind-search-widget span {
+  display: inline !important;
+}
+
+.kalifind-search-widget button {
+  display: inline-block !important;
+  cursor: pointer !important;
+}
+
+.kalifind-search-widget input {
+  display: inline-block !important;
+}
+
+.kalifind-search-widget img {
+  display: block !important;
+  max-width: 100% !important;
+  height: auto !important;
+}
+
+/* Override WordPress theme styles */
+.kalifind-search-widget {
+  /* Prevent theme from affecting our widget */
+  font-size: 16px !important;
+  font-weight: normal !important;
+  text-align: left !important;
+  direction: ltr !important;
+  unicode-bidi: normal !important;
+}
+
+/* Ensure our styles take precedence */
+.kalifind-search-widget .bg-primary {
+  background-color: #823bed !important;
+}
+
+.kalifind-search-widget .text-primary {
+  color: #823bed !important;
+}
+
+.kalifind-search-widget .border-primary {
+  border-color: #823bed !important;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+  .kalifind-search-widget {
+    font-size: 14px !important;
+  }
+}

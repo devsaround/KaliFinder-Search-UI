@@ -33,5 +33,7 @@ export default defineConfig(({ mode }) => ({
     },
     outDir: "dist",
     // emptyOutDir: true,
+    // Bundle React and ReactDOM into the output so it works standalone on WordPress
+    // (do not externalize react/react-dom)
   },
 }));

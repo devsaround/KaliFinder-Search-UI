@@ -1,8 +1,10 @@
 import React, { useState } from "react";
 import ReactDOM from "react-dom/client";
 import SearchDropdown from "./components/SearchDropdown.tsx";
+import ShadowDOMSearchDropdown from "./components/ShadowDOMSearchDropdown.tsx";
 import "./index.css";
 import { createCache } from "./lib/cache";
+import { injectIsolatedStyles, applyScopedStyles } from "./lib/styleIsolation";
 
 interface InitialData {
   totalProducts: number;
@@ -14,6 +16,15 @@ interface InitialData {
 }
 
 export const cache = createCache<InitialData>();
+
+// Add comprehensive debugging at the start
+console.log("Kalifind Search: Script loaded and executing");
+console.log("Kalifind Search: Document ready state:", document.readyState);
+console.log("Kalifind Search: Current URL:", window.location.href);
+console.log(
+  "Kalifind Search: All script tags:",
+  document.querySelectorAll('script[src*="kalifind-search.js"]')
+);
 
 const prefetchData = async (storeUrl: string) => {
   const cacheKey = `initialData-${storeUrl}`;
@@ -27,9 +38,7 @@ const prefetchData = async (storeUrl: string) => {
 
     const response = await fetch(
       `${import.meta.env.VITE_BACKEND_URL}/v1/search?${params.toString()}`,
-      {
-        
-      },
+      {}
     );
     const result = await response.json();
 
@@ -87,12 +96,16 @@ const ModalManager: React.FC<{
     setTimeout(onUnmount, 300);
   };
 
-  return <SearchDropdown isOpen={isOpen} onClose={handleClose} {...props} />;
+  // Use Shadow DOM for complete CSS isolation
+  return (
+    <ShadowDOMSearchDropdown isOpen={isOpen} onClose={handleClose} {...props} />
+  );
 };
 
 // Function to find elements in header with class or id containing "search"
 const findSearchTriggerElements = (): Element[] => {
   const header = document.querySelector("header");
+  console.log("Kalifind Search: Header found:", header);
   if (!header) {
     console.log("Kalifind Search: No header found");
     return [];
@@ -100,19 +113,36 @@ const findSearchTriggerElements = (): Element[] => {
 
   const elements: Element[] = [];
   const allElements = header.querySelectorAll("*");
+  console.log("Kalifind Search: All elements in header:", allElements);
 
   allElements.forEach((element) => {
     const id = element.id;
+    const className = element.className;
+    console.log(
+      "Kalifind Search: Checking element:",
+      element,
+      "id:",
+      id,
+      "className:",
+      className
+    );
+
     if (id && id.toLowerCase().includes("search")) {
+      console.log("Kalifind Search: Found element by ID:", element);
       elements.push(element);
       return;
     }
 
-    const className = element.className;
     if (typeof className === "string" && className) {
       const classes = className.split(/\s+/);
       for (const cls of classes) {
         if (cls.toLowerCase().includes("search")) {
+          console.log(
+            "Kalifind Search: Found element by class:",
+            element,
+            "class:",
+            cls
+          );
           elements.push(element);
           return;
         }
@@ -120,6 +150,7 @@ const findSearchTriggerElements = (): Element[] => {
     }
   });
 
+  console.log("Kalifind Search: Final trigger elements:", elements);
   return elements;
 };
 
@@ -154,11 +185,17 @@ const removeExistingSearch = (elements: Element[]): void => {
       return;
     }
 
+    // Inject isolated styles first
+    injectIsolatedStyles(document.body);
+
     const modalContainer = document.createElement("div");
     modalContainer.id = "kalifind-modal-container";
-    modalContainer.style.cssText = `
-      all: initial !important;
-      box-sizing: border-box !important;
+    modalContainer.className = "kalifind-search-widget";
+
+    // Apply scoped styles
+    applyScopedStyles(modalContainer);
+
+    modalContainer.style.cssText += `
       position: fixed !important;
       top: 0 !important;
       left: 0 !important;
@@ -182,16 +219,22 @@ const removeExistingSearch = (elements: Element[]): void => {
     root.render(
       <React.StrictMode>
         <ModalManager onUnmount={handleUnmount} {...config} />
-      </React.StrictMode>,
+      </React.StrictMode>
     );
   };
 
   const initialize = () => {
+    console.log("Kalifind Search: Initialize function called");
     const scriptTag = document.querySelector(
-      'script[src*="kalifind-search.js"]',
+      'script[src*="kalifind-search.js"]'
     );
+    console.log("Kalifind Search: Script tag found:", scriptTag);
     if (!scriptTag) {
       console.error("Kalifind Search script tag not found.");
+      console.log(
+        "Kalifind Search: Available script tags:",
+        document.querySelectorAll("script")
+      );
       return;
     }
 
@@ -200,19 +243,37 @@ const removeExistingSearch = (elements: Element[]): void => {
 
     const url = new URL(scriptSrc, window.location.origin);
     const storeUrl = url.searchParams.get("storeUrl");
+    const storeId = url.searchParams.get("storeId");
+    const storeType = url.searchParams.get("storeType");
+
+    // Handle both parameter formats
+    let finalStoreUrl = storeUrl;
+    if (!finalStoreUrl && storeId && storeType) {
+      // Construct storeUrl from storeId and storeType
+      finalStoreUrl = `https://api.kalifind.com/stores/${storeId}/${storeType}`;
+    }
 
     const configFromUrl = {
-      storeUrl: storeUrl || undefined,
+      storeUrl: finalStoreUrl || undefined,
     };
 
-    if (!storeUrl) {
-      console.error("Kalifind Search: storeUrl parameter is missing.");
+    if (!finalStoreUrl) {
+      console.error(
+        "Kalifind Search: Either storeUrl or both storeId and storeType parameters are required."
+      );
+      console.log("Available parameters:", { storeUrl, storeId, storeType });
       return;
     }
 
-    prefetchData(storeUrl);
+    console.log("Kalifind Search: Using storeUrl:", finalStoreUrl);
+    prefetchData(finalStoreUrl);
 
     const triggerElements = findSearchTriggerElements();
+    console.log("Kalifind Search: Found trigger elements:", triggerElements);
+    console.log(
+      "Kalifind Search: Number of trigger elements:",
+      triggerElements.length
+    );
 
     if (triggerElements.length > 0) {
       removeExistingSearch(triggerElements);
@@ -231,7 +292,7 @@ const removeExistingSearch = (elements: Element[]): void => {
             e.stopImmediatePropagation();
             openSearchModal(configFromUrl);
           },
-          true,
+          true
         );
       });
     } else {
@@ -261,7 +322,7 @@ const removeExistingSearch = (elements: Element[]): void => {
         });
       } else {
         console.warn(
-          "Kalifind Search: No header found for fallback icon injection.",
+          "Kalifind Search: No header found for fallback icon injection."
         );
       }
     }

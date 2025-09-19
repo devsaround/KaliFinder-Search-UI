@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shadow DOM Test - Kalifind Search</title>
+    <style>
+        /* Simulate WordPress theme styles that could conflict */
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f0f0f0;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .wp-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .theme-button {
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            font-size: 18px;
+            cursor: pointer;
+            margin: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .theme-input {
+            width: 100%;
+            padding: 15px;
+            border: 3px solid #ff6b6b;
+            border-radius: 10px;
+            font-size: 16px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .theme-text {
+            color: #ff6b6b;
+            font-size: 24px;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Simulate conflicting styles */
+        * {
+            box-sizing: border-box;
+        }
+
+        div {
+            background: linear-gradient(45deg, #ff9a9e, #fecfef);
+            border: 2px solid #ff6b6b;
+        }
+
+        button {
+            background: #ff6b6b !important;
+            color: white !important;
+            border: none !important;
+            padding: 10px 20px !important;
+            border-radius: 5px !important;
+        }
+
+        input {
+            background: #4ecdc4 !important;
+            color: white !important;
+            border: 2px solid #45b7aa !important;
+            padding: 10px !important;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="wp-content">
+        <h1>Shadow DOM Test - Kalifind Search</h1>
+        <p class="theme-text">This page simulates a WordPress theme with conflicting CSS styles.</p>
+
+        <div style="margin: 20px 0;">
+            <h2>Theme Elements (These should NOT affect the search widget):</h2>
+            <button class="theme-button">Theme Button</button>
+            <input class="theme-input" placeholder="Theme Input" />
+            <div style="padding: 20px; background: linear-gradient(45deg, #ff9a9e, #fecfef); margin: 10px 0;">
+                <p>This div has conflicting styles that should not affect the search widget.</p>
+            </div>
+        </div>
+
+        <div style="margin: 20px 0;">
+            <h2>Search Widget Test:</h2>
+            <p>Click the search button below to test the Shadow DOM implementation:</p>
+
+            <!-- This will be replaced by the search widget -->
+            <div id="search-trigger" style="
+                display: inline-block;
+                padding: 15px 30px;
+                background: #823BED;
+                color: white;
+                border-radius: 8px;
+                cursor: pointer;
+                font-size: 16px;
+                font-weight: bold;
+                box-shadow: 0 4px 15px rgba(130, 59, 237, 0.3);
+                transition: all 0.3s ease;
+            " onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                🔍 Open Search (Shadow DOM)
+            </div>
+        </div>
+
+        <div style="margin: 20px 0;">
+            <h3>What to Test:</h3>
+            <ul>
+                <li>✅ Search widget should open without theme interference</li>
+                <li>✅ All styles should be consistent (purple theme)</li>
+                <li>✅ No conflicting colors or fonts from the page</li>
+                <li>✅ Responsive design should work properly</li>
+                <li>✅ Animations should work smoothly</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Load the Shadow DOM search widget -->
+    <script type="module" src="/src/embed-search.tsx?storeUrl=https://findifly.kinsta.cloud" defer></script>
+</body>
+
+</html>

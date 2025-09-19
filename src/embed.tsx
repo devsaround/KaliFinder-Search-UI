@@ -3,12 +3,16 @@ import ReactDOM from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
 import SearchDropdown from "./components/SearchDropdown.tsx";
+import ShadowDOMSearchDropdown from "./components/ShadowDOMSearchDropdown.tsx";
 
 interface KalifindSearchConfig {
   containerId: string;
   userId?: string;
   apiKey?: string;
 }
+
+// Add debugging at the start
+console.log("Kalifind Search: Script loaded and executing");
 
 const init = (config: KalifindSearchConfig) => {
   const container = document.getElementById(config.containerId);
@@ -17,7 +21,7 @@ const init = (config: KalifindSearchConfig) => {
     root.render(
       <React.StrictMode>
         <App userId={config.userId} apiKey={config.apiKey} />
-      </React.StrictMode>,
+      </React.StrictMode>
     );
   } else {
     console.error(`Could not find element with id "${config.containerId}"`);
@@ -41,7 +45,10 @@ const ModalManager: React.FC<{
     setTimeout(onUnmount, 300);
   };
 
-  return <SearchDropdown isOpen={isOpen} onClose={handleClose} {...props} />;
+  // Use Shadow DOM for complete CSS isolation
+  return (
+    <ShadowDOMSearchDropdown isOpen={isOpen} onClose={handleClose} {...props} />
+  );
 };
 
 // Function to find elements in header with class or id containing "search"
@@ -61,7 +68,7 @@ const findSearchTriggerElements = (): Element[] => {
   console.log(
     "Kalifind Search: Checking",
     allElements.length,
-    "elements in header",
+    "elements in header"
   );
 
   allElements.forEach((element) => {
@@ -182,13 +189,13 @@ const applyImportantStyles = (htmlString: string): string => {
     root.render(
       <React.StrictMode>
         <ModalManager onUnmount={handleUnmount} {...config} />
-      </React.StrictMode>,
+      </React.StrictMode>
     );
   };
 
   const initialize = () => {
     const scriptTag = document.querySelector(
-      'script[src*="kalifind-search.js"]',
+      'script[src*="kalifind-search.js"]'
     );
     if (!scriptTag) {
       console.error("Kalifind Search script tag not found.");
@@ -200,21 +207,35 @@ const applyImportantStyles = (htmlString: string): string => {
 
     const url = new URL(scriptSrc, window.location.origin);
     const storeUrl = url.searchParams.get("storeUrl");
+    const storeId = url.searchParams.get("storeId");
+    const storeType = url.searchParams.get("storeType");
+
+    // Handle both parameter formats
+    let finalStoreUrl = storeUrl;
+    if (!finalStoreUrl && storeId && storeType) {
+      // Construct storeUrl from storeId and storeType
+      finalStoreUrl = `https://api.kalifind.com/stores/${storeId}/${storeType}`;
+    }
 
     const configFromUrl = {
-      storeUrl: storeUrl || undefined,
+      storeUrl: finalStoreUrl || undefined,
     };
 
-    if (!storeUrl) {
-      console.error("Kalifind Search: storeUrl parameter is missing.");
+    if (!finalStoreUrl) {
+      console.error(
+        "Kalifind Search: Either storeUrl or both storeId and storeType parameters are required."
+      );
+      console.log("Available parameters:", { storeUrl, storeId, storeType });
       return;
     }
+
+    console.log("Kalifind Search: Using storeUrl:", finalStoreUrl);
 
     const triggerElements = findSearchTriggerElements();
     console.log(
       "Kalifind Search: Found",
       triggerElements.length,
-      "search trigger elements",
+      "search trigger elements"
     );
     console.log("Kalifind Search: Trigger elements", triggerElements);
 
@@ -238,7 +259,7 @@ const applyImportantStyles = (htmlString: string): string => {
             e.stopImmediatePropagation(); // Prevent other listeners on the same element
             openSearchModal(configFromUrl);
           },
-          true,
+          true
         ); // Add listener in capture phase
       });
     } else {
@@ -274,7 +295,7 @@ const applyImportantStyles = (htmlString: string): string => {
         });
       } else {
         console.warn(
-          "Kalifind Search: No header found for fallback icon injection.",
+          "Kalifind Search: No header found for fallback icon injection."
         );
       }
     }
