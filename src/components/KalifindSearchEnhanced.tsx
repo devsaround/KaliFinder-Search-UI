@@ -45,6 +45,13 @@ interface Product {
   category: string;
 }
 
+interface ConfiguredFacet {
+  field: string;
+  label: string;
+  visible: boolean;
+  terms: number;
+}
+
 interface FilterState {
   categories: string[];
   priceRange: [number, number];
@@ -55,7 +62,7 @@ interface FilterState {
   tags: string[];
 }
 
-const KalifindSearch: React.FC<{
+const KalifindSearchEnhanced: React.FC<{
   storeUrl?: string;
   onClose?: () => void;
   searchQuery?: string;
@@ -77,7 +84,7 @@ const KalifindSearch: React.FC<{
   >([]);
   const [isAutocompleteLoading, setIsAutocompleteLoading] = useState(false);
   const [isPriceLoading, setIsPriceLoading] = useState(true);
-  const [maxPrice, setMaxPrice] = useState<number>(10000); // Default max price
+  const [maxPrice, setMaxPrice] = useState<number>(10000);
   const [availableCategories, setAvailableCategories] = useState<string[]>([]);
   const [availableBrands, setAvailableBrands] = useState<string[]>([]);
   const [availableColors, setAvailableColors] = useState<string[]>([]);
@@ -100,9 +107,10 @@ const KalifindSearch: React.FC<{
     [key: string]: number;
   }>({});
   const [sortOption, setSortOption] = useState("default");
+  const [configuredFacets, setConfiguredFacets] = useState<ConfiguredFacet[]>([]);
   const [filters, setFilters] = useState<FilterState>({
     categories: [],
-    priceRange: [0, 10000], // Default price range
+    priceRange: [0, 10000],
     colors: [],
     sizes: [],
     brands: [],
@@ -119,7 +127,6 @@ const KalifindSearch: React.FC<{
       }
     } catch (error) {
       console.error("Failed to parse recent searches from localStorage", error);
-      setRecentSearches([]);
     }
   }, []);
 
@@ -152,6 +159,28 @@ const KalifindSearch: React.FC<{
   const searchRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  // Load configured facets from backend
+  useEffect(() => {
+    const loadConfiguredFacets = async () => {
+      if (!storeUrl) return;
+
+      try {
+        const response = await fetch(
+          `${import.meta.env.VITE_BACKEND_URL}/v1/facets/configured?storeUrl=${storeUrl}`,
+        );
+
+        if (response.ok) {
+          const facets = await response.json();
+          setConfiguredFacets(facets);
+        }
+      } catch (error) {
+        console.error("Failed to load configured facets:", error);
+      }
+    };
+
+    loadConfiguredFacets();
+  }, [storeUrl]);
+
   const isAnyFilterActive =
     !!debouncedSearchQuery ||
     filters.categories.length > 0 ||
@@ -160,10 +189,6 @@ const KalifindSearch: React.FC<{
     filters.sizes.length > 0 ||
     filters.tags.length > 0 ||
     filters.priceRange[1] < maxPrice;
-
-  // ... (rest of the imports)
-
-  // ... (rest of the component)
 
   useEffect(() => {
     const initFilters = async () => {
@@ -232,7 +257,7 @@ const KalifindSearch: React.FC<{
             const colorCounts: { [key: string]: number } = {};
             const sizeCounts: { [key: string]: number } = {};
             const tagCounts: { [key: string]: number } = {};
-            
+
             result.forEach((product: any) => {
               if (product.categories) {
                 product.categories.forEach((cat: string) => {
@@ -265,7 +290,7 @@ const KalifindSearch: React.FC<{
                 });
               }
             });
-            
+
             setAvailableCategories(Array.from(allCategories));
             setAvailableBrands(Array.from(allBrands));
             setAvailableColors(Array.from(allColors));
@@ -339,18 +364,9 @@ const KalifindSearch: React.FC<{
             if (debouncedSearchQuery) {
               params.append("q", debouncedSearchQuery);
             }
-            // if (storeId) {
-            //   params.append("storeId", storeId.toString());
-            // }
-            // if (storeType) {
-            //   params.append("storeType", storeType);
-            // }
             if (storeUrl) {
               params.append("storeUrl", storeUrl);
             }
-
-            // params.append("storeId", "28");
-            // params.append("storeType", "woocommerce");
 
             const response = await fetch(
               `${
@@ -402,17 +418,9 @@ const KalifindSearch: React.FC<{
           if (debouncedSearchQuery) {
             params.append("q", debouncedSearchQuery);
           }
-          // if (storeId) {
-          //   params.append("storeId", storeId.toString());
-          // }
-          // if (storeType) {
-          //   params.append("storeType", storeType);
-          // }
           if (storeUrl) {
             params.append("storeUrl", storeUrl);
           }
-          // params.append("storeId", "28");
-          // params.append("storeType", "woocommerce");
 
           if (filters.categories.length > 0) {
             params.append("categories", filters.categories.join(","));
@@ -462,7 +470,7 @@ const KalifindSearch: React.FC<{
       fetchProducts();
     });
   }, [
-    isPriceLoading, // Add this
+    isPriceLoading,
     debouncedSearchQuery,
     filters.categories,
     filters.colors,
@@ -542,7 +550,7 @@ const KalifindSearch: React.FC<{
     }));
   };
 
-  const handleSizeChange = (size: number) => {
+  const handleSizeChange = (size: string) => {
     setFilters((prev) => ({
       ...prev,
       sizes: prev.sizes.includes(size)
@@ -569,6 +577,197 @@ const KalifindSearch: React.FC<{
     }));
   };
 
+  // Helper function to render facet based on configuration
+  const renderFacet = (facet: ConfiguredFacet) => {
+    switch (facet.field) {
+      case "category":
+        return (
+          <AccordionItem key={facet.field} value={facet.field}>
+            <AccordionTrigger className="text-[16px] lg:text-[18px] !text-foreground">
+              <b>{facet.label}</b>
+            </AccordionTrigger>
+            <AccordionContent>
+              <div className="!space-y-[8px]">
+                {availableCategories.map((category) => (
+                  <label
+                    key={category}
+                    className="!flex !items-center !justify-between !cursor-pointer"
+                  >
+                    <div className="!flex !items-center !gap-[10px]">
+                      <input
+                        type="checkbox"
+                        checked={filters.categories.includes(category)}
+                        onChange={() => handleCategoryChange(category)}
+                        className="!w-[16px] !h-[16px] lg:!w-5 lg:!h-5 top-0 !text-primary !bg-background !border-border !rounded "
+                      />
+                      <span className="!text-foreground text-[14px] lg:text-[16px]">
+                        {category}
+                      </span>
+                    </div>
+                    <span className="!text-muted-foreground !text-[12px] lg:text-[14px] mr-[8px]">
+                      {categoryCounts[category] || 0}
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+        );
+
+      case "brand":
+        return (
+          <AccordionItem key={facet.field} value={facet.field}>
+            <AccordionTrigger className="text-[16px] lg:text-[18px] !font-extrabold !text-foreground">
+              <b>{facet.label}</b>
+            </AccordionTrigger>
+            <AccordionContent>
+              <div className="!space-y-[8px]">
+                {availableBrands.map((brand) => (
+                  <label
+                    key={brand}
+                    className="!flex !items-center !justify-between !cursor-pointer"
+                  >
+                    <div className="!flex !items-center !gap-[8px]">
+                      <input
+                        type="checkbox"
+                        checked={filters.brands.includes(brand)}
+                        onChange={() => handleBrandChange(brand)}
+                        className="!w-[16px] !h-[16px] lg:!w-5 lg:!h-5 !text-primary !bg-background !border-border !rounded "
+                      />
+                      <span className="!text-foreground text-[14px] lg:text-[16px]">
+                        {brand}
+                      </span>
+                    </div>
+                    <span className="!text-muted-foreground !text-[12px] lg:text-[14px] mr-[8px]">
+                      {brandCounts[brand] || 0}
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+        );
+
+      case "price":
+        return (
+          <AccordionItem key={facet.field} value={facet.field}>
+            <AccordionTrigger className="text-[16px] lg:text-[18px] !font-[800] !text-foreground">
+              <b className="font-extrabold">{facet.label}</b>
+            </AccordionTrigger>
+            <AccordionContent>
+              <Slider
+                value={[filters.priceRange[1]]}
+                onValueChange={(value) =>
+                  setFilters((prev) => ({
+                    ...prev,
+                    priceRange: [prev.priceRange[0], value[0]],
+                  }))
+                }
+                max={maxPrice}
+                step={10}
+                className="!w-full !mb-[16px] !mt-[8px]"
+              />
+              <div className="!flex !justify-between !text-[12px] lg:text-[14px] !text-muted-foreground">
+                <span>{filters.priceRange[0]} €</span>
+                <span>{filters.priceRange[1]} €</span>
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+        );
+
+      case "size":
+        return (
+          <AccordionItem key={facet.field} value={facet.field}>
+            <AccordionTrigger className="text-[16px] lg:text-[18px] !font-[700] !text-foreground">
+              <b className="font-extrabold">{facet.label}</b>
+            </AccordionTrigger>
+            <AccordionContent>
+              <div className="!grid !grid-cols-4 !gap-[8px]">
+                {availableSizes.map((size) => (
+                  <button
+                    key={size}
+                    onClick={() => handleSizeChange(size)}
+                    className={`my-border !rounded !py-[8px] !text-[12px] lg:text-[14px] !font-medium ${
+                      filters.sizes.includes(size) ? "!bg-primary !text-primary-foreground" : ""
+                    }`}
+                  >
+                    {size}
+                  </button>
+                ))}
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+        );
+
+      case "color":
+        return (
+          <AccordionItem key={facet.field} value={facet.field}>
+            <AccordionTrigger className="text-[16px] lg:text-[18px] !font-[700] !text-foreground">
+              <b className="font-extrabold">{facet.label}</b>
+            </AccordionTrigger>
+            <AccordionContent>
+              <div className="!flex !gap-[8px]">
+                {availableColors.map((color) => (
+                  <button
+                    key={color}
+                    onClick={() => handleColorChange(color)}
+                    className={`!w-[24px] !h-[24px] lg:!w-[32px] lg:!h-[32px] !rounded-full !border-2 ${
+                      filters.colors.includes(color)
+                        ? "!border-primary !scale-110"
+                        : "!border-border"
+                    }`}
+                    style={{
+                      backgroundColor: color.toLowerCase(),
+                      transform: filters.colors.includes(color)
+                        ? "scale(1.1)"
+                        : "scale(1)",
+                    }}
+                  />
+                ))}
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+        );
+
+      case "tags":
+        return (
+          <AccordionItem key={facet.field} value={facet.field}>
+            <AccordionTrigger className="text-[16px] lg:text-[18px] !font-[700] !text-foreground">
+              <b className="font-extrabold">{facet.label}</b>
+            </AccordionTrigger>
+            <AccordionContent>
+              <div className="!space-y-[8px]">
+                {availableTags.map((tag) => (
+                  <label
+                    key={tag}
+                    className="!flex !items-center !justify-between !cursor-pointer"
+                  >
+                    <div className="!flex !items-center !gap-[10px]">
+                      <input
+                        type="checkbox"
+                        checked={filters.tags.includes(tag)}
+                        onChange={() => handleTagChange(tag)}
+                        className="!w-[16px] !h-[16px] lg:!w-5 lg:!h-5 top-0 !text-primary !bg-background !border-border !rounded "
+                      />
+                      <span className="!text-foreground text-[14px] lg:text-[16px]">
+                        {tag}
+                      </span>
+                    </div>
+                    <span className="!text-muted-foreground !text-[12px] lg:text-[14px] mr-[8px]">
+                      {tagCounts[tag] || 0}
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+        );
+
+      default:
+        return null;
+    }
+  };
+
   const LoadingSkeleton = () => (
     <div className="!grid !grid-cols-2 sm:!grid-cols-2 xl:grid-cols-3 2xl:!grid-cols-4 !gap-[16px] !w-full">
       {Array.from({ length: 8 }).map((_, i) => (
@@ -587,7 +786,6 @@ const KalifindSearch: React.FC<{
   );
 
   return (
-    // <div className="box-border !bg-background !min-h-screen w-screen lg:pt-[4px] lg:px-[96px]">
     <div className="box-border !bg-background !min-h-screen w-screen lg:pt-[4px]">
       {!hideHeader && (
         <div className="!bg-background !w-full pt-[12px] lg:px-[48px]">
@@ -631,8 +829,6 @@ const KalifindSearch: React.FC<{
                         paddingLeft: "30px",
                       }}
                     />
-
-                    {/* <div className="!absolute !right-[12px] !top-1/2 !transform !-translate-y-1/2 !flex !gap-[8px]"></div> */}
                   </div>
                   <button
                     className="!rounded-lg hover:!bg-muted/20 !transition-colors !duration-200 !flex-shrink-0"
@@ -711,169 +907,10 @@ const KalifindSearch: React.FC<{
             <div className="!px-[16px] sm:!p-[16px] !overflow-y-auto !flex-1">
               <Accordion
                 type="multiple"
-                defaultValue={["category", "price", "size", "color", "brand", "tags"]}
+                defaultValue={configuredFacets.map(f => f.field)}
                 className="!w-full"
               >
-                <AccordionItem value="category">
-                  <AccordionTrigger className="!font-extrabold text-[16px]">
-                    Categories
-                  </AccordionTrigger>
-                  <AccordionContent>
-                    <div className="!space-y-[8px]">
-                      {availableCategories.map((category) => (
-                        <label
-                          key={category}
-                          className="!flex !items-center !justify-between !cursor-pointer !p-[4px] sm:!p-[8px] hover:!bg-muted !rounded-lg"
-                        >
-                          <div className="!flex !items-center !gap-[12px]">
-                            <input
-                              type="checkbox"
-                              checked={filters.categories.includes(category)}
-                              onChange={() => handleCategoryChange(category)}
-                              className="!w-[16px] !h-[16px] sm:!w-5 sm:!h-5 !text-primary !bg-background !border-border !rounded "
-                            />
-                            <span className="!text-foreground !text-[14px] sm:!text-[16px] lg:leading-[24px]">
-                              {category}
-                            </span>
-                          </div>
-                          <span className="!text-muted-foreground !text-[12px] sm:!text-[14px] !bg-muted !px-[8px] !py-[4px] !rounded">
-                            {categoryCounts[category] || 0}
-                          </span>
-                        </label>
-                      ))}
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-                <AccordionItem value="brand">
-                  <AccordionTrigger className="!font-extrabold text-[16px]">
-                    Brand
-                  </AccordionTrigger>
-                  <AccordionContent>
-                    <div className="!space-y-[8px]">
-                      {availableBrands.map((brand) => (
-                        <label
-                          key={brand}
-                          className="!flex !items-center !justify-between !cursor-pointer !p-[4px] sm:!p-[8px] hover:!bg-muted !rounded-lg"
-                        >
-                          <div className="!flex !items-center !gap-[12px]">
-                            <input
-                              type="checkbox"
-                              checked={filters.brands.includes(brand)}
-                              onChange={() => handleBrandChange(brand)}
-                              className="!w-[16px] !h-[16px] sm:!w-5 sm:!h-5 !text-primary !bg-background !border-border !rounded "
-                            />
-                            <span className="!text-foreground !text-[14px] sm:!text-[16px] lg:leading-[16px]">
-                              {brand}
-                            </span>
-                          </div>
-                          <span className="!text-muted-foreground !text-[12px] sm:!text-[14px] !bg-muted !px-[8px] !py-[4px] !rounded">
-                            {brandCounts[brand] || 0}
-                          </span>
-                        </label>
-                      ))}
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-                {!isPriceLoading && (
-                  <AccordionItem value="price">
-                    <AccordionTrigger className="!font-extrabold text-[16px]">
-                      <b className="!font-extrabold">Price</b>
-                    </AccordionTrigger>
-                    <AccordionContent>
-                      <div className="!space-y-[16px] !pt-[16px]">
-                        <Slider
-                          value={[filters.priceRange[1]]}
-                          onValueChange={(value: any) =>
-                            setFilters((prev: any) => ({
-                              ...prev,
-                              priceRange: [prev.priceRange[0], value[0]],
-                            }))
-                          }
-                          max={maxPrice}
-                          step={10}
-                          className="!w-full"
-                        />
-                        <div className="!flex !justify-between !text-[14px] !text-muted-foreground">
-                          <span>{filters.priceRange[0]} €</span>
-                          <span>{filters.priceRange[1]} €</span>
-                        </div>
-                      </div>
-                    </AccordionContent>
-                  </AccordionItem>
-                )}
-                <AccordionItem value="size">
-                  <AccordionTrigger className="!font-extrabold text-[16px]">
-                    <b className="!font-extrabold">Size</b>
-                  </AccordionTrigger>
-                  <AccordionContent>
-                    <div className="!grid !grid-cols-4 !gap-[8px] !pt-[16px]">
-                      {availableSizes.map((size) => (
-                        <div
-                          key={size}
-                          onClick={() => handleSizeChange(size)}
-                          className={`my-border !rounded-lg !py-[8px] !text-[12px] sm:!py-[12px] sm:!text-[14px] !font-medium text-center ${
-                            filters.sizes.includes(size) ? "!bg-primary !text-primary-foreground" : ""
-                          }`}
-                        >
-                          {size}
-                        </div>
-                      ))}
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-                <AccordionItem value="color">
-                  <AccordionTrigger className="!font-extrabold text-[16px]">
-                    <b className="!font-extrabold">Color</b>
-                  </AccordionTrigger>
-                  <AccordionContent>
-                    <div className="!flex !gap-[8px] !flex-wrap !pt-[16px]">
-                      {availableColors.map((color) => (
-                        <button
-                          key={color}
-                          onClick={() => handleColorChange(color)}
-                          className={`!w-[32px] !h-[32px] sm:!w-[40px] sm:!h-[40px] !rounded-full !border-4 !transition-all ${
-                            filters.colors.includes(color)
-                              ? "!border-primary !scale-110 !shadow-lg"
-                              : "!border-border hover:!border-muted-foreground"
-                          }`}
-                          style={{
-                            backgroundColor: color.toLowerCase(),
-                          }}
-                        />
-                      ))}
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-                <AccordionItem value="tags">
-                  <AccordionTrigger className="!font-extrabold text-[16px]">
-                    <b className="!font-extrabold">Tags</b>
-                  </AccordionTrigger>
-                  <AccordionContent>
-                    <div className="!space-y-[8px]">
-                      {availableTags.map((tag) => (
-                        <label
-                          key={tag}
-                          className="!flex !items-center !justify-between !cursor-pointer !p-[4px] sm:!p-[8px] hover:!bg-muted !rounded-lg"
-                        >
-                          <div className="!flex !items-center !gap-[12px]">
-                            <input
-                              type="checkbox"
-                              checked={filters.tags.includes(tag)}
-                              onChange={() => handleTagChange(tag)}
-                              className="!w-[16px] !h-[16px] sm:!w-5 sm:!h-5 !text-primary !bg-background !border-border !rounded "
-                            />
-                            <span className="!text-foreground !text-[14px] sm:!text-[16px] lg:leading-[16px]">
-                              {tag}
-                            </span>
-                          </div>
-                          <span className="!text-muted-foreground !text-[12px] sm:!text-[14px] !bg-muted !px-[8px] !py-[4px] !rounded">
-                            {tagCounts[tag] || 0}
-                          </span>
-                        </label>
-                      ))}
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
+                {configuredFacets.map(renderFacet)}
               </Accordion>
             </div>
 
@@ -920,169 +957,9 @@ const KalifindSearch: React.FC<{
         <aside className="w-80 lg:!w-[312px] !p-[16px] !bg-filter-bg !hidden lg:!block">
           <Accordion
             type="multiple"
-            defaultValue={["category", "price", "size", "color", "brand", "tags"]}
+            defaultValue={configuredFacets.map(f => f.field)}
           >
-            <AccordionItem value="category">
-              <AccordionTrigger className="text-[16px] lg:text-[18px] !text-foreground">
-                <b>Category</b>
-              </AccordionTrigger>
-              <AccordionContent>
-                <div className="!space-y-[8px]">
-                  {availableCategories.map((category) => (
-                    <label
-                      key={category}
-                      className="!flex !items-center !justify-between !cursor-pointer"
-                    >
-                      <div className="!flex !items-center !gap-[10px]">
-                        <input
-                          type="checkbox"
-                          checked={filters.categories.includes(category)}
-                          onChange={() => handleCategoryChange(category)}
-                          className="!w-[16px] !h-[16px] lg:!w-5 lg:!h-5 top-0 !text-primary !bg-background !border-border !rounded "
-                        />
-                        <span className="!text-foreground text-[14px] lg:text-[16px]">
-                          {category}
-                        </span>
-                      </div>
-                      <span className="!text-muted-foreground !text-[12px] lg:text-[14px] mr-[8px]">
-                        {categoryCounts[category] || 0}
-                      </span>
-                    </label>
-                  ))}
-                </div>
-              </AccordionContent>
-            </AccordionItem>
-            <AccordionItem value="brand">
-              <AccordionTrigger className="text-[16px] lg:text-[18px] !font-extrabold !text-foreground">
-                <b>Brand</b>
-              </AccordionTrigger>
-              <AccordionContent>
-                <div className="!space-y-[8px]">
-                  {availableBrands.map((brand) => (
-                    <label
-                      key={brand}
-                      className="!flex !items-center !justify-between !cursor-pointer"
-                    >
-                      <div className="!flex !items-center !gap-[8px]">
-                        <input
-                          type="checkbox"
-                          checked={filters.brands.includes(brand)}
-                          onChange={() => handleBrandChange(brand)}
-                          className="!w-[16px] !h-[16px] lg:!w-5 lg:!h-5 !text-primary !bg-background !border-border !rounded "
-                        />
-                        <span className="!text-foreground text-[14px] lg:text-[16px]">
-                          {brand}
-                        </span>
-                      </div>
-                      <span className="!text-muted-foreground !text-[12px] lg:text-[14px] mr-[8px]">
-                        {brandCounts[brand] || 0}
-                      </span>
-                    </label>
-                  ))}
-                </div>
-              </AccordionContent>
-            </AccordionItem>
-            {!isPriceLoading && (
-              <AccordionItem value="price">
-                <AccordionTrigger className="text-[16px] lg:text-[18px] !font-[800] !text-foreground">
-                  <b className="font-extrabold">Price</b>
-                </AccordionTrigger>
-                <AccordionContent>
-                  <Slider
-                    value={[filters.priceRange[1]]}
-                    onValueChange={(value) =>
-                      setFilters((prev) => ({
-                        ...prev,
-                        priceRange: [prev.priceRange[0], value[0]],
-                      }))
-                    }
-                    max={maxPrice}
-                    step={10}
-                    className="!w-full !mb-[16px] !mt-[8px]"
-                  />
-                  <div className="!flex !justify-between !text-[12px] lg:text-[14px] !text-muted-foreground">
-                    <span>{filters.priceRange[0]} €</span>
-                    <span>{filters.priceRange[1]} €</span>
-                  </div>
-                </AccordionContent>
-              </AccordionItem>
-            )}
-            <AccordionItem value="size">
-              <AccordionTrigger className="text-[16px] lg:text-[18px] !font-[700] !text-foreground">
-                <b className="font-extrabold">Size</b>
-              </AccordionTrigger>
-              <AccordionContent>
-                <div className="!grid !grid-cols-4 !gap-[8px]">
-                  {availableSizes.map((size) => (
-                    <button
-                      key={size}
-                      onClick={() => handleSizeChange(size)}
-                      className={`my-border !rounded !py-[8px] !text-[12px] lg:text-[14px] !font-medium ${
-                        filters.sizes.includes(size) ? "!bg-primary !text-primary-foreground" : ""
-                      }`}
-                    >
-                      {size}
-                    </button>
-                  ))}
-                </div>
-              </AccordionContent>
-            </AccordionItem>
-            <AccordionItem value="color">
-              <AccordionTrigger className="text-[16px] lg:text-[18px] !font-[700] !text-foreground">
-                <b className="font-extrabold">Color</b>
-              </AccordionTrigger>
-              <AccordionContent>
-                <div className="!flex !gap-[8px]">
-                  {availableColors.map((color) => (
-                    <button
-                      key={color}
-                      onClick={() => handleColorChange(color)}
-                      className={`!w-[24px] !h-[24px] lg:!w-[32px] lg:!h-[32px] !rounded-full !border-2 ${
-                        filters.colors.includes(color)
-                          ? "!border-primary !scale-110"
-                          : "!border-border"
-                      }`}
-                      style={{
-                        backgroundColor: color.toLowerCase(),
-                        transform: filters.colors.includes(color)
-                          ? "scale(1.1)"
-                          : "scale(1)",
-                      }}
-                    />
-                  ))}
-                </div>
-              </AccordionContent>
-            </AccordionItem>
-            <AccordionItem value="tags">
-              <AccordionTrigger className="text-[16px] lg:text-[18px] !font-[700] !text-foreground">
-                <b className="font-extrabold">Tags</b>
-              </AccordionTrigger>
-              <AccordionContent>
-                <div className="!space-y-[8px]">
-                  {availableTags.map((tag) => (
-                    <label
-                      key={tag}
-                      className="!flex !items-center !justify-between !cursor-pointer"
-                    >
-                      <div className="!flex !items-center !gap-[10px]">
-                        <input
-                          type="checkbox"
-                          checked={filters.tags.includes(tag)}
-                          onChange={() => handleTagChange(tag)}
-                          className="!w-[16px] !h-[16px] lg:!w-5 lg:!h-5 top-0 !text-primary !bg-background !border-border !rounded "
-                        />
-                        <span className="!text-foreground text-[14px] lg:text-[16px]">
-                          {tag}
-                        </span>
-                      </div>
-                      <span className="!text-muted-foreground !text-[12px] lg:text-[14px] mr-[8px]">
-                        {tagCounts[tag] || 0}
-                      </span>
-                    </label>
-                  ))}
-                </div>
-              </AccordionContent>
-            </AccordionItem>
+            {configuredFacets.map(renderFacet)}
           </Accordion>
           {isAnyFilterActive && (
             <Button
@@ -1149,7 +1026,6 @@ const KalifindSearch: React.FC<{
               </div>
             )}
             <div className="hidden lg:flex pt-[22px] pb-[4px]  !text-[14px] sm:!text-[16px] lg:text-[18px] !font-bold !text-foreground !mb-[8px] mt-[8px]">
-              {/* {isAnyFilterActive ? "Search Results" : ""} */}
               Search Results
             </div>
             <div className="pt-[16px] lg:pt-[0px] !mb-[16px] flex justify-between items-center text-[12px] lg:text-[16px] !text-muted-foreground">
@@ -1283,4 +1159,4 @@ const KalifindSearch: React.FC<{
   );
 };
 
-export default KalifindSearch;
+export default KalifindSearchEnhanced;
