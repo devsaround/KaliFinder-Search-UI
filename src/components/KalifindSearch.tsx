@@ -1184,7 +1184,8 @@ const KalifindSearch: React.FC<{
               {showAutocomplete &&
                 searchQuery.length > 0 &&
                 (isAutocompleteLoading ||
-                  autocompleteSuggestions.length > 0) && (
+                  autocompleteSuggestions.length > 0 ||
+                  (!isAutocompleteLoading && autocompleteSuggestions.length === 0)) && (
                   <div className="!absolute !top-full !left-0 !right-0 !bg-background !border !border-border !rounded-lg !shadow-lg !z-[9999999] !mt-[4px] !w-full">
                     <div className="[&_*]:!z-[9999999] !p-[16px]">
                       {isAutocompleteLoading ? (
