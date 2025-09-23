@@ -77,8 +77,9 @@ const ShadowDOMSearchDropdown: React.FC<ShadowDOMSearchDropdownProps> = ({
 
   // Autocomplete logic for mobile
   useEffect(() => {
-    if (!storeUrl || !searchQuery) {
+    if (!storeUrl || !searchQuery.trim()) {
       setAutocompleteSuggestions([]);
+      setIsAutocompleteLoading(false);
       return;
     }
 
@@ -98,9 +99,25 @@ const ShadowDOMSearchDropdown: React.FC<ShadowDOMSearchDropdownProps> = ({
           throw new Error("bad response");
         }
 
-            const result = await response.json();
-            setAutocompleteSuggestions(result.map((r: any) => r.title || r.name) || []);
-            setHighlightedSuggestionIndex(-1); // Reset highlight when new suggestions arrive
+        const result = await response.json();
+        
+        // Better handling of different response formats
+        let suggestions: string[] = [];
+        if (Array.isArray(result)) {
+          suggestions = result.map((r: any) => {
+            // Handle different possible field names
+            return r.title || r.name || r.product_title || r.product_name || String(r);
+          }).filter(Boolean);
+        } else if (result && Array.isArray(result.suggestions)) {
+          suggestions = result.suggestions.map((s: any) => String(s));
+        } else if (result && Array.isArray(result.products)) {
+          suggestions = result.products.map((r: any) => {
+            return r.title || r.name || r.product_title || r.product_name || String(r);
+          }).filter(Boolean);
+        }
+        
+        setAutocompleteSuggestions(suggestions);
+        setHighlightedSuggestionIndex(-1); // Reset highlight when new suggestions arrive
       } catch (error) {
         console.error("Failed to fetch autocomplete suggestions:", error);
         setAutocompleteSuggestions([]);
@@ -467,8 +484,10 @@ const ShadowDOMSearchDropdown: React.FC<ShadowDOMSearchDropdownProps> = ({
             return;
           }
           
-          if (query) {
+          if (query.trim()) {
             setShowAutocomplete(false);
+            setHighlightedSuggestionIndex(-1);
+            setAutocompleteSuggestions([]);
             inputRef.current?.blur();
           }
         } else if (event.key === "ArrowDown") {
@@ -488,6 +507,8 @@ const ShadowDOMSearchDropdown: React.FC<ShadowDOMSearchDropdownProps> = ({
         } else if (event.key === "Escape") {
           setShowAutocomplete(false);
           setHighlightedSuggestionIndex(-1);
+          setAutocompleteSuggestions([]);
+          inputRef.current?.blur();
         }
       };
 
@@ -497,17 +518,27 @@ const ShadowDOMSearchDropdown: React.FC<ShadowDOMSearchDropdownProps> = ({
         // Show autocomplete when user starts typing
         if (query.trim()) {
           setShowAutocomplete(true);
+        } else {
+          // Hide autocomplete when input is cleared
+          setShowAutocomplete(false);
+          setAutocompleteSuggestions([]);
+          setHighlightedSuggestionIndex(-1);
         }
       };
 
       const handleSuggestionClick = (suggestion: string) => {
         console.log("Mobile suggestion clicked:", suggestion);
-        setSearchQuery(suggestion);
-        console.log("Mobile search query set to:", suggestion);
-        setShowAutocomplete(false);
-        setHighlightedSuggestionIndex(-1);
-        // Trigger search immediately for mobile
-        // The search will be triggered by the debounced effect
+        
+        try {
+          setSearchQuery(suggestion);
+          setShowAutocomplete(false);
+          setHighlightedSuggestionIndex(-1);
+          setAutocompleteSuggestions([]);
+          // Blur input to close mobile keyboard
+          inputRef.current?.blur();
+        } catch (error) {
+          console.error("Error in ShadowDOM handleSuggestionClick:", error);
+        }
       };
 
 

@@ -55,7 +55,8 @@ const KalifindSearch: React.FC<{
     string[]
   >([]);
   const [isAutocompleteLoading, setIsAutocompleteLoading] = useState(false);
-  const [highlightedSuggestionIndex, setHighlightedSuggestionIndex] = useState(-1);
+  const [highlightedSuggestionIndex, setHighlightedSuggestionIndex] =
+    useState(-1);
   const [isPriceLoading, setIsPriceLoading] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [hasMoreProducts, setHasMoreProducts] = useState(true);
@@ -68,7 +69,11 @@ const KalifindSearch: React.FC<{
   const [showRecommendations, setShowRecommendations] = useState(true);
   const [hasSearched, setHasSearched] = useState(false);
   const [recommendations, setRecommendations] = useState<Product[]>([]);
-  const [popularSearches, setPopularSearches] = useState<string[]>(["shirt", "underwear", "plan"]);
+  const [popularSearches, setPopularSearches] = useState<string[]>([
+    "shirt",
+    "underwear",
+    "plan",
+  ]);
   const [showFilters, setShowFilters] = useState(false);
   const [isInitialState, setIsInitialState] = useState(true);
   const [maxPrice, setMaxPrice] = useState<number>(10000); // Default max price
@@ -112,11 +117,11 @@ const KalifindSearch: React.FC<{
     const checkIsMobile = () => {
       setIsMobile(window.innerWidth < 1024);
     };
-    
+
     checkIsMobile();
-    window.addEventListener('resize', checkIsMobile);
-    
-    return () => window.removeEventListener('resize', checkIsMobile);
+    window.addEventListener("resize", checkIsMobile);
+
+    return () => window.removeEventListener("resize", checkIsMobile);
   }, []);
 
   // Load recent searches from localStorage on mount
@@ -183,15 +188,15 @@ const KalifindSearch: React.FC<{
     try {
       const response = await fetch(
         `${import.meta.env.VITE_BACKEND_URL}/v1/search/popular?storeUrl=${storeUrl}`,
-        {}
+        {},
       );
-      
+
       if (!response.ok) {
         throw new Error("Failed to fetch popular searches");
       }
-      
+
       const result = await response.json();
-      
+
       // Handle response format
       let searches: string[];
       if (Array.isArray(result)) {
@@ -201,7 +206,7 @@ const KalifindSearch: React.FC<{
       } else {
         searches = ["shirt", "underwear", "plan"]; // Fallback to default
       }
-      
+
       setPopularSearches(searches.slice(0, 6)); // Limit to 6 popular searches
     } catch (error) {
       console.error("Failed to fetch popular searches:", error);
@@ -216,20 +221,20 @@ const KalifindSearch: React.FC<{
       // Try to fetch AI-powered recommendations first
       const response = await fetch(
         `${import.meta.env.VITE_BACKEND_URL}/v1/search/recommended?storeUrl=${storeUrl}&type=smart`,
-        {}
+        {},
       );
-      
+
       if (!response.ok) {
         // Fallback to trending products if smart recommendations fail
         const trendingResponse = await fetch(
           `${import.meta.env.VITE_BACKEND_URL}/v1/search/trending?storeUrl=${storeUrl}`,
-          {}
+          {},
         );
-        
+
         if (!trendingResponse.ok) {
           throw new Error("Failed to fetch recommendations");
         }
-        
+
         const trendingResult = await trendingResponse.json();
         let products: Product[];
         if (Array.isArray(trendingResult)) {
@@ -239,13 +244,13 @@ const KalifindSearch: React.FC<{
         } else {
           products = [];
         }
-        
+
         setRecommendations(products.slice(0, 8));
         return;
       }
-      
+
       const result = await response.json();
-      
+
       // Handle response format
       let products: Product[];
       if (Array.isArray(result)) {
@@ -255,7 +260,7 @@ const KalifindSearch: React.FC<{
       } else {
         products = [];
       }
-      
+
       setRecommendations(products.slice(0, 8)); // Limit to 8 recommendations
     } catch (error) {
       console.error("Failed to fetch recommendations:", error);
@@ -304,7 +309,6 @@ const KalifindSearch: React.FC<{
     const initFilters = async () => {
       if (!storeUrl) return;
 
-
       const fetchWithRetry = async (retries = 3) => {
         try {
           const params = new URLSearchParams();
@@ -320,7 +324,7 @@ const KalifindSearch: React.FC<{
           }
 
           const result = await response.json();
-          
+
           // Handle both array and object response formats
           let products: Product[];
           if (Array.isArray(result)) {
@@ -328,7 +332,10 @@ const KalifindSearch: React.FC<{
           } else if (result && Array.isArray(result.products)) {
             products = result.products;
           } else {
-            console.error("Kalifind Search: Unexpected API response format:", result);
+            console.error(
+              "Kalifind Search: Unexpected API response format:",
+              result,
+            );
             return;
           }
 
@@ -356,7 +363,7 @@ const KalifindSearch: React.FC<{
             const colorCounts: { [key: string]: number } = {};
             const sizeCounts: { [key: string]: number } = {};
             const tagCounts: { [key: string]: number } = {};
-            
+
             products.forEach((product: Product) => {
               if (product.categories) {
                 product.categories.forEach((cat: string) => {
@@ -389,7 +396,7 @@ const KalifindSearch: React.FC<{
                 });
               }
             });
-            
+
             setAvailableCategories(Array.from(allCategories));
             setAvailableBrands(Array.from(allBrands));
             setAvailableColors(Array.from(allColors));
@@ -421,47 +428,96 @@ const KalifindSearch: React.FC<{
   // Click outside handler
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (
-        searchRef.current &&
-        !searchRef.current.contains(event.target as Node)
-      ) {
-        setShowAutocomplete(false);
+      // Check if the click is on a suggestion item
+      const target = event.target as HTMLElement;
+      const isSuggestionClick = target.closest("[data-suggestion-item]");
+
+      if (isSuggestionClick) {
+        console.log(
+          "Click detected on suggestion item, not closing autocomplete",
+        );
+        return;
       }
+
+      // Add a small delay to allow suggestion clicks to process first
+      setTimeout(() => {
+        if (
+          searchRef.current &&
+          !searchRef.current.contains(event.target as Node)
+        ) {
+          console.log("Click outside detected, closing autocomplete");
+          setShowAutocomplete(false);
+        }
+      }, 50);
     };
 
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener("click", handleClickOutside);
+    return () => document.removeEventListener("click", handleClickOutside);
   }, []);
 
   // Autocomplete search
   useEffect(() => {
     if (!storeUrl) return;
-    if (debouncedSearchQuery) {
+
+    // Only show autocomplete when user is typing and has a meaningful query
+    if (searchQuery.length > 0 && debouncedSearchQuery.trim()) {
       startTransition(() => {
         setIsAutocompleteLoading(true);
         (async () => {
           try {
             const params = new URLSearchParams();
-            if (debouncedSearchQuery) {
-              params.append("q", debouncedSearchQuery);
-            }
-            if (storeUrl) {
-              params.append("storeUrl", storeUrl);
-            }
+            params.append("q", debouncedSearchQuery.trim());
+            params.append("storeUrl", storeUrl);
 
             const url = `${import.meta.env.VITE_BACKEND_URL}/v1/autocomplete?${params.toString()}`;
             console.log("Autocomplete API call:", url);
-            
+
             const response = await fetch(url, {});
 
             if (!response.ok) {
-              console.error("Autocomplete API error:", response.status, response.statusText);
+              console.error(
+                "Autocomplete API error:",
+                response.status,
+                response.statusText,
+              );
               throw new Error("bad response");
             }
 
             const result = await response.json();
             console.log("Autocomplete API result:", result);
-            setAutocompleteSuggestions(result.map((r: Product) => r.title || r.name) || []);
+
+            // Better handling of different response formats
+            let suggestions: string[] = [];
+            if (Array.isArray(result)) {
+              suggestions = result
+                .map((r: any) => {
+                  // Handle different possible field names
+                  return (
+                    r.title ||
+                    r.name ||
+                    r.product_title ||
+                    r.product_name ||
+                    String(r)
+                  );
+                })
+                .filter(Boolean);
+            } else if (result && Array.isArray(result.suggestions)) {
+              suggestions = result.suggestions.map((s: any) => String(s));
+            } else if (result && Array.isArray(result.products)) {
+              suggestions = result.products
+                .map((r: any) => {
+                  return (
+                    r.title ||
+                    r.name ||
+                    r.product_title ||
+                    r.product_name ||
+                    String(r)
+                  );
+                })
+                .filter(Boolean);
+            }
+
+            setAutocompleteSuggestions(suggestions);
             setHighlightedSuggestionIndex(-1); // Reset highlight when new suggestions arrive
           } catch (error) {
             console.error("Failed to fetch autocomplete suggestions:", error);
@@ -472,25 +528,15 @@ const KalifindSearch: React.FC<{
         })();
       });
     } else {
+      // Clear suggestions when search query is empty
       setAutocompleteSuggestions([]);
+      setIsAutocompleteLoading(false);
     }
-  }, [debouncedSearchQuery, storeUrl]);
+  }, [debouncedSearchQuery, storeUrl, searchQuery]);
 
-  // search products
-  useEffect(() => {
-    console.log("Search effect triggered:", {
-      isPriceLoading,
-      storeUrl,
-      showRecommendations,
-      isInitialState,
-      debouncedSearchQuery,
-      searchQuery
-    });
-    
-    if (isPriceLoading || !storeUrl || showRecommendations || isInitialState) {
-      console.log("Search effect skipped due to conditions");
-      return; // Wait for the initial price to be loaded or skip if showing recommendations or in initial state
-    }
+  // Extract search logic into a reusable function
+  const performSearch = async (query: string) => {
+    if (!storeUrl) return;
 
     startTransition(() => {
       setIsLoading(true);
@@ -508,13 +554,13 @@ const KalifindSearch: React.FC<{
 
         try {
           const params = new URLSearchParams();
-          if (debouncedSearchQuery) {
-            params.append("q", debouncedSearchQuery);
-            
+          if (query) {
+            params.append("q", query);
+
             // Add popular search boosting
-            const lowerQuery = debouncedSearchQuery.toLowerCase();
-            const matchingPopularTerms = popularSearches.filter(term => 
-              lowerQuery.includes(term.toLowerCase())
+            const lowerQuery = query.toLowerCase();
+            const matchingPopularTerms = popularSearches.filter((term) =>
+              lowerQuery.includes(term.toLowerCase()),
             );
             if (matchingPopularTerms.length > 0) {
               params.append("popularTerms", matchingPopularTerms.join(","));
@@ -571,12 +617,12 @@ const KalifindSearch: React.FC<{
             throw new Error("bad response");
           }
           const result = await response.json();
-          
+
           // Handle paginated response format
           let products: Product[];
           let total = 0;
           let hasMore = false;
-          
+
           if (result && Array.isArray(result.products)) {
             products = result.products;
             total = result.total || 0;
@@ -586,12 +632,15 @@ const KalifindSearch: React.FC<{
             total = result.length;
             hasMore = false;
           } else {
-            console.error("Kalifind Search: Unexpected search response format:", result);
+            console.error(
+              "Kalifind Search: Unexpected search response format:",
+              result,
+            );
             products = [];
             total = 0;
             hasMore = false;
           }
-          
+
           setFilteredProducts(products);
           setTotalProducts(total);
           setDisplayedProducts(products.length);
@@ -607,6 +656,32 @@ const KalifindSearch: React.FC<{
 
       fetchProducts();
     });
+  };
+
+  // search products
+  useEffect(() => {
+    console.log("Search effect triggered:", {
+      isPriceLoading,
+      storeUrl,
+      showRecommendations,
+      isInitialState,
+      debouncedSearchQuery,
+      searchQuery,
+    });
+
+    // Skip search if we're in initial state showing recommendations
+    if (isPriceLoading || !storeUrl || showRecommendations || isInitialState) {
+      console.log("Search effect skipped due to conditions");
+      return; // Wait for the initial price to be loaded or skip if showing recommendations or in initial state
+    }
+
+    // Skip search if there's no meaningful query
+    if (!debouncedSearchQuery.trim()) {
+      console.log("Search effect skipped - no meaningful query");
+      return;
+    }
+
+    performSearch(debouncedSearchQuery);
   }, [
     isPriceLoading, // Add this
     debouncedSearchQuery,
@@ -628,10 +703,13 @@ const KalifindSearch: React.FC<{
   const sortedProducts = useMemo(() => {
     // Ensure filteredProducts is an array before processing
     if (!Array.isArray(filteredProducts)) {
-      console.warn("Kalifind Search: filteredProducts is not an array:", filteredProducts);
+      console.warn(
+        "Kalifind Search: filteredProducts is not an array:",
+        filteredProducts,
+      );
       return [];
     }
-    
+
     const productsToSort = [...filteredProducts];
     switch (sortOption) {
       case "a-z":
@@ -654,13 +732,23 @@ const KalifindSearch: React.FC<{
   const handleSearch = (query: string) => {
     console.log("handleSearch called with:", query);
     setSearchQuery(query);
-    
-    // Show autocomplete when user starts typing
-    if (query.trim()) {
+
+    // Always show autocomplete when user starts typing (even for single characters)
+    if (query.length > 0) {
       setShowAutocomplete(true);
+    } else {
+      // Hide autocomplete when input is cleared
+      setShowAutocomplete(false);
+      setAutocompleteSuggestions([]);
+      setHighlightedSuggestionIndex(-1);
     }
-    
-    // Add to recent searches if it's a new search
+
+    // Note: Recent searches are now only added on Enter key press or suggestion click
+    // This prevents adding to recent searches just by typing
+  };
+
+  // Helper function to add to recent searches
+  const addToRecentSearches = (query: string) => {
     if (query.trim() && !recentSearches.includes(query.trim())) {
       setRecentSearches((prev) => {
         const newSearches = [
@@ -674,6 +762,7 @@ const KalifindSearch: React.FC<{
 
   const handlePopularSearchClick = (term: string) => {
     handleSearch(term);
+    addToRecentSearches(term); // Add to recent searches when clicking popular search
     inputRef.current?.focus();
   };
 
@@ -682,56 +771,57 @@ const KalifindSearch: React.FC<{
     // - Sets the clicked value into the search input
     // - Automatically triggers a search for that value
     // - Saves the clicked value into recent searches via Zustand and updates localStorage
-    console.log("Suggestion clicked:", suggestion);
-    setSearchQuery(suggestion);
-    console.log("Search query set to:", suggestion);
+    console.log("Suggestion clickeddddddddd:", suggestion);
+
+    // Close autocomplete first
     setShowAutocomplete(false);
     setHighlightedSuggestionIndex(-1);
-    inputRef.current?.blur();
-    
-    // Add to recent searches
-    if (suggestion.trim() && !recentSearches.includes(suggestion.trim())) {
-      setRecentSearches((prev) => {
-        const newSearches = [
-          suggestion.trim(),
-          ...prev.filter((item) => item !== suggestion.trim()),
-        ].slice(0, 10);
-        return newSearches;
-      });
-    }
+    setAutocompleteSuggestions([]);
 
-    // Trigger search immediately by updating the search behavior state
+    // Add to recent searches
+    addToRecentSearches(suggestion);
+
+    // Update search behavior state
     setShowRecommendations(false);
     setShowFilters(true);
     setIsInitialState(false);
-    if (!hasSearched) {
-      setHasSearched(true);
-    }
+    setHasSearched(true);
+
+    // Set the search query
+    setSearchQuery(suggestion);
+
+    // Perform search immediately - no conditions, just search!
+    performSearch(suggestion);
+
+    // Blur input to close any mobile keyboards
+    inputRef.current?.blur();
   };
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.key === "Enter") {
       event.preventDefault();
       const query = event.currentTarget.value;
-      
+
       // If there's a highlighted suggestion, use that instead
-      if (highlightedSuggestionIndex >= 0 && autocompleteSuggestions[highlightedSuggestionIndex]) {
-        const selectedSuggestion = autocompleteSuggestions[highlightedSuggestionIndex];
+      if (
+        highlightedSuggestionIndex >= 0 &&
+        autocompleteSuggestions[highlightedSuggestionIndex]
+      ) {
+        const selectedSuggestion =
+          autocompleteSuggestions[highlightedSuggestionIndex];
         handleSuggestionClick(selectedSuggestion);
         return;
       }
-      
-      if (query) {
-        setRecentSearches((prev) => {
-          const newSearches = [
-            query,
-            ...prev.filter((item) => item !== query),
-          ].slice(0, 10);
-          return newSearches;
-        });
+
+      if (query.trim()) {
+        // Add to recent searches only on Enter key press
+        addToRecentSearches(query);
+
+        // Close autocomplete and trigger search
         setShowAutocomplete(false);
-        inputRef.current?.blur();
-        
+        setHighlightedSuggestionIndex(-1);
+        setAutocompleteSuggestions([]);
+
         // Trigger search immediately when Enter is pressed
         setShowRecommendations(false);
         setShowFilters(true);
@@ -739,24 +829,28 @@ const KalifindSearch: React.FC<{
         if (!hasSearched) {
           setHasSearched(true);
         }
+
+        inputRef.current?.blur();
       }
     } else if (event.key === "ArrowDown") {
       event.preventDefault();
       if (showAutocomplete && autocompleteSuggestions.length > 0) {
-        setHighlightedSuggestionIndex(prev => 
-          prev < autocompleteSuggestions.length - 1 ? prev + 1 : 0
+        setHighlightedSuggestionIndex((prev) =>
+          prev < autocompleteSuggestions.length - 1 ? prev + 1 : 0,
         );
       }
     } else if (event.key === "ArrowUp") {
       event.preventDefault();
       if (showAutocomplete && autocompleteSuggestions.length > 0) {
-        setHighlightedSuggestionIndex(prev => 
-          prev > 0 ? prev - 1 : autocompleteSuggestions.length - 1
+        setHighlightedSuggestionIndex((prev) =>
+          prev > 0 ? prev - 1 : autocompleteSuggestions.length - 1,
         );
       }
     } else if (event.key === "Escape") {
       setShowAutocomplete(false);
       setHighlightedSuggestionIndex(-1);
+      setAutocompleteSuggestions([]);
+      inputRef.current?.blur();
     }
   };
 
@@ -840,7 +934,7 @@ const KalifindSearch: React.FC<{
   // Load more products function
   const loadMoreProducts = useCallback(async () => {
     if (isLoadingMore || !hasMoreProducts) return;
-    
+
     setIsLoadingMore(true);
     try {
       const params = new URLSearchParams();
@@ -850,7 +944,7 @@ const KalifindSearch: React.FC<{
       if (storeUrl) {
         params.append("storeUrl", storeUrl);
       }
-      
+
       // Add all current filters
       if (filters.categories.length > 0) {
         params.append("categories", filters.categories.join(","));
@@ -878,13 +972,13 @@ const KalifindSearch: React.FC<{
       }
       params.append("minPrice", debouncedPriceRange[0].toString());
       params.append("maxPrice", debouncedPriceRange[1].toString() ?? "999999");
-      
+
       params.append("page", (currentPage + 1).toString());
       params.append("limit", "12");
 
       const response = await fetch(
         `${import.meta.env.VITE_BACKEND_URL}/v1/search?${params.toString()}`,
-        {}
+        {},
       );
 
       if (!response.ok) {
@@ -894,7 +988,7 @@ const KalifindSearch: React.FC<{
       const result = await response.json();
       let products: Product[];
       let hasMore = false;
-      
+
       if (result && Array.isArray(result.products)) {
         products = result.products;
         hasMore = result.hasMore || false;
@@ -909,9 +1003,9 @@ const KalifindSearch: React.FC<{
       if (products.length === 0) {
         setHasMoreProducts(false);
       } else {
-        setFilteredProducts(prev => [...prev, ...products]);
-        setDisplayedProducts(prev => prev + products.length);
-        setCurrentPage(prev => prev + 1);
+        setFilteredProducts((prev) => [...prev, ...products]);
+        setDisplayedProducts((prev) => prev + products.length);
+        setCurrentPage((prev) => prev + 1);
         setHasMoreProducts(hasMore);
       }
     } catch (error) {
@@ -919,7 +1013,15 @@ const KalifindSearch: React.FC<{
     } finally {
       setIsLoadingMore(false);
     }
-  }, [isLoadingMore, hasMoreProducts, debouncedSearchQuery, storeUrl, currentPage, filters, debouncedPriceRange]);
+  }, [
+    isLoadingMore,
+    hasMoreProducts,
+    debouncedSearchQuery,
+    storeUrl,
+    currentPage,
+    filters,
+    debouncedPriceRange,
+  ]);
 
   // Infinite scroll observer for mobile
   useEffect(() => {
@@ -931,10 +1033,10 @@ const KalifindSearch: React.FC<{
           loadMoreProducts();
         }
       },
-      { threshold: 0.1 }
+      { threshold: 0.1 },
     );
 
-    const loadMoreTrigger = document.getElementById('load-more-trigger');
+    const loadMoreTrigger = document.getElementById("load-more-trigger");
     if (loadMoreTrigger) {
       observer.observe(loadMoreTrigger);
     }
@@ -997,7 +1099,11 @@ const KalifindSearch: React.FC<{
                       type="text"
                       value={searchQuery}
                       onChange={(e) => handleSearch(e.target.value)}
-                      onFocus={() => setShowAutocomplete(true)}
+                      onFocus={() => {
+                        if (searchQuery.length > 0) {
+                          setShowAutocomplete(true);
+                        }
+                      }}
                       onKeyDown={handleKeyDown}
                       placeholder="Search"
                       className="!w-full !pl-[30px] !pr-[16px] !py-[12px] !text-foreground !placeholder-muted-foreground focus:!outline-none focus:!border-none focus:!ring-0"
@@ -1021,9 +1127,12 @@ const KalifindSearch: React.FC<{
                 </div>
               </div>
 
-              {showAutocomplete && debouncedSearchQuery && (
-                  <div className="!absolute !top-full !left-0 !right-0 !bg-background !border !border-border !rounded-lg !shadow-lg !z-50 !mt-[4px] !w-full">
-                    <div className="!z-[999] !p-[16px]">
+              {showAutocomplete &&
+                searchQuery.length > 0 &&
+                (isAutocompleteLoading ||
+                  autocompleteSuggestions.length > 0) && (
+                  <div className="!absolute !top-full !left-0 !right-0 !bg-background !border !border-border !rounded-lg !shadow-lg !z-[9999999] !mt-[4px] !w-full">
+                    <div className="[&_*]:!z-[9999999] !p-[16px]">
                       {isAutocompleteLoading ? (
                         <div className="!flex !items-center !justify-center !py-[12px] !gap-[8px] !text-muted-foreground">
                           <div className="!w-4 !h-4 !border-2 !border-muted-foreground !border-t-transparent !rounded-full !animate-spin"></div>
@@ -1039,18 +1148,42 @@ const KalifindSearch: React.FC<{
                               (suggestion, index) => (
                                 <div
                                   key={index}
-                                  className={`!flex !items-center !gap-[8px] !cursor-pointer hover:!bg-muted !p-[8px] !rounded ${
-                                    index === highlightedSuggestionIndex ? '!bg-muted' : ''
+                                  data-suggestion-item="true"
+                                  className={`z-[9999999] !flex !items-center !gap-[8px] !cursor-pointer hover:!bg-muted !p-[8px] !rounded ${
+                                    index === highlightedSuggestionIndex
+                                      ? "!bg-muted"
+                                      : ""
                                   }`}
                                   onClick={(e) => {
                                     e.preventDefault();
                                     e.stopPropagation();
-                                    console.log("Desktop suggestion clicked:", suggestion);
+                                    console.log(
+                                      "Desktop suggestion clicked:",
+                                      suggestion,
+                                    );
+                                    console.log(
+                                      "About to call handleSuggestionClick",
+                                    );
+                                    // Prevent click outside from interfering
+                                    e.nativeEvent.stopImmediatePropagation();
                                     handleSuggestionClick(suggestion);
+                                    console.log(
+                                      "handleSuggestionClick called successfully",
+                                    );
+                                  }}
+                                  onMouseDown={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    console.log(
+                                      "Desktop suggestion mousedown:",
+                                      suggestion,
+                                    );
+                                    // Prevent click outside from interfering
+                                    e.nativeEvent.stopImmediatePropagation();
                                   }}
                                 >
                                   <Search className="!w-[16px] !h-[16px] !text-muted-foreground" />
-                                  <span className="!text-muted-foreground">
+                                  <span className="!text-muted-foreground pointer-events-none">
                                     {suggestion}
                                   </span>
                                 </div>
@@ -1061,7 +1194,7 @@ const KalifindSearch: React.FC<{
                       ) : !isAutocompleteLoading ? (
                         <div className="!flex !items-center !justify-center !py-[12px] !text-muted-foreground">
                           <Search className="!w-4 !h-4 !mr-2" />
-                          <span>No suggestions found for "{debouncedSearchQuery}"</span>
+                          <span>No suggestions found for "{searchQuery}"</span>
                         </div>
                       ) : null}
                     </div>
@@ -1072,7 +1205,9 @@ const KalifindSearch: React.FC<{
         </div>
       )}
 
-      <div className={`!fixed !bottom-[16px] !left-1/2 !-translate-x-1/2 !z-50 ${shouldShowFilters ? '!block lg:!hidden' : '!hidden'}`}>
+      <div
+        className={`!fixed !bottom-[16px] !left-1/2 !-translate-x-1/2 !z-50 ${shouldShowFilters ? "!block lg:!hidden" : "!hidden"}`}
+      >
         <Drawer>
           <DrawerTrigger asChild>
             <button className="!flex !items-center !gap-[8px] !px-[16px] !py-[12px] !bg-primary !text-primary-foreground !rounded-full !font-medium !shadow-lg !hover:!bg-primary-hover !transition-all !duration-300 !transform !hover:!scale-105">
@@ -1094,7 +1229,14 @@ const KalifindSearch: React.FC<{
             <div className="!px-[16px] sm:!p-[16px] !overflow-y-auto !flex-1">
               <Accordion
                 type="multiple"
-                defaultValue={["category", "price", "size", "color", "brand", "tags"]}
+                defaultValue={[
+                  "category",
+                  "price",
+                  "size",
+                  "color",
+                  "brand",
+                  "tags",
+                ]}
                 className="!w-full"
               >
                 <AccordionItem value="category">
@@ -1195,7 +1337,9 @@ const KalifindSearch: React.FC<{
                           key={size}
                           onClick={() => handleSizeChange(size)}
                           className={`my-border !rounded-lg !py-[8px] !text-[12px] sm:!py-[12px] sm:!text-[14px] !font-medium text-center ${
-                            filters.sizes.includes(size) ? "!bg-primary !text-primary-foreground" : ""
+                            filters.sizes.includes(size)
+                              ? "!bg-primary !text-primary-foreground"
+                              : ""
                           }`}
                         >
                           {size}
@@ -1257,7 +1401,7 @@ const KalifindSearch: React.FC<{
                     </div>
                   </AccordionContent>
                 </AccordionItem>
-                
+
                 {/* Mandatory Facets for Mobile */}
                 <AccordionItem value="stockStatus">
                   <AccordionTrigger className="!font-extrabold text-[16px]">
@@ -1265,28 +1409,30 @@ const KalifindSearch: React.FC<{
                   </AccordionTrigger>
                   <AccordionContent>
                     <div className="!space-y-[8px]">
-                      {["In Stock", "Out of Stock", "On Backorder"].map((status) => (
-                        <label
-                          key={status}
-                          className="!flex !items-center !justify-between !cursor-pointer !p-[4px] sm:!p-[8px] hover:!bg-muted !rounded-lg"
-                        >
-                          <div className="!flex !items-center !gap-[12px]">
-                            <input
-                              type="checkbox"
-                              checked={filters.stockStatus.includes(status)}
-                              onChange={() => handleStockStatusChange(status)}
-                              className="!w-[16px] !h-[16px] sm:!w-5 sm:!h-5 !text-primary !bg-background !border-border !rounded "
-                            />
-                            <span className="!text-foreground !text-[14px] sm:!text-[16px] lg:leading-[16px]">
-                              {status}
-                            </span>
-                          </div>
-                        </label>
-                      ))}
+                      {["In Stock", "Out of Stock", "On Backorder"].map(
+                        (status) => (
+                          <label
+                            key={status}
+                            className="!flex !items-center !justify-between !cursor-pointer !p-[4px] sm:!p-[8px] hover:!bg-muted !rounded-lg"
+                          >
+                            <div className="!flex !items-center !gap-[12px]">
+                              <input
+                                type="checkbox"
+                                checked={filters.stockStatus.includes(status)}
+                                onChange={() => handleStockStatusChange(status)}
+                                className="!w-[16px] !h-[16px] sm:!w-5 sm:!h-5 !text-primary !bg-background !border-border !rounded "
+                              />
+                              <span className="!text-foreground !text-[14px] sm:!text-[16px] lg:leading-[16px]">
+                                {status}
+                              </span>
+                            </div>
+                          </label>
+                        ),
+                      )}
                     </div>
                   </AccordionContent>
                 </AccordionItem>
-                
+
                 <AccordionItem value="featured">
                   <AccordionTrigger className="!font-extrabold text-[16px]">
                     <b className="!font-extrabold">Featured Products</b>
@@ -1307,7 +1453,7 @@ const KalifindSearch: React.FC<{
                     </div>
                   </AccordionContent>
                 </AccordionItem>
-                
+
                 <AccordionItem value="sale">
                   <AccordionTrigger className="!font-extrabold text-[16px]">
                     <b className="!font-extrabold">Sale Status</b>
@@ -1344,20 +1490,20 @@ const KalifindSearch: React.FC<{
               </div>
               <div className="!flex !gap-[8px] !p-[16px] !border-t !border-border">
                 <button
-                onClick={() => {
-                  setFilters({
-                    categories: [],
-                    priceRange: [0, maxPrice],
-                    colors: [],
-                    sizes: [],
-                    brands: [],
-                    genders: [],
-                    tags: [],
-                    stockStatus: [],
-                    featuredProducts: false,
-                    saleStatus: false,
-                  });
-                }}
+                  onClick={() => {
+                    setFilters({
+                      categories: [],
+                      priceRange: [0, maxPrice],
+                      colors: [],
+                      sizes: [],
+                      brands: [],
+                      genders: [],
+                      tags: [],
+                      stockStatus: [],
+                      featuredProducts: false,
+                      saleStatus: false,
+                    });
+                  }}
                   className="!flex-1 !py-[12px] !border !border-border !text-foreground !rounded-lg !font-medium hover:!bg-muted !transition-colors text-[14px]"
                 >
                   Clear All
@@ -1374,10 +1520,19 @@ const KalifindSearch: React.FC<{
       </div>
 
       <div className="!flex !w-full lg:px-[64px] !mx-auto">
-        <aside className={`w-80 lg:!w-[312px] !p-[16px] !bg-filter-bg ${shouldShowFilters ? '!hidden lg:!block' : '!hidden'}`}>
+        <aside
+          className={`w-80 lg:!w-[312px] !p-[16px] !bg-filter-bg ${shouldShowFilters ? "!hidden lg:!block" : "!hidden"}`}
+        >
           <Accordion
             type="multiple"
-            defaultValue={["category", "price", "size", "color", "brand", "tags"]}
+            defaultValue={[
+              "category",
+              "price",
+              "size",
+              "color",
+              "brand",
+              "tags",
+            ]}
           >
             <AccordionItem value="category">
               <AccordionTrigger className="text-[16px] lg:text-[18px] !text-foreground">
@@ -1475,7 +1630,9 @@ const KalifindSearch: React.FC<{
                       key={size}
                       onClick={() => handleSizeChange(size)}
                       className={`my-border !rounded !py-[8px] !text-[12px] lg:text-[14px] !font-medium ${
-                        filters.sizes.includes(size) ? "!bg-primary !text-primary-foreground" : ""
+                        filters.sizes.includes(size)
+                          ? "!bg-primary !text-primary-foreground"
+                          : ""
                       }`}
                     >
                       {size}
@@ -1540,7 +1697,7 @@ const KalifindSearch: React.FC<{
                 </div>
               </AccordionContent>
             </AccordionItem>
-            
+
             {/* Mandatory Facets */}
             <AccordionItem value="stockStatus">
               <AccordionTrigger className="text-[16px] lg:text-[18px] !font-[700] !text-foreground">
@@ -1548,28 +1705,30 @@ const KalifindSearch: React.FC<{
               </AccordionTrigger>
               <AccordionContent>
                 <div className="!space-y-[8px]">
-                  {["In Stock", "Out of Stock", "On Backorder"].map((status) => (
-                    <label
-                      key={status}
-                      className="!flex !items-center !justify-between !cursor-pointer"
-                    >
-                      <div className="!flex !items-center !gap-[10px]">
-                        <input
-                          type="checkbox"
-                          checked={filters.stockStatus.includes(status)}
-                          onChange={() => handleStockStatusChange(status)}
-                          className="!w-[16px] !h-[16px] lg:!w-5 lg:!h-5 top-0 !text-primary !bg-background !border-border !rounded "
-                        />
-                        <span className="!text-foreground text-[14px] lg:text-[16px]">
-                          {status}
-                        </span>
-                      </div>
-                    </label>
-                  ))}
+                  {["In Stock", "Out of Stock", "On Backorder"].map(
+                    (status) => (
+                      <label
+                        key={status}
+                        className="!flex !items-center !justify-between !cursor-pointer"
+                      >
+                        <div className="!flex !items-center !gap-[10px]">
+                          <input
+                            type="checkbox"
+                            checked={filters.stockStatus.includes(status)}
+                            onChange={() => handleStockStatusChange(status)}
+                            className="!w-[16px] !h-[16px] lg:!w-5 lg:!h-5 top-0 !text-primary !bg-background !border-border !rounded "
+                          />
+                          <span className="!text-foreground text-[14px] lg:text-[16px]">
+                            {status}
+                          </span>
+                        </div>
+                      </label>
+                    ),
+                  )}
                 </div>
               </AccordionContent>
             </AccordionItem>
-            
+
             <AccordionItem value="featured">
               <AccordionTrigger className="text-[16px] lg:text-[18px] !font-[700] !text-foreground">
                 <b className="font-extrabold">Featured Products</b>
@@ -1590,7 +1749,7 @@ const KalifindSearch: React.FC<{
                 </div>
               </AccordionContent>
             </AccordionItem>
-            
+
             <AccordionItem value="sale">
               <AccordionTrigger className="text-[16px] lg:text-[18px] !font-[700] !text-foreground">
                 <b className="font-extrabold">Sale Status</b>
@@ -1697,73 +1856,71 @@ const KalifindSearch: React.FC<{
                   </b>{" "}
                   products
                 </div>
-              </div>
-            )}
-            {!showRecommendations && (
-              <div onClick={(e) => e.stopPropagation()}>
-                <DropdownMenu>
-                  <DropdownMenuTrigger>
-                    <div className="!flex !items-center !border !border-border !px-[8px] !py-[4px] md:!px-[12px] md:!py-[8px] !rounded-md text-[12px] lg:text-[14px]">
-                      Sort By
-                      <ChevronDown className="!w-[12px] !h-[12px] md:!w-[16px] md:!h-[16px] !ml-[4px] md:!ml-[8px]" />
-                    </div>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent
-                    align="end"
-                    className="z-[100000]"
-                    container={document.body}
-                  >
-                    <DropdownMenuLabel className="!font-semibold text-[14px]">
-                      Sort by
-                    </DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      onSelect={(e) => {
-                        e.preventDefault();
-                        setSortOption("default");
-                      }}
-                      className="text-[14px]"
+                <div onClick={(e) => e.stopPropagation()}>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger>
+                      <div className="!flex !items-center !border !border-border !px-[8px] !py-[4px] md:!px-[12px] md:!py-[8px] !rounded-md text-[12px] lg:text-[14px]">
+                        Sort By
+                        <ChevronDown className="!w-[12px] !h-[12px] md:!w-[16px] md:!h-[16px] !ml-[4px] md:!ml-[8px]" />
+                      </div>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent
+                      align="end"
+                      className="z-[100000]"
+                      container={document.body}
                     >
-                      Relevance
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onSelect={(e) => {
-                        e.preventDefault();
-                        setSortOption("a-z");
-                      }}
-                      className="text-[14px]"
-                    >
-                      Name: A-Z
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onSelect={(e) => {
-                        e.preventDefault();
-                        setSortOption("z-a");
-                      }}
-                      className="text-[14px]"
-                    >
-                      Name: Z-A
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onSelect={(e) => {
-                        e.preventDefault();
-                        setSortOption("price-asc");
-                      }}
-                      className="text-[14px]"
-                    >
-                      Price: Low to High
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onSelect={(e) => {
-                        e.preventDefault();
-                        setSortOption("price-desc");
-                      }}
-                      className="text-[14px]"
-                    >
-                      Price: High to Low
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                      <DropdownMenuLabel className="!font-semibold text-[14px]">
+                        Sort by
+                      </DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        onSelect={(e) => {
+                          e.preventDefault();
+                          setSortOption("default");
+                        }}
+                        className="text-[14px]"
+                      >
+                        Relevance
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onSelect={(e) => {
+                          e.preventDefault();
+                          setSortOption("a-z");
+                        }}
+                        className="text-[14px]"
+                      >
+                        Name: A-Z
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onSelect={(e) => {
+                          e.preventDefault();
+                          setSortOption("z-a");
+                        }}
+                        className="text-[14px]"
+                      >
+                        Name: Z-A
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onSelect={(e) => {
+                          e.preventDefault();
+                          setSortOption("price-asc");
+                        }}
+                        className="text-[14px]"
+                      >
+                        Price: Low to High
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onSelect={(e) => {
+                          e.preventDefault();
+                          setSortOption("price-desc");
+                        }}
+                        className="text-[14px]"
+                      >
+                        Price: High to Low
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
               </div>
             )}
 
@@ -1772,7 +1929,7 @@ const KalifindSearch: React.FC<{
               <div className="!w-full">
                 {/* Popular Searches */}
                 <div className="!mb-8">
-                  <h3 className="!text-[18px] lg:!text-[20px] !font-bold !text-foreground !mb-4">
+                  <h3 className="!text-[18px] lg:!text-[20px] !font-bold !text-foreground !mb-[8px] !mt-[8px]">
                     Popular Searches
                   </h3>
                   <p className="!text-[14px] !text-muted-foreground !mb-4">
@@ -1800,11 +1957,8 @@ const KalifindSearch: React.FC<{
                 {recommendations.length > 0 && (
                   <div className="!mb-8">
                     <h3 className="!text-[18px] lg:!text-[20px] !font-bold !text-foreground !mb-4">
-                      Smart Recommendations
+                      Recommendations
                     </h3>
-                    <p className="!text-[14px] !text-muted-foreground !mb-4">
-                      AI-powered product suggestions based on trending items and user behavior
-                    </p>
                     <div className="!grid !grid-cols-2 sm:!grid-cols-2 xl:grid-cols-3 2xl:!grid-cols-4 !gap-[8px] sm:!gap-[16px] !w-full">
                       {recommendations.map((product) => (
                         <div
@@ -1885,7 +2039,8 @@ const KalifindSearch: React.FC<{
                           loading="lazy"
                           onError={(e) => {
                             const target = e.target as HTMLImageElement;
-                            target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjNmNGY2Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5YTNhZiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk5vIEltYWdlPC90ZXh0Pjwvc3ZnPg==';
+                            target.src =
+                              "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjNmNGY2Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5YTNhZiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk5vIEltYWdlPC90ZXh0Pjwvc3ZnPg==";
                           }}
                         />
                         {product.featured && (
@@ -1926,7 +2081,7 @@ const KalifindSearch: React.FC<{
                     </div>
                   ))}
                 </div>
-                
+
                 {/* Infinite scroll trigger for mobile */}
                 {isMobile && hasMoreProducts && (
                   <div id="load-more-trigger" className="!w-full !h-4 !my-4">
@@ -1934,19 +2089,30 @@ const KalifindSearch: React.FC<{
                       <div className="!flex !justify-center !items-center !py-4">
                         <div className="!flex !items-center !gap-2">
                           <div className="!flex !space-x-2">
-                            <div className="!w-2 !h-2 !bg-primary !rounded-full !animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                            <div className="!w-2 !h-2 !bg-primary !rounded-full !animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                            <div className="!w-2 !h-2 !bg-primary !rounded-full !animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                            <div
+                              className="!w-2 !h-2 !bg-primary !rounded-full !animate-bounce"
+                              style={{ animationDelay: "0ms" }}
+                            ></div>
+                            <div
+                              className="!w-2 !h-2 !bg-primary !rounded-full !animate-bounce"
+                              style={{ animationDelay: "150ms" }}
+                            ></div>
+                            <div
+                              className="!w-2 !h-2 !bg-primary !rounded-full !animate-bounce"
+                              style={{ animationDelay: "300ms" }}
+                            ></div>
                           </div>
                           <span className="!text-sm !text-muted-foreground">
-                            Loading {Math.min(12, totalProducts - displayedProducts)} more products...
+                            Loading{" "}
+                            {Math.min(12, totalProducts - displayedProducts)}{" "}
+                            more products...
                           </span>
                         </div>
                       </div>
                     )}
                   </div>
                 )}
-                
+
                 {/* Load More button for desktop */}
                 {!isMobile && hasMoreProducts && (
                   <div className="!flex !justify-center !mt-8">
@@ -1955,20 +2121,25 @@ const KalifindSearch: React.FC<{
                       disabled={isLoadingMore}
                       className="!bg-primary hover:!bg-primary-hover !text-primary-foreground !px-8 !py-3 !rounded-lg !font-medium !transition-colors !disabled:opacity-50 !disabled:cursor-not-allowed"
                     >
-                      {isLoadingMore ? 'Loading...' : `Load More (${Math.min(12, totalProducts - displayedProducts)} more)`}
+                      {isLoadingMore
+                        ? "Loading..."
+                        : `Load More (${Math.min(12, totalProducts - displayedProducts)} more)`}
                     </button>
                   </div>
                 )}
               </>
             )}
 
-            {!isLoading && !isPending && !showRecommendations && sortedProducts.length === 0 && (
-              <div className="!text-center !py-[48px] !w-full">
-                <p className="!text-muted-foreground text-[16px] lg:text-[18px]">
-                  No products found matching your criteria.
-                </p>
-              </div>
-            )}
+            {!isLoading &&
+              !isPending &&
+              !showRecommendations &&
+              sortedProducts.length === 0 && (
+                <div className="!text-center !py-[48px] !w-full">
+                  <p className="!text-muted-foreground text-[16px] lg:text-[18px]">
+                    No products found matching your criteria.
+                  </p>
+                </div>
+              )}
           </div>
         </main>
       </div>

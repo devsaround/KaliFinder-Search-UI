@@ -57,7 +57,11 @@ const KalifindSearchDesktop: React.FC<KalifindSearchDesktopProps> = ({
                       type="text"
                       value={searchQuery}
                       onChange={(e) => handleSearch(e.target.value)}
-                      onFocus={() => setShowAutocomplete?.(true)}
+                      onFocus={() => {
+                        if (searchQuery.length > 0) {
+                          setShowAutocomplete?.(true);
+                        }
+                      }}
                       onKeyDown={handleKeyDown}
                       placeholder="Search"
                       className="!w-full !pl-[30px] !pr-[16px] !py-[12px] !text-foreground !placeholder-muted-foreground focus:!outline-none focus:!border-none focus:!ring-0"

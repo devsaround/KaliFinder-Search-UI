@@ -61,7 +61,11 @@ const KalifindSearchMobile: React.FC<KalifindSearchMobileProps> = ({
                     type="text"
                     value={searchQuery}
                     onChange={(e) => handleSearch(e.target.value)}
-                    onFocus={() => setShowAutocomplete?.(true)}
+                    onFocus={() => {
+                      if (searchQuery.length > 0) {
+                        setShowAutocomplete?.(true);
+                      }
+                    }}
                     onKeyDown={handleKeyDown}
                     placeholder="Search"
                     className="h-full w-full pl-10 pr-4 py-2 text-base text-foreground placeholder-muted-foreground focus:outline-none border-none ring-0"
@@ -82,7 +86,7 @@ const KalifindSearchMobile: React.FC<KalifindSearchMobileProps> = ({
       </div>
 
       {/* Autocomplete dropdown for mobile */}
-      {showAutocomplete && searchQuery && (
+      {showAutocomplete && searchQuery.length > 0 && (isAutocompleteLoading || autocompleteSuggestions.length > 0) && (
         <div className="absolute top-full left-0 right-0 bg-background border border-border rounded-lg shadow-lg z-50 mt-1 mx-4">
           <div className="p-4">
             {isAutocompleteLoading ? (
@@ -99,14 +103,19 @@ const KalifindSearchMobile: React.FC<KalifindSearchMobileProps> = ({
                   {autocompleteSuggestions.map((suggestion, index) => (
                     <div
                       key={index}
-                      className={`flex items-center gap-2 cursor-pointer hover:bg-muted p-2 rounded ${
+                      data-suggestion-item="true"
+                      className={`flex items-center gap-2 cursor-pointer hover:bg-muted p-2 rounded transition-colors ${
                         index === highlightedSuggestionIndex ? 'bg-muted' : ''
                       }`}
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
                         console.log("Mobile suggestion clicked:", suggestion);
+                        console.log("About to call handleSuggestionClick");
+                        // Prevent click outside from interfering
+                        e.nativeEvent.stopImmediatePropagation();
                         handleSuggestionClick?.(suggestion);
+                        console.log("handleSuggestionClick called successfully");
                       }}
                     >
                       <Search className="w-4 h-4 text-muted-foreground" />
