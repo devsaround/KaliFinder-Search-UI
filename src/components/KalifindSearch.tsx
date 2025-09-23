@@ -4,6 +4,7 @@ import React, {
   useRef,
   useEffect,
   useMemo,
+  useCallback,
 } from "react";
 import { Search, ShoppingCart, X, Filter, ChevronDown } from "lucide-react";
 
@@ -55,20 +56,26 @@ const KalifindSearch: React.FC<{
   >([]);
   const [isAutocompleteLoading, setIsAutocompleteLoading] = useState(false);
   const [isPriceLoading, setIsPriceLoading] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [hasMoreProducts, setHasMoreProducts] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [isMobile, setIsMobile] = useState(false);
+  const [totalProducts, setTotalProducts] = useState(0);
+  const [displayedProducts, setDisplayedProducts] = useState(0);
 
   // New state variables for search behavior
   const [showRecommendations, setShowRecommendations] = useState(true);
   const [hasSearched, setHasSearched] = useState(false);
   const [recommendations, setRecommendations] = useState<Product[]>([]);
-  const [popularSearches] = useState<string[]>(["shirt", "underwear", "plan"]);
+  const [popularSearches, setPopularSearches] = useState<string[]>(["shirt", "underwear", "plan"]);
   const [showFilters, setShowFilters] = useState(false);
+  const [isInitialState, setIsInitialState] = useState(true);
   const [maxPrice, setMaxPrice] = useState<number>(10000); // Default max price
   const [availableCategories, setAvailableCategories] = useState<string[]>([]);
   const [availableBrands, setAvailableBrands] = useState<string[]>([]);
   const [availableColors, setAvailableColors] = useState<string[]>([]);
   const [availableSizes, setAvailableSizes] = useState<string[]>([]);
   const [availableTags, setAvailableTags] = useState<string[]>([]);
-  const [totalProducts, setTotalProducts] = useState(0);
   const [categoryCounts, setCategoryCounts] = useState<{
     [key: string]: number;
   }>({});
@@ -93,7 +100,23 @@ const KalifindSearch: React.FC<{
     brands: [],
     genders: [],
     tags: [],
+    // Mandatory facets
+    stockStatus: [],
+    featuredProducts: false,
+    saleStatus: false,
   });
+
+  // Detect mobile device
+  useEffect(() => {
+    const checkIsMobile = () => {
+      setIsMobile(window.innerWidth < 1024);
+    };
+    
+    checkIsMobile();
+    window.addEventListener('resize', checkIsMobile);
+    
+    return () => window.removeEventListener('resize', checkIsMobile);
+  }, []);
 
   // Load recent searches from localStorage on mount
   useEffect(() => {
@@ -144,22 +167,81 @@ const KalifindSearch: React.FC<{
     filters.colors.length > 0 ||
     filters.sizes.length > 0 ||
     filters.tags.length > 0 ||
-    filters.priceRange[1] < maxPrice;
+    filters.priceRange[1] < maxPrice ||
+    filters.stockStatus.length > 0 ||
+    filters.featuredProducts ||
+    filters.saleStatus;
 
   // Show filters if user has searched or filters are active
   const shouldShowFilters = showFilters || isAnyFilterActive;
 
-  // Fetch recommendations
-  const fetchRecommendations = async () => {
+  // Fetch popular searches
+  const fetchPopularSearches = async () => {
     if (!storeUrl) return;
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/v1/search/recommended?storeUrl=${storeUrl}`,
+        `${import.meta.env.VITE_BACKEND_URL}/v1/search/popular?storeUrl=${storeUrl}`,
         {}
       );
+      
       if (!response.ok) {
-        throw new Error("Failed to fetch recommendations");
+        throw new Error("Failed to fetch popular searches");
       }
+      
+      const result = await response.json();
+      
+      // Handle response format
+      let searches: string[];
+      if (Array.isArray(result)) {
+        searches = result;
+      } else if (result && Array.isArray(result.searches)) {
+        searches = result.searches;
+      } else {
+        searches = ["shirt", "underwear", "plan"]; // Fallback to default
+      }
+      
+      setPopularSearches(searches.slice(0, 6)); // Limit to 6 popular searches
+    } catch (error) {
+      console.error("Failed to fetch popular searches:", error);
+      // Keep default popular searches
+    }
+  };
+
+  // Fetch smart recommendations
+  const fetchRecommendations = async () => {
+    if (!storeUrl) return;
+    try {
+      // Try to fetch AI-powered recommendations first
+      const response = await fetch(
+        `${import.meta.env.VITE_BACKEND_URL}/v1/search/recommended?storeUrl=${storeUrl}&type=smart`,
+        {}
+      );
+      
+      if (!response.ok) {
+        // Fallback to trending products if smart recommendations fail
+        const trendingResponse = await fetch(
+          `${import.meta.env.VITE_BACKEND_URL}/v1/search/trending?storeUrl=${storeUrl}`,
+          {}
+        );
+        
+        if (!trendingResponse.ok) {
+          throw new Error("Failed to fetch recommendations");
+        }
+        
+        const trendingResult = await trendingResponse.json();
+        let products: Product[];
+        if (Array.isArray(trendingResult)) {
+          products = trendingResult;
+        } else if (trendingResult && Array.isArray(trendingResult.products)) {
+          products = trendingResult.products;
+        } else {
+          products = [];
+        }
+        
+        setRecommendations(products.slice(0, 8));
+        return;
+      }
+      
       const result = await response.json();
       
       // Handle response format
@@ -179,21 +261,37 @@ const KalifindSearch: React.FC<{
     }
   };
 
-  // Search behavior state management
+  // Search behavior state management according to search.md requirements
   useEffect(() => {
     if (!searchQuery && !hasSearched) {
-      // Initial state - show recommendations
+      // First Open (Initial State)
+      // - Search box is empty
+      // - Show Recommendations + Popular Searches
+      // - Do NOT fetch all products yet (skip all-products fetch if showing recommendations + popular)
+      // - Filter sidebar is NOT visible
+      // - Show recent/latest searches below the search input
       setShowRecommendations(true);
       setShowFilters(false);
+      setIsInitialState(true);
       fetchRecommendations();
+      fetchPopularSearches();
     } else if (!searchQuery && hasSearched) {
-      // Empty after search - show all products with filters
+      // User Clears Search (after typing at least once)
+      // - Fetch all products and display in results
+      // - Keep filter sidebar visible
+      // - Filter data is fetched/derived only once (from the first all-products fetch) and reused afterward
       setShowRecommendations(false);
       setShowFilters(true);
+      setIsInitialState(false);
     } else if (searchQuery) {
-      // User is typing - hide recommendations, show filters
+      // User Starts Typing / Searching
+      // - Show filter sidebar (remains visible for subsequent searches)
+      // - Show skeleton loaders until results load
+      // - Show suggestions/autocomplete based on typed input
+      // - Clicking a suggestion: Sets the clicked value into the search input, automatically triggers a search for that value, saves the clicked value into recent searches
       setShowRecommendations(false);
       setShowFilters(true);
+      setIsInitialState(false);
       if (!hasSearched) {
         setHasSearched(true);
       }
@@ -378,12 +476,14 @@ const KalifindSearch: React.FC<{
 
   // search products
   useEffect(() => {
-    if (isPriceLoading || !storeUrl || showRecommendations) {
-      return; // Wait for the initial price to be loaded or skip if showing recommendations
+    if (isPriceLoading || !storeUrl || showRecommendations || isInitialState) {
+      return; // Wait for the initial price to be loaded or skip if showing recommendations or in initial state
     }
 
     startTransition(() => {
       setIsLoading(true);
+      setCurrentPage(1);
+      setHasMoreProducts(true);
       const fetchProducts = async () => {
         if (
           typeof debouncedPriceRange[0] === "undefined" ||
@@ -427,11 +527,23 @@ const KalifindSearch: React.FC<{
           if (filters.tags.length > 0) {
             params.append("tags", filters.tags.join(","));
           }
+          // Mandatory facets
+          if (filters.stockStatus.length > 0) {
+            params.append("stockStatus", filters.stockStatus.join(","));
+          }
+          if (filters.featuredProducts) {
+            params.append("featured", "true");
+          }
+          if (filters.saleStatus) {
+            params.append("onSale", "true");
+          }
           params.append("minPrice", debouncedPriceRange[0].toString());
           params.append(
             "maxPrice",
             debouncedPriceRange[1].toString() ?? "999999",
           );
+          params.append("page", "1");
+          params.append("limit", "12");
 
           const response = await fetch(
             `${
@@ -448,18 +560,30 @@ const KalifindSearch: React.FC<{
           }
           const result = await response.json();
           
-          // Handle both array and object response formats
+          // Handle paginated response format
           let products: Product[];
-          if (Array.isArray(result)) {
-            products = result;
-          } else if (result && Array.isArray(result.products)) {
+          let total = 0;
+          let hasMore = false;
+          
+          if (result && Array.isArray(result.products)) {
             products = result.products;
+            total = result.total || 0;
+            hasMore = result.hasMore || false;
+          } else if (Array.isArray(result)) {
+            products = result;
+            total = result.length;
+            hasMore = false;
           } else {
             console.error("Kalifind Search: Unexpected search response format:", result);
             products = [];
+            total = 0;
+            hasMore = false;
           }
           
           setFilteredProducts(products);
+          setTotalProducts(total);
+          setDisplayedProducts(products.length);
+          setHasMoreProducts(hasMore);
           console.log(products);
         } catch (error) {
           console.error("Failed to fetch products:", error);
@@ -479,9 +603,14 @@ const KalifindSearch: React.FC<{
     filters.sizes,
     filters.brands,
     filters.tags,
+    filters.stockStatus,
+    filters.featuredProducts,
+    filters.saleStatus,
     filters.priceRange,
     debouncedPriceRange,
     storeUrl,
+    showRecommendations,
+    isInitialState,
   ]);
 
   const sortedProducts = useMemo(() => {
@@ -534,8 +663,24 @@ const KalifindSearch: React.FC<{
   };
 
   const handleSuggestionClick = (suggestion: string) => {
-    handleSearch(suggestion);
+    // Clicking a suggestion:
+    // - Sets the clicked value into the search input
+    // - Automatically triggers a search for that value
+    // - Saves the clicked value into recent searches via Zustand and updates localStorage
+    setSearchQuery(suggestion);
+    setShowAutocomplete(false);
     inputRef.current?.blur();
+    
+    // Add to recent searches
+    if (suggestion.trim() && !recentSearches.includes(suggestion.trim())) {
+      setRecentSearches((prev) => {
+        const newSearches = [
+          suggestion.trim(),
+          ...prev.filter((item) => item !== suggestion.trim()),
+        ].slice(0, 10);
+        return newSearches;
+      });
+    }
   };
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
@@ -608,6 +753,139 @@ const KalifindSearch: React.FC<{
         : [...prev.tags, tag],
     }));
   };
+
+  // Mandatory facet handlers
+  const handleStockStatusChange = (status: string) => {
+    setFilters((prev) => ({
+      ...prev,
+      stockStatus: prev.stockStatus.includes(status)
+        ? prev.stockStatus.filter((s) => s !== status)
+        : [...prev.stockStatus, status],
+    }));
+  };
+
+  const handleFeaturedProductsChange = () => {
+    setFilters((prev) => ({
+      ...prev,
+      featuredProducts: !prev.featuredProducts,
+    }));
+  };
+
+  const handleSaleStatusChange = () => {
+    setFilters((prev) => ({
+      ...prev,
+      saleStatus: !prev.saleStatus,
+    }));
+  };
+
+  // Load more products function
+  const loadMoreProducts = useCallback(async () => {
+    if (isLoadingMore || !hasMoreProducts) return;
+    
+    setIsLoadingMore(true);
+    try {
+      const params = new URLSearchParams();
+      if (debouncedSearchQuery) {
+        params.append("q", debouncedSearchQuery);
+      }
+      if (storeUrl) {
+        params.append("storeUrl", storeUrl);
+      }
+      
+      // Add all current filters
+      if (filters.categories.length > 0) {
+        params.append("categories", filters.categories.join(","));
+      }
+      if (filters.colors.length > 0) {
+        params.append("colors", filters.colors.join(","));
+      }
+      if (filters.sizes.length > 0) {
+        params.append("sizes", filters.sizes.join(","));
+      }
+      if (filters.brands.length > 0) {
+        params.append("brands", filters.brands.join(","));
+      }
+      if (filters.tags.length > 0) {
+        params.append("tags", filters.tags.join(","));
+      }
+      if (filters.stockStatus.length > 0) {
+        params.append("stockStatus", filters.stockStatus.join(","));
+      }
+      if (filters.featuredProducts) {
+        params.append("featured", "true");
+      }
+      if (filters.saleStatus) {
+        params.append("onSale", "true");
+      }
+      params.append("minPrice", debouncedPriceRange[0].toString());
+      params.append("maxPrice", debouncedPriceRange[1].toString() ?? "999999");
+      
+      params.append("page", (currentPage + 1).toString());
+      params.append("limit", "12");
+
+      const response = await fetch(
+        `${import.meta.env.VITE_BACKEND_URL}/v1/search?${params.toString()}`,
+        {}
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to load more products");
+      }
+
+      const result = await response.json();
+      let products: Product[];
+      let hasMore = false;
+      
+      if (result && Array.isArray(result.products)) {
+        products = result.products;
+        hasMore = result.hasMore || false;
+      } else if (Array.isArray(result)) {
+        products = result;
+        hasMore = false;
+      } else {
+        products = [];
+        hasMore = false;
+      }
+
+      if (products.length === 0) {
+        setHasMoreProducts(false);
+      } else {
+        setFilteredProducts(prev => [...prev, ...products]);
+        setDisplayedProducts(prev => prev + products.length);
+        setCurrentPage(prev => prev + 1);
+        setHasMoreProducts(hasMore);
+      }
+    } catch (error) {
+      console.error("Failed to load more products:", error);
+    } finally {
+      setIsLoadingMore(false);
+    }
+  }, [isLoadingMore, hasMoreProducts, debouncedSearchQuery, storeUrl, currentPage, filters, debouncedPriceRange]);
+
+  // Infinite scroll observer for mobile
+  useEffect(() => {
+    if (!isMobile) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMoreProducts && !isLoadingMore) {
+          loadMoreProducts();
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    const loadMoreTrigger = document.getElementById('load-more-trigger');
+    if (loadMoreTrigger) {
+      observer.observe(loadMoreTrigger);
+    }
+
+    return () => {
+      if (loadMoreTrigger) {
+        observer.unobserve(loadMoreTrigger);
+      }
+    };
+  }, [isMobile, hasMoreProducts, isLoadingMore, loadMoreProducts]);
 
   const LoadingSkeleton = () => (
     <div className="!grid !grid-cols-2 sm:!grid-cols-2 xl:grid-cols-3 2xl:!grid-cols-4 !gap-[16px] !w-full">
@@ -743,7 +1021,10 @@ const KalifindSearch: React.FC<{
                   filters.colors.length +
                   filters.sizes.length +
                   filters.brands.length +
-                  filters.tags.length}
+                  filters.tags.length +
+                  filters.stockStatus.length +
+                  (filters.featuredProducts ? 1 : 0) +
+                  (filters.saleStatus ? 1 : 0)}
               </span>
             </button>
           </DrawerTrigger>
@@ -914,6 +1195,77 @@ const KalifindSearch: React.FC<{
                     </div>
                   </AccordionContent>
                 </AccordionItem>
+                
+                {/* Mandatory Facets for Mobile */}
+                <AccordionItem value="stockStatus">
+                  <AccordionTrigger className="!font-extrabold text-[16px]">
+                    <b className="!font-extrabold">Stock Status</b>
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <div className="!space-y-[8px]">
+                      {["In Stock", "Out of Stock", "On Backorder"].map((status) => (
+                        <label
+                          key={status}
+                          className="!flex !items-center !justify-between !cursor-pointer !p-[4px] sm:!p-[8px] hover:!bg-muted !rounded-lg"
+                        >
+                          <div className="!flex !items-center !gap-[12px]">
+                            <input
+                              type="checkbox"
+                              checked={filters.stockStatus.includes(status)}
+                              onChange={() => handleStockStatusChange(status)}
+                              className="!w-[16px] !h-[16px] sm:!w-5 sm:!h-5 !text-primary !bg-background !border-border !rounded "
+                            />
+                            <span className="!text-foreground !text-[14px] sm:!text-[16px] lg:leading-[16px]">
+                              {status}
+                            </span>
+                          </div>
+                        </label>
+                      ))}
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+                
+                <AccordionItem value="featured">
+                  <AccordionTrigger className="!font-extrabold text-[16px]">
+                    <b className="!font-extrabold">Featured Products</b>
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <div className="!space-y-[8px]">
+                      <label className="!flex !items-center !gap-[12px] !cursor-pointer !p-[4px] sm:!p-[8px] hover:!bg-muted !rounded-lg">
+                        <input
+                          type="checkbox"
+                          checked={filters.featuredProducts}
+                          onChange={handleFeaturedProductsChange}
+                          className="!w-[16px] !h-[16px] sm:!w-5 sm:!h-5 !text-primary !bg-background !border-border !rounded "
+                        />
+                        <span className="!text-foreground !text-[14px] sm:!text-[16px] lg:leading-[16px]">
+                          Featured Only
+                        </span>
+                      </label>
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+                
+                <AccordionItem value="sale">
+                  <AccordionTrigger className="!font-extrabold text-[16px]">
+                    <b className="!font-extrabold">Sale Status</b>
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <div className="!space-y-[8px]">
+                      <label className="!flex !items-center !gap-[12px] !cursor-pointer !p-[4px] sm:!p-[8px] hover:!bg-muted !rounded-lg">
+                        <input
+                          type="checkbox"
+                          checked={filters.saleStatus}
+                          onChange={handleSaleStatusChange}
+                          className="!w-[16px] !h-[16px] sm:!w-5 sm:!h-5 !text-primary !bg-background !border-border !rounded "
+                        />
+                        <span className="!text-foreground !text-[14px] sm:!text-[16px] lg:leading-[16px]">
+                          On Sale Only
+                        </span>
+                      </label>
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
               </Accordion>
             </div>
 
@@ -930,17 +1282,20 @@ const KalifindSearch: React.FC<{
               </div>
               <div className="!flex !gap-[8px] !p-[16px] !border-t !border-border">
                 <button
-                  onClick={() => {
-                    setFilters({
-                      categories: [],
-                      priceRange: [0, maxPrice],
-                      colors: [],
-                      sizes: [],
-                      brands: [],
-                      genders: [],
-                      tags: [],
-                    });
-                  }}
+                onClick={() => {
+                  setFilters({
+                    categories: [],
+                    priceRange: [0, maxPrice],
+                    colors: [],
+                    sizes: [],
+                    brands: [],
+                    genders: [],
+                    tags: [],
+                    stockStatus: [],
+                    featuredProducts: false,
+                    saleStatus: false,
+                  });
+                }}
                   className="!flex-1 !py-[12px] !border !border-border !text-foreground !rounded-lg !font-medium hover:!bg-muted !transition-colors text-[14px]"
                 >
                   Clear All
@@ -1123,6 +1478,77 @@ const KalifindSearch: React.FC<{
                 </div>
               </AccordionContent>
             </AccordionItem>
+            
+            {/* Mandatory Facets */}
+            <AccordionItem value="stockStatus">
+              <AccordionTrigger className="text-[16px] lg:text-[18px] !font-[700] !text-foreground">
+                <b className="font-extrabold">Stock Status</b>
+              </AccordionTrigger>
+              <AccordionContent>
+                <div className="!space-y-[8px]">
+                  {["In Stock", "Out of Stock", "On Backorder"].map((status) => (
+                    <label
+                      key={status}
+                      className="!flex !items-center !justify-between !cursor-pointer"
+                    >
+                      <div className="!flex !items-center !gap-[10px]">
+                        <input
+                          type="checkbox"
+                          checked={filters.stockStatus.includes(status)}
+                          onChange={() => handleStockStatusChange(status)}
+                          className="!w-[16px] !h-[16px] lg:!w-5 lg:!h-5 top-0 !text-primary !bg-background !border-border !rounded "
+                        />
+                        <span className="!text-foreground text-[14px] lg:text-[16px]">
+                          {status}
+                        </span>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+            
+            <AccordionItem value="featured">
+              <AccordionTrigger className="text-[16px] lg:text-[18px] !font-[700] !text-foreground">
+                <b className="font-extrabold">Featured Products</b>
+              </AccordionTrigger>
+              <AccordionContent>
+                <div className="!space-y-[8px]">
+                  <label className="!flex !items-center !gap-[10px] !cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={filters.featuredProducts}
+                      onChange={handleFeaturedProductsChange}
+                      className="!w-[16px] !h-[16px] lg:!w-5 lg:!h-5 top-0 !text-primary !bg-background !border-border !rounded "
+                    />
+                    <span className="!text-foreground text-[14px] lg:text-[16px]">
+                      Featured Only
+                    </span>
+                  </label>
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+            
+            <AccordionItem value="sale">
+              <AccordionTrigger className="text-[16px] lg:text-[18px] !font-[700] !text-foreground">
+                <b className="font-extrabold">Sale Status</b>
+              </AccordionTrigger>
+              <AccordionContent>
+                <div className="!space-y-[8px]">
+                  <label className="!flex !items-center !gap-[10px] !cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={filters.saleStatus}
+                      onChange={handleSaleStatusChange}
+                      className="!w-[16px] !h-[16px] lg:!w-5 lg:!h-5 top-0 !text-primary !bg-background !border-border !rounded "
+                    />
+                    <span className="!text-foreground text-[14px] lg:text-[16px]">
+                      On Sale Only
+                    </span>
+                  </label>
+                </div>
+              </AccordionContent>
+            </AccordionItem>
           </Accordion>
           {isAnyFilterActive && (
             <Button
@@ -1131,12 +1557,15 @@ const KalifindSearch: React.FC<{
               onClick={() => {
                 setFilters({
                   categories: [],
-                  priceRange: [0, 1000],
+                  priceRange: [0, maxPrice],
                   colors: [],
                   sizes: [],
                   brands: [],
                   genders: [],
                   tags: [],
+                  stockStatus: [],
+                  featuredProducts: false,
+                  saleStatus: false,
                 });
               }}
             >
@@ -1196,21 +1625,16 @@ const KalifindSearch: React.FC<{
             )}
             {!showRecommendations && (
               <div className="pt-[16px] lg:pt-[0px] !mb-[16px] flex justify-between items-center text-[12px] lg:text-[16px] !text-muted-foreground">
-                {isAnyFilterActive ? (
-                  <div className="!ml-[8px]">
-                    <b className="!font-extrabold text-foreground">
-                      {filteredProducts.length}
-                    </b>{" "}
-                    products found
-                  </div>
-                ) : (
-                  <div className="!ml-[8px]">
-                    <b className="!font-extrabold text-foreground">
-                      {totalProducts}
-                    </b>{" "}
-                    products found
-                  </div>
-                )}
+                <div className="!ml-[8px]">
+                  <b className="!font-extrabold text-foreground">
+                    {displayedProducts}
+                  </b>{" "}
+                  out of{" "}
+                  <b className="!font-extrabold text-foreground">
+                    {totalProducts}
+                  </b>{" "}
+                  products
+                </div>
               </div>
             )}
             {!showRecommendations && (
@@ -1289,48 +1713,80 @@ const KalifindSearch: React.FC<{
                   <h3 className="!text-[18px] lg:!text-[20px] !font-bold !text-foreground !mb-4">
                     Popular Searches
                   </h3>
+                  <p className="!text-[14px] !text-muted-foreground !mb-4">
+                    Trending search terms from other customers
+                  </p>
                   <div className="!flex !flex-wrap !gap-2">
-                    {popularSearches.map((term) => (
+                    {popularSearches.map((term, index) => (
                       <button
                         key={term}
                         onClick={() => handlePopularSearchClick(term)}
-                        className="!bg-muted hover:!bg-muted/80 !text-foreground !px-4 !py-2 !rounded-full !text-[14px] !font-medium !transition-colors !capitalize"
+                        className="!bg-muted hover:!bg-primary hover:!text-primary-foreground !text-foreground !px-4 !py-2 !rounded-full !text-[14px] !font-medium !transition-all !duration-300 !transform hover:!scale-105 !capitalize !border !border-transparent hover:!border-primary"
                       >
-                        {term}
+                        <span className="!flex !items-center !gap-2">
+                          <span className="!text-xs !bg-primary/20 !text-primary !px-2 !py-1 !rounded-full">
+                            #{index + 1}
+                          </span>
+                          {term}
+                        </span>
                       </button>
                     ))}
                   </div>
                 </div>
 
-                {/* Recommendations */}
+                {/* Smart Recommendations */}
                 {recommendations.length > 0 && (
                   <div className="!mb-8">
                     <h3 className="!text-[18px] lg:!text-[20px] !font-bold !text-foreground !mb-4">
-                      Recommended Products
+                      Smart Recommendations
                     </h3>
+                    <p className="!text-[14px] !text-muted-foreground !mb-4">
+                      AI-powered product suggestions based on trending items and user behavior
+                    </p>
                     <div className="!grid !grid-cols-2 sm:!grid-cols-2 xl:grid-cols-3 2xl:!grid-cols-4 !gap-[8px] sm:!gap-[16px] !w-full">
                       {recommendations.map((product) => (
                         <div
                           key={product.id}
-                          className="!bg-background !border !border-border !rounded-lg !p-[8px] sm:!p-[12px] hover:!shadow-lg !transition-shadow !w-full !flex !flex-col"
+                          className="!bg-background !border !border-border !rounded-lg !p-[8px] sm:!p-[12px] hover:!shadow-lg !transition-shadow !w-full !flex !flex-col group"
                         >
-                          <div className="!relative !mb-[8px]">
+                          <div className="!relative !mb-[8px] overflow-hidden">
                             <img
                               src={product.imageUrl || product.image}
                               alt={product.title}
-                              className="!w-full !h-[112px] sm:!h-[144px] !object-cover !rounded-md"
+                              className="!w-full !h-[112px] sm:!h-[144px] !object-cover !rounded-md group-hover:!scale-105 !transition-transform !duration-300"
                             />
+                            {product.featured && (
+                              <div className="!absolute !top-2 !right-2 !bg-primary !text-primary-foreground !px-2 !py-1 !rounded-full !text-xs !font-bold">
+                                Featured
+                              </div>
+                            )}
+                            {product.salePrice && (
+                              <div className="!absolute !top-2 !left-2 !bg-red-500 !text-white !px-2 !py-1 !rounded-full !text-xs !font-bold">
+                                Sale
+                              </div>
+                            )}
                           </div>
                           <h3 className="!text-[14px] sm:!text-[16px] !font-bold !text-foreground !mb-[4px] sm:!mb-[8px] h-[40px] sm:h-[48px] overflow-hidden">
                             {product.title}
                           </h3>
                           <div className="!flex !items-center !justify-between mt-auto">
                             <div className="!flex !items-center !gap-[8px]">
-                              <span className="!text-muted-foreground !text-[12px] sm:!text-[14px]">
-                                {product.price}
-                              </span>
+                              {product.salePrice ? (
+                                <div className="!flex !items-center !gap-2">
+                                  <span className="!text-primary !text-[14px] sm:!text-[16px] !font-bold">
+                                    {product.salePrice}
+                                  </span>
+                                  <span className="!text-muted-foreground !text-[12px] sm:!text-[14px] !line-through">
+                                    {product.regularPrice}
+                                  </span>
+                                </div>
+                              ) : (
+                                <span className="!text-muted-foreground !text-[12px] sm:!text-[14px]">
+                                  {product.price}
+                                </span>
+                              )}
                             </div>
-                            <button className="!bg-primary hover:!bg-primary-hover !text-primary-foreground !p-[6px] sm:!p-[8px] !rounded-md !transition-colors">
+                            <button className="!bg-primary hover:!bg-primary-hover !text-primary-foreground !p-[6px] sm:!p-[8px] !rounded-md !transition-colors group-hover:!scale-110 !transform !duration-200">
                               <ShoppingCart className="!w-[12px] !h-[12px] sm:!w-[16px] sm:!h-[16px]" />
                             </button>
                           </div>
@@ -1352,35 +1808,96 @@ const KalifindSearch: React.FC<{
             ) : isLoading || isPending ? (
               <LoadingSkeleton />
             ) : (
-              <div className="!grid !grid-cols-2 sm:!grid-cols-2 xl:grid-cols-3 2xl:!grid-cols-4 !gap-[8px] sm:!gap-[16px] !w-full">
-                {sortedProducts.map((product) => (
-                  <div
-                    key={product.id}
-                    className="!bg-background !border !border-border !rounded-lg !p-[8px] sm:!p-[12px] hover:!shadow-lg !transition-shadow !w-full !flex !flex-col"
-                  >
-                    <div className="!relative !mb-[8px]">
-                      <img
-                        src={product.imageUrl || product.image}
-                        alt={product.title}
-                        className="!w-full !h-[112px] sm:!h-[144px] !object-cover !rounded-md"
-                      />
-                    </div>
-                    <h3 className="!text-[14px] sm:!text-[16px] !font-bold !text-foreground !mb-[4px] sm:!mb-[8px] h-[40px] sm:h-[48px] overflow-hidden">
-                      {product.title}
-                    </h3>
-                    <div className="!flex !items-center !justify-between mt-auto">
-                      <div className="!flex !items-center !gap-[8px]">
-                        <span className="!text-muted-foreground !text-[12px] sm:!text-[14px]">
-                          {product.price}
-                        </span>
+              <>
+                <div className="!grid !grid-cols-2 sm:!grid-cols-2 xl:grid-cols-3 2xl:!grid-cols-4 !gap-[8px] sm:!gap-[16px] !w-full">
+                  {sortedProducts.map((product) => (
+                    <div
+                      key={product.id}
+                      className="!bg-background !border !border-border !rounded-lg !p-[8px] sm:!p-[12px] hover:!shadow-lg !transition-shadow !w-full !flex !flex-col group"
+                    >
+                      <div className="!relative !mb-[8px] overflow-hidden">
+                        <img
+                          src={product.imageUrl || product.image}
+                          alt={product.title}
+                          className="!w-full !h-[112px] sm:!h-[144px] !object-cover !rounded-md group-hover:!scale-105 !transition-transform !duration-300"
+                          loading="lazy"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjNmNGY2Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5YTNhZiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk5vIEltYWdlPC90ZXh0Pjwvc3ZnPg==';
+                          }}
+                        />
+                        {product.featured && (
+                          <div className="!absolute !top-2 !right-2 !bg-primary !text-primary-foreground !px-2 !py-1 !rounded-full !text-xs !font-bold">
+                            Featured
+                          </div>
+                        )}
+                        {product.salePrice && (
+                          <div className="!absolute !top-2 !left-2 !bg-red-500 !text-white !px-2 !py-1 !rounded-full !text-xs !font-bold">
+                            Sale
+                          </div>
+                        )}
                       </div>
-                      <button className="!bg-primary hover:!bg-primary-hover !text-primary-foreground !p-[6px] sm:!p-[8px] !rounded-md !transition-colors">
-                        <ShoppingCart className="!w-[12px] !h-[12px] sm:!w-[16px] sm:!h-[16px]" />
-                      </button>
+                      <h3 className="!text-[14px] sm:!text-[16px] !font-bold !text-foreground !mb-[4px] sm:!mb-[8px] h-[40px] sm:h-[48px] overflow-hidden">
+                        {product.title}
+                      </h3>
+                      <div className="!flex !items-center !justify-between mt-auto">
+                        <div className="!flex !items-center !gap-[8px]">
+                          {product.salePrice ? (
+                            <div className="!flex !items-center !gap-2">
+                              <span className="!text-primary !text-[14px] sm:!text-[16px] !font-bold">
+                                {product.salePrice}
+                              </span>
+                              <span className="!text-muted-foreground !text-[12px] sm:!text-[14px] !line-through">
+                                {product.regularPrice}
+                              </span>
+                            </div>
+                          ) : (
+                            <span className="!text-muted-foreground !text-[12px] sm:!text-[14px]">
+                              {product.price}
+                            </span>
+                          )}
+                        </div>
+                        <button className="!bg-primary hover:!bg-primary-hover !text-primary-foreground !p-[6px] sm:!p-[8px] !rounded-md !transition-colors group-hover:!scale-110 !transform !duration-200">
+                          <ShoppingCart className="!w-[12px] !h-[12px] sm:!w-[16px] sm:!h-[16px]" />
+                        </button>
+                      </div>
                     </div>
+                  ))}
+                </div>
+                
+                {/* Infinite scroll trigger for mobile */}
+                {isMobile && hasMoreProducts && (
+                  <div id="load-more-trigger" className="!w-full !h-4 !my-4">
+                    {isLoadingMore && (
+                      <div className="!flex !justify-center !items-center !py-4">
+                        <div className="!flex !items-center !gap-2">
+                          <div className="!flex !space-x-2">
+                            <div className="!w-2 !h-2 !bg-primary !rounded-full !animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                            <div className="!w-2 !h-2 !bg-primary !rounded-full !animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                            <div className="!w-2 !h-2 !bg-primary !rounded-full !animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                          </div>
+                          <span className="!text-sm !text-muted-foreground">
+                            Loading {Math.min(12, totalProducts - displayedProducts)} more products...
+                          </span>
+                        </div>
+                      </div>
+                    )}
                   </div>
-                ))}
-              </div>
+                )}
+                
+                {/* Load More button for desktop */}
+                {!isMobile && hasMoreProducts && (
+                  <div className="!flex !justify-center !mt-8">
+                    <button
+                      onClick={loadMoreProducts}
+                      disabled={isLoadingMore}
+                      className="!bg-primary hover:!bg-primary-hover !text-primary-foreground !px-8 !py-3 !rounded-lg !font-medium !transition-colors !disabled:opacity-50 !disabled:cursor-not-allowed"
+                    >
+                      {isLoadingMore ? 'Loading...' : `Load More (${Math.min(12, totalProducts - displayedProducts)} more)`}
+                    </button>
+                  </div>
+                )}
+              </>
             )}
 
             {!isLoading && !isPending && !showRecommendations && sortedProducts.length === 0 && (

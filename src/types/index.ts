@@ -54,6 +54,36 @@ export interface FilterState {
   brands: string[];
   genders?: string[];
   tags: string[];
+  // Mandatory facets
+  stockStatus: string[];      // In Stock, Out of Stock, On Backorder
+  featuredProducts: boolean; // Featured vs Regular products
+  saleStatus: boolean;       // On Sale vs Regular Price
+}
+
+// Facet configuration for mandatory and optional facets
+export interface FacetConfig {
+  field: string;        // Facet field name
+  label: string;        // Display label
+  visible: boolean;     // Show/hide facet
+  terms: number;        // Number of terms to show
+  mandatory: boolean;   // Whether this is a mandatory facet
+}
+
+// Mandatory facets (Always Visible)
+export interface MandatoryFacets {
+  categories: boolean;
+  priceRange: boolean;
+  stockStatus: boolean;
+  featuredProducts: boolean;
+  saleStatus: boolean;
+}
+
+// Optional facets (Configurable via Backend)
+export interface OptionalFacets {
+  brands?: boolean;
+  sizes?: boolean;
+  colors?: boolean;
+  tags?: boolean;
 }
 
 export interface SearchConfig {
