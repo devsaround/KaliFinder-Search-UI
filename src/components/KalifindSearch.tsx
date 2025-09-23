@@ -10,6 +10,7 @@ import { Search, ShoppingCart, X, Filter, ChevronDown } from "lucide-react";
 
 import { useDebounce } from "@/hooks/use-debounce";
 import { Slider } from "@/components/ui/slider";
+import { addToCart, handleCartError } from "@/utils/cart";
 import {
   Accordion,
   AccordionContent,
@@ -106,6 +107,10 @@ const KalifindSearch: React.FC<{
     tags: false,
   });
 
+  // Cart functionality state
+  const [addingToCart, setAddingToCart] = useState<string | null>(null);
+  const [cartMessage, setCartMessage] = useState<string | null>(null);
+
   const [filters, setFilters] = useState<FilterState>({
     categories: [],
     priceRange: [0, 10000], // Default price range
@@ -171,6 +176,50 @@ const KalifindSearch: React.FC<{
 
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
   const debouncedPriceRange = useDebounce(filters.priceRange, 300);
+
+  // Fuzzy matching function for better autocomplete
+  const fuzzyMatch = (query: string, suggestion: string): boolean => {
+    if (!query || !suggestion) return false;
+    
+    const queryLower = query.toLowerCase().trim();
+    const suggestionLower = suggestion.toLowerCase().trim();
+    
+    // Exact match
+    if (suggestionLower.includes(queryLower)) return true;
+    
+    // Fuzzy matching - check if all characters in query appear in order in suggestion
+    let queryIndex = 0;
+    for (let i = 0; i < suggestionLower.length && queryIndex < queryLower.length; i++) {
+      if (suggestionLower[i] === queryLower[queryIndex]) {
+        queryIndex++;
+      }
+    }
+    
+    // If we found all characters in order, it's a match
+    return queryIndex === queryLower.length;
+  };
+
+  // Function to score and sort suggestions by relevance
+  const scoreSuggestion = (query: string, suggestion: string): number => {
+    if (!query || !suggestion) return 0;
+    
+    const queryLower = query.toLowerCase().trim();
+    const suggestionLower = suggestion.toLowerCase().trim();
+    
+    // Exact match gets highest score
+    if (suggestionLower === queryLower) return 100;
+    
+    // Starts with query gets high score
+    if (suggestionLower.startsWith(queryLower)) return 90;
+    
+    // Contains query gets medium score
+    if (suggestionLower.includes(queryLower)) return 70;
+    
+    // Fuzzy match gets lower score
+    if (fuzzyMatch(query, suggestion)) return 50;
+    
+    return 0;
+  };
 
   const searchRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -524,9 +573,9 @@ const KalifindSearch: React.FC<{
             console.log("Autocomplete API result:", result);
 
             // Better handling of different response formats
-            let suggestions: string[] = [];
+            let rawSuggestions: string[] = [];
             if (Array.isArray(result)) {
-              suggestions = result
+              rawSuggestions = result
                 .map((r: any) => {
                   // Handle different possible field names
                   return (
@@ -539,9 +588,9 @@ const KalifindSearch: React.FC<{
                 })
                 .filter(Boolean);
             } else if (result && Array.isArray(result.suggestions)) {
-              suggestions = result.suggestions.map((s: any) => String(s));
+              rawSuggestions = result.suggestions.map((s: any) => String(s));
             } else if (result && Array.isArray(result.products)) {
-              suggestions = result.products
+              rawSuggestions = result.products
                 .map((r: any) => {
                   return (
                     r.title ||
@@ -554,7 +603,22 @@ const KalifindSearch: React.FC<{
                 .filter(Boolean);
             }
 
-            setAutocompleteSuggestions(suggestions);
+            // Apply fuzzy matching and scoring to improve suggestions
+            const query = debouncedSearchQuery.trim();
+            const scoredSuggestions = rawSuggestions
+              .map(suggestion => ({
+                text: suggestion,
+                score: scoreSuggestion(query, suggestion)
+              }))
+              .filter(item => item.score > 0) // Only include suggestions with positive scores
+              .sort((a, b) => b.score - a.score) // Sort by score (highest first)
+              .map(item => item.text)
+              .slice(0, 10); // Limit to top 10 suggestions
+
+            console.log("Raw suggestions:", rawSuggestions);
+            console.log("Filtered and scored suggestions:", scoredSuggestions);
+
+            setAutocompleteSuggestions(scoredSuggestions);
             setHighlightedSuggestionIndex(-1); // Reset highlight when new suggestions arrive
           } catch (error) {
             console.error("Failed to fetch autocomplete suggestions:", error);
@@ -695,6 +759,97 @@ const KalifindSearch: React.FC<{
     });
   };
 
+  // New function to fetch products from autocomplete API
+  const performAutocompleteSearch = async (query: string) => {
+    if (!storeUrl) return;
+
+    startTransition(() => {
+      setIsLoading(true);
+      setCurrentPage(1);
+      setHasMoreProducts(true);
+      const fetchAutocompleteProducts = async () => {
+        try {
+          const params = new URLSearchParams();
+          params.append("q", query);
+          params.append("storeUrl", storeUrl);
+
+          const response = await fetch(
+            `${import.meta.env.VITE_BACKEND_URL}/v1/autocomplete?${params.toString()}`,
+            {},
+          );
+
+          console.log(
+            `Autocomplete API call: ${import.meta.env.VITE_BACKEND_URL}/v1/autocomplete?${params.toString()}`,
+          );
+          
+          if (!response.ok) {
+            throw new Error("bad response");
+          }
+          
+          const result = await response.json();
+          console.log("Autocomplete API result:", result);
+
+          // Handle different response formats from autocomplete API
+          let products: Product[] = [];
+          let total = 0;
+          let hasMore = false;
+
+          if (Array.isArray(result)) {
+            // If result is an array, treat as products
+            products = result;
+            total = result.length;
+            hasMore = false;
+          } else if (result && Array.isArray(result.products)) {
+            // If result has products property
+            products = result.products;
+            total = result.total || result.products.length;
+            hasMore = result.hasMore || false;
+          } else if (result && Array.isArray(result.suggestions)) {
+            // If result has suggestions, convert to products format
+            products = result.suggestions.map((suggestion: any) => ({
+              id: suggestion.id || suggestion.title || String(Math.random()),
+              title: suggestion.title || suggestion.name || suggestion.product_title || suggestion.product_name || String(suggestion),
+              price: suggestion.price || "0",
+              image: suggestion.image || suggestion.imageUrl || "",
+              imageUrl: suggestion.imageUrl || suggestion.image || "",
+              regularPrice: suggestion.regularPrice || suggestion.price || "0",
+              salePrice: suggestion.salePrice || "",
+              featured: suggestion.featured || false,
+              categories: suggestion.categories || [],
+              brands: suggestion.brands || [],
+              colors: suggestion.colors || [],
+              sizes: suggestion.sizes || [],
+              tags: suggestion.tags || [],
+            }));
+            total = products.length;
+            hasMore = false;
+          } else {
+            console.error(
+              "Kalifind Search: Unexpected autocomplete response format:",
+              result,
+            );
+            products = [];
+            total = 0;
+            hasMore = false;
+          }
+
+          setFilteredProducts(products);
+          setTotalProducts(total);
+          setDisplayedProducts(products.length);
+          setHasMoreProducts(hasMore);
+          console.log("Autocomplete products:", products);
+        } catch (error) {
+          console.error("Failed to fetch autocomplete products:", error);
+          setFilteredProducts([]);
+        } finally {
+          setIsLoading(false);
+        }
+      };
+
+      fetchAutocompleteProducts();
+    });
+  };
+
   // search products
   useEffect(() => {
     console.log("Search effect triggered:", {
@@ -806,9 +961,9 @@ const KalifindSearch: React.FC<{
   const handleSuggestionClick = (suggestion: string) => {
     // Clicking a suggestion:
     // - Sets the clicked value into the search input
-    // - Automatically triggers a search for that value
+    // - Automatically triggers an autocomplete search for that value
     // - Saves the clicked value into recent searches via Zustand and updates localStorage
-    console.log("Suggestion clickeddddddddd:", suggestion);
+    console.log("Suggestion clicked:", suggestion);
 
     // Close autocomplete first
     setShowAutocomplete(false);
@@ -827,8 +982,8 @@ const KalifindSearch: React.FC<{
     // Set the search query
     setSearchQuery(suggestion);
 
-    // Perform search immediately - no conditions, just search!
-    performSearch(suggestion);
+    // Perform autocomplete search immediately - fetch data from autocomplete API!
+    performAutocompleteSearch(suggestion);
 
     // Blur input to close any mobile keyboards
     inputRef.current?.blur();
@@ -1102,6 +1257,50 @@ const KalifindSearch: React.FC<{
     }
   };
 
+  // Product click handler
+  const handleProductClick = (product: Product) => {
+    if (product.productUrl) {
+      window.open(product.productUrl, "_blank");
+    } else if (product.url) {
+      window.open(product.url, "_blank");
+    } else {
+      console.warn("No product URL available for:", product.title);
+    }
+  };
+
+  // Cart functionality
+  const handleAddToCart = async (product: Product) => {
+    if (!storeUrl) {
+      console.error("Store URL is required for cart operations");
+      return;
+    }
+
+    setAddingToCart(product.id);
+    setCartMessage(null);
+
+    try {
+      const result = await addToCart(product, storeUrl);
+      setCartMessage(result.message || "Added to cart!");
+      
+      // Clear message after 3 seconds
+      setTimeout(() => {
+        setCartMessage(null);
+      }, 3000);
+      
+    } catch (error) {
+      console.error("Add to cart failed:", error);
+      handleCartError(error, product);
+      setCartMessage("Failed to add to cart. Redirecting to product page...");
+      
+      // Clear message after 3 seconds
+      setTimeout(() => {
+        setCartMessage(null);
+      }, 3000);
+    } finally {
+      setAddingToCart(null);
+    }
+  };
+
   const LoadingSkeleton = () => (
     <div className="!grid !grid-cols-2 sm:!grid-cols-2 xl:grid-cols-3 2xl:!grid-cols-4 !gap-[16px] !w-full">
       {Array.from({ length: 8 }).map((_, i) => (
@@ -1184,8 +1383,7 @@ const KalifindSearch: React.FC<{
               {showAutocomplete &&
                 searchQuery.length > 0 &&
                 (isAutocompleteLoading ||
-                  autocompleteSuggestions.length > 0 ||
-                  (!isAutocompleteLoading && autocompleteSuggestions.length === 0)) && (
+                  autocompleteSuggestions.length > 0) && (
                   <div className="!absolute !top-full !left-0 !right-0 !bg-background !border !border-border !rounded-lg !shadow-lg !z-[9999999] !mt-[4px] !w-full">
                     <div className="[&_*]:!z-[9999999] !p-[16px]">
                       {isAutocompleteLoading ? (
@@ -2036,7 +2234,8 @@ const KalifindSearch: React.FC<{
                       {recommendations.map((product) => (
                         <div
                           key={product.id}
-                          className="!bg-background !border !border-border !rounded-lg !p-[8px] sm:!p-[12px] hover:!shadow-lg !transition-shadow !w-full !flex !flex-col group"
+                          onClick={() => handleProductClick(product)}
+                          className="!bg-background !border !border-border !rounded-lg !p-[8px] sm:!p-[12px] hover:!shadow-lg !transition-shadow !w-full !flex !flex-col group !cursor-pointer"
                         >
                           <div className="!relative !mb-[8px] overflow-hidden">
                             <img
@@ -2094,8 +2293,19 @@ const KalifindSearch: React.FC<{
                                 </span>
                               )}
                             </div>
-                            <button className="!bg-primary hover:!bg-primary-hover !text-primary-foreground !p-[6px] sm:!p-[8px] !rounded-md !transition-colors group-hover:!scale-110 !transform !duration-200">
-                              <ShoppingCart className="!w-[12px] !h-[12px] sm:!w-[16px] sm:!h-[16px]" />
+                            <button 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleAddToCart(product);
+                              }}
+                              disabled={addingToCart === product.id}
+                              className="!bg-primary hover:!bg-primary-hover !text-primary-foreground !p-[6px] sm:!p-[8px] !rounded-md !transition-colors group-hover:!scale-110 !transform !duration-200 disabled:!opacity-50 disabled:!cursor-not-allowed"
+                            >
+                              {addingToCart === product.id ? (
+                                <div className="!w-[12px] !h-[12px] sm:!w-[16px] sm:!h-[16px] !border-2 !border-primary-foreground !border-t-transparent !rounded-full !animate-spin"></div>
+                              ) : (
+                                <ShoppingCart className="!w-[12px] !h-[12px] sm:!w-[16px] sm:!h-[16px]" />
+                              )}
                             </button>
                           </div>
                         </div>
@@ -2121,7 +2331,8 @@ const KalifindSearch: React.FC<{
                   {sortedProducts.map((product) => (
                     <div
                       key={product.id}
-                      className="!bg-background !border !border-border !rounded-lg !p-[8px] sm:!p-[12px] hover:!shadow-lg !transition-shadow !w-full !flex !flex-col group"
+                      onClick={() => handleProductClick(product)}
+                      className="!bg-background !border !border-border !rounded-lg !p-[8px] sm:!p-[12px] hover:!shadow-lg !transition-shadow !w-full !flex !flex-col group !cursor-pointer"
                     >
                       <div className="!relative !mb-[8px] overflow-hidden">
                         <img
@@ -2185,8 +2396,19 @@ const KalifindSearch: React.FC<{
                             </span>
                           )}
                         </div>
-                        <button className="!bg-primary hover:!bg-primary-hover !text-primary-foreground !p-[6px] sm:!p-[8px] !rounded-md !transition-colors group-hover:!scale-110 !transform !duration-200">
-                          <ShoppingCart className="!w-[12px] !h-[12px] sm:!w-[16px] sm:!h-[16px]" />
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleAddToCart(product);
+                          }}
+                          disabled={addingToCart === product.id}
+                          className="!bg-primary hover:!bg-primary-hover !text-primary-foreground !p-[6px] sm:!p-[8px] !rounded-md !transition-colors group-hover:!scale-110 !transform !duration-200 disabled:!opacity-50 disabled:!cursor-not-allowed"
+                        >
+                          {addingToCart === product.id ? (
+                            <div className="!w-[12px] !h-[12px] sm:!w-[16px] sm:!h-[16px] !border-2 !border-primary-foreground !border-t-transparent !rounded-full !animate-spin"></div>
+                          ) : (
+                            <ShoppingCart className="!w-[12px] !h-[12px] sm:!w-[16px] sm:!h-[16px]" />
+                          )}
                         </button>
                       </div>
                     </div>
@@ -2251,6 +2473,16 @@ const KalifindSearch: React.FC<{
                   </p>
                 </div>
               )}
+
+            {/* Cart Message Display */}
+            {cartMessage && (
+              <div className="!fixed !top-4 !right-4 !z-[999999] !bg-primary !text-primary-foreground !px-4 !py-2 !rounded-lg !shadow-lg !max-w-sm">
+                <div className="!flex !items-center !gap-2">
+                  <div className="!w-4 !h-4 !border-2 !border-primary-foreground !border-t-transparent !rounded-full !animate-spin"></div>
+                  <span className="!text-sm !font-medium">{cartMessage}</span>
+                </div>
+              </div>
+            )}
           </div>
         </main>
       </div>

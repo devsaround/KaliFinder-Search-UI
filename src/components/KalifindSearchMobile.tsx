@@ -86,7 +86,7 @@ const KalifindSearchMobile: React.FC<KalifindSearchMobileProps> = ({
       </div>
 
       {/* Autocomplete dropdown for mobile */}
-      {showAutocomplete && searchQuery.length > 0 && (isAutocompleteLoading || autocompleteSuggestions.length > 0 || (!isAutocompleteLoading && autocompleteSuggestions.length === 0)) && (
+      {showAutocomplete && searchQuery.length > 0 && (isAutocompleteLoading || autocompleteSuggestions.length > 0) && (
         <div className="absolute top-full left-0 right-0 bg-background border border-border rounded-lg shadow-lg z-50 mt-1 mx-4">
           <div className="p-4">
             {isAutocompleteLoading ? (

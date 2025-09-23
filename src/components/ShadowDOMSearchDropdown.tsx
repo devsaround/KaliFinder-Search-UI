@@ -28,6 +28,50 @@ const ShadowDOMSearchDropdown: React.FC<ShadowDOMSearchDropdownProps> = ({
   const searchRef = useRef<HTMLDivElement>(null);
   const shadowInitializedRef = useRef(false);
 
+  // Fuzzy matching function for better autocomplete
+  const fuzzyMatch = (query: string, suggestion: string): boolean => {
+    if (!query || !suggestion) return false;
+    
+    const queryLower = query.toLowerCase().trim();
+    const suggestionLower = suggestion.toLowerCase().trim();
+    
+    // Exact match
+    if (suggestionLower.includes(queryLower)) return true;
+    
+    // Fuzzy matching - check if all characters in query appear in order in suggestion
+    let queryIndex = 0;
+    for (let i = 0; i < suggestionLower.length && queryIndex < queryLower.length; i++) {
+      if (suggestionLower[i] === queryLower[queryIndex]) {
+        queryIndex++;
+      }
+    }
+    
+    // If we found all characters in order, it's a match
+    return queryIndex === queryLower.length;
+  };
+
+  // Function to score and sort suggestions by relevance
+  const scoreSuggestion = (query: string, suggestion: string): number => {
+    if (!query || !suggestion) return 0;
+    
+    const queryLower = query.toLowerCase().trim();
+    const suggestionLower = suggestion.toLowerCase().trim();
+    
+    // Exact match gets highest score
+    if (suggestionLower === queryLower) return 100;
+    
+    // Starts with query gets high score
+    if (suggestionLower.startsWith(queryLower)) return 90;
+    
+    // Contains query gets medium score
+    if (suggestionLower.includes(queryLower)) return 70;
+    
+    // Fuzzy match gets lower score
+    if (fuzzyMatch(query, suggestion)) return 50;
+    
+    return 0;
+  };
+
   // Check if device is mobile or tablet (using 1280px breakpoint)
   useEffect(() => {
     const checkScreenSize = () => {
@@ -102,21 +146,36 @@ const ShadowDOMSearchDropdown: React.FC<ShadowDOMSearchDropdownProps> = ({
         const result = await response.json();
         
         // Better handling of different response formats
-        let suggestions: string[] = [];
+        let rawSuggestions: string[] = [];
         if (Array.isArray(result)) {
-          suggestions = result.map((r: any) => {
+          rawSuggestions = result.map((r: any) => {
             // Handle different possible field names
             return r.title || r.name || r.product_title || r.product_name || String(r);
           }).filter(Boolean);
         } else if (result && Array.isArray(result.suggestions)) {
-          suggestions = result.suggestions.map((s: any) => String(s));
+          rawSuggestions = result.suggestions.map((s: any) => String(s));
         } else if (result && Array.isArray(result.products)) {
-          suggestions = result.products.map((r: any) => {
+          rawSuggestions = result.products.map((r: any) => {
             return r.title || r.name || r.product_title || r.product_name || String(r);
           }).filter(Boolean);
         }
+
+        // Apply fuzzy matching and scoring to improve suggestions
+        const query = searchQuery.trim();
+        const scoredSuggestions = rawSuggestions
+          .map(suggestion => ({
+            text: suggestion,
+            score: scoreSuggestion(query, suggestion)
+          }))
+          .filter(item => item.score > 0) // Only include suggestions with positive scores
+          .sort((a, b) => b.score - a.score) // Sort by score (highest first)
+          .map(item => item.text)
+          .slice(0, 10); // Limit to top 10 suggestions
+
+        console.log("Mobile raw suggestions:", rawSuggestions);
+        console.log("Mobile filtered and scored suggestions:", scoredSuggestions);
         
-        setAutocompleteSuggestions(suggestions);
+        setAutocompleteSuggestions(scoredSuggestions);
         setHighlightedSuggestionIndex(-1); // Reset highlight when new suggestions arrive
       } catch (error) {
         console.error("Failed to fetch autocomplete suggestions:", error);

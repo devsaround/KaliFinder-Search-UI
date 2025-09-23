@@ -44,6 +44,10 @@ export interface Product {
   status?: string;
   featured?: boolean;
   storeUrl?: string;
+  // Cart-specific fields
+  productType?: string; // "simple" or "variable"
+  shopifyVariantId?: string; // Shopify variant ID
+  wooProductId?: string; // WooCommerce product ID
 }
 
 export interface FilterState {
@@ -145,4 +149,27 @@ export interface FilterCounts {
   colorCounts: { [key: string]: number };
   sizeCounts: { [key: string]: number };
   tagCounts: { [key: string]: number };
+}
+
+// Cart functionality types
+export interface CartProduct extends Product {
+  // Required for cart operations
+  storeUrl: string;
+  storeType: 'shopify' | 'woocommerce';
+}
+
+export interface CartResponse {
+  success: boolean;
+  message?: string;
+  cart?: {
+    item_count: number;
+    total_price: string;
+    items: any[];
+  };
+}
+
+export interface CartError {
+  error: string;
+  message: string;
+  fallbackUrl?: string;
 }
