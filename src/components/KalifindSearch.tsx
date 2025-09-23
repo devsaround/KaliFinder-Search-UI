@@ -55,6 +55,7 @@ const KalifindSearch: React.FC<{
     string[]
   >([]);
   const [isAutocompleteLoading, setIsAutocompleteLoading] = useState(false);
+  const [highlightedSuggestionIndex, setHighlightedSuggestionIndex] = useState(-1);
   const [isPriceLoading, setIsPriceLoading] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [hasMoreProducts, setHasMoreProducts] = useState(true);
@@ -150,9 +151,10 @@ const KalifindSearch: React.FC<{
       initialSearchQuery !== undefined &&
       initialSearchQuery !== searchQuery
     ) {
+      console.log("Syncing search query from parent:", initialSearchQuery);
       setSearchQuery(initialSearchQuery);
     }
-  }, [initialSearchQuery]);
+  }, [initialSearchQuery, searchQuery]);
 
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
   const debouncedPriceRange = useDebounce(filters.priceRange, 300);
@@ -460,7 +462,8 @@ const KalifindSearch: React.FC<{
 
             const result = await response.json();
             console.log("auto", result);
-            setAutocompleteSuggestions(result.map((r: Product) => r.name) || []);
+            setAutocompleteSuggestions(result.map((r: Product) => r.title || r.name) || []);
+            setHighlightedSuggestionIndex(-1); // Reset highlight when new suggestions arrive
           } catch (error) {
             console.error("Failed to fetch autocomplete suggestions:", error);
             setAutocompleteSuggestions([]);
@@ -476,7 +479,17 @@ const KalifindSearch: React.FC<{
 
   // search products
   useEffect(() => {
+    console.log("Search effect triggered:", {
+      isPriceLoading,
+      storeUrl,
+      showRecommendations,
+      isInitialState,
+      debouncedSearchQuery,
+      searchQuery
+    });
+    
     if (isPriceLoading || !storeUrl || showRecommendations || isInitialState) {
+      console.log("Search effect skipped due to conditions");
       return; // Wait for the initial price to be loaded or skip if showing recommendations or in initial state
     }
 
@@ -642,6 +655,11 @@ const KalifindSearch: React.FC<{
   const handleSearch = (query: string) => {
     setSearchQuery(query);
     
+    // Show autocomplete when user starts typing
+    if (query.trim()) {
+      setShowAutocomplete(true);
+    }
+    
     // Add to recent searches if it's a new search
     if (query.trim() && !recentSearches.includes(query.trim())) {
       setRecentSearches((prev) => {
@@ -652,9 +670,6 @@ const KalifindSearch: React.FC<{
         return newSearches;
       });
     }
-    
-    // Hide autocomplete when searching
-    setShowAutocomplete(false);
   };
 
   const handlePopularSearchClick = (term: string) => {
@@ -667,8 +682,11 @@ const KalifindSearch: React.FC<{
     // - Sets the clicked value into the search input
     // - Automatically triggers a search for that value
     // - Saves the clicked value into recent searches via Zustand and updates localStorage
+    console.log("Suggestion clicked:", suggestion);
     setSearchQuery(suggestion);
+    console.log("Search query set to:", suggestion);
     setShowAutocomplete(false);
+    setHighlightedSuggestionIndex(-1);
     inputRef.current?.blur();
     
     // Add to recent searches
@@ -681,12 +699,28 @@ const KalifindSearch: React.FC<{
         return newSearches;
       });
     }
+
+    // Trigger search immediately by updating the search behavior state
+    setShowRecommendations(false);
+    setShowFilters(true);
+    setIsInitialState(false);
+    if (!hasSearched) {
+      setHasSearched(true);
+    }
   };
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.key === "Enter") {
       event.preventDefault();
       const query = event.currentTarget.value;
+      
+      // If there's a highlighted suggestion, use that instead
+      if (highlightedSuggestionIndex >= 0 && autocompleteSuggestions[highlightedSuggestionIndex]) {
+        const selectedSuggestion = autocompleteSuggestions[highlightedSuggestionIndex];
+        handleSuggestionClick(selectedSuggestion);
+        return;
+      }
+      
       if (query) {
         setRecentSearches((prev) => {
           const newSearches = [
@@ -697,7 +731,32 @@ const KalifindSearch: React.FC<{
         });
         setShowAutocomplete(false);
         inputRef.current?.blur();
+        
+        // Trigger search immediately when Enter is pressed
+        setShowRecommendations(false);
+        setShowFilters(true);
+        setIsInitialState(false);
+        if (!hasSearched) {
+          setHasSearched(true);
+        }
       }
+    } else if (event.key === "ArrowDown") {
+      event.preventDefault();
+      if (showAutocomplete && autocompleteSuggestions.length > 0) {
+        setHighlightedSuggestionIndex(prev => 
+          prev < autocompleteSuggestions.length - 1 ? prev + 1 : 0
+        );
+      }
+    } else if (event.key === "ArrowUp") {
+      event.preventDefault();
+      if (showAutocomplete && autocompleteSuggestions.length > 0) {
+        setHighlightedSuggestionIndex(prev => 
+          prev > 0 ? prev - 1 : autocompleteSuggestions.length - 1
+        );
+      }
+    } else if (event.key === "Escape") {
+      setShowAutocomplete(false);
+      setHighlightedSuggestionIndex(-1);
     }
   };
 
@@ -962,15 +1021,13 @@ const KalifindSearch: React.FC<{
                 </div>
               </div>
 
-              {showAutocomplete &&
-                (autocompleteSuggestions.length > 0 ||
-                  isAutocompleteLoading ||
-                  debouncedSearchQuery) && (
+              {showAutocomplete && debouncedSearchQuery && (
                   <div className="!absolute !top-full !left-0 !right-0 !bg-background !border !border-border !rounded-lg !shadow-lg !z-50 !mt-[4px] !w-full">
                     <div className="!z-[999] !p-[16px]">
                       {isAutocompleteLoading ? (
-                        <div className="!text-center !py-[8px] !text-muted-foreground">
-                          Loading suggestions...
+                        <div className="!flex !items-center !justify-center !py-[12px] !gap-[8px] !text-muted-foreground">
+                          <div className="!w-4 !h-4 !border-2 !border-muted-foreground !border-t-transparent !rounded-full !animate-spin"></div>
+                          <span>Loading suggestions...</span>
                         </div>
                       ) : autocompleteSuggestions.length > 0 ? (
                         <>
@@ -982,10 +1039,15 @@ const KalifindSearch: React.FC<{
                               (suggestion, index) => (
                                 <div
                                   key={index}
-                                  className="!flex !items-center !gap-[8px] !cursor-pointer hover:!bg-muted !p-[8px] !rounded"
-                                  onClick={() => {
+                                  className={`!flex !items-center !gap-[8px] !cursor-pointer hover:!bg-muted !p-[8px] !rounded ${
+                                    index === highlightedSuggestionIndex ? '!bg-muted' : ''
+                                  }`}
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    console.log("Desktop suggestion clicked:", suggestion);
+                                    alert(`Suggestion clicked: ${suggestion}`);
                                     handleSuggestionClick(suggestion);
-                                    setShowAutocomplete(false);
                                   }}
                                 >
                                   <Search className="!w-[16px] !h-[16px] !text-muted-foreground" />
@@ -997,9 +1059,10 @@ const KalifindSearch: React.FC<{
                             )}
                           </div>
                         </>
-                      ) : debouncedSearchQuery && !isAutocompleteLoading ? (
-                        <div className="!text-center !py-[8px] !text-muted-foreground">
-                          No suggestions found for {debouncedSearchQuery}.
+                      ) : !isAutocompleteLoading ? (
+                        <div className="!flex !items-center !justify-center !py-[12px] !text-muted-foreground">
+                          <Search className="!w-4 !h-4 !mr-2" />
+                          <span>No suggestions found for "{debouncedSearchQuery}"</span>
                         </div>
                       ) : null}
                     </div>

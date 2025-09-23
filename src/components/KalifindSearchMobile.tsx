@@ -8,6 +8,13 @@ interface KalifindSearchMobileProps {
   handleSearch: (query: string) => void;
   handleKeyDown: (event: React.KeyboardEvent<HTMLInputElement>) => void;
   onClose: () => void;
+  showAutocomplete?: boolean;
+  setShowAutocomplete?: (show: boolean) => void;
+  autocompleteSuggestions?: string[];
+  isAutocompleteLoading?: boolean;
+  handleSuggestionClick?: (suggestion: string) => void;
+  highlightedSuggestionIndex?: number;
+  setHighlightedSuggestionIndex?: (index: number) => void;
 }
 
 const KalifindSearchMobile: React.FC<KalifindSearchMobileProps> = ({
@@ -17,6 +24,13 @@ const KalifindSearchMobile: React.FC<KalifindSearchMobileProps> = ({
   handleSearch,
   handleKeyDown,
   onClose,
+  showAutocomplete = false,
+  setShowAutocomplete,
+  autocompleteSuggestions = [],
+  isAutocompleteLoading = false,
+  handleSuggestionClick,
+  highlightedSuggestionIndex = -1,
+  setHighlightedSuggestionIndex,
 }) => {
   return (
     <div className="sticky top-0 z-50 bg-background w-full border-b border-border">
@@ -47,6 +61,7 @@ const KalifindSearchMobile: React.FC<KalifindSearchMobileProps> = ({
                     type="text"
                     value={searchQuery}
                     onChange={(e) => handleSearch(e.target.value)}
+                    onFocus={() => setShowAutocomplete?.(true)}
                     onKeyDown={handleKeyDown}
                     placeholder="Search"
                     className="h-full w-full pl-10 pr-4 py-2 text-base text-foreground placeholder-muted-foreground focus:outline-none border-none ring-0"
@@ -65,6 +80,51 @@ const KalifindSearchMobile: React.FC<KalifindSearchMobileProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Autocomplete dropdown for mobile */}
+      {showAutocomplete && searchQuery && (
+        <div className="absolute top-full left-0 right-0 bg-background border border-border rounded-lg shadow-lg z-50 mt-1 mx-4">
+          <div className="p-4">
+            {isAutocompleteLoading ? (
+              <div className="flex items-center justify-center py-3 gap-2 text-muted-foreground">
+                <div className="w-4 h-4 border-2 border-muted-foreground border-t-transparent rounded-full animate-spin"></div>
+                <span>Loading suggestions...</span>
+              </div>
+            ) : autocompleteSuggestions.length > 0 ? (
+              <>
+                <h3 className="text-sm font-medium text-foreground mb-3">
+                  Suggestions
+                </h3>
+                <div className="space-y-2">
+                  {autocompleteSuggestions.map((suggestion, index) => (
+                    <div
+                      key={index}
+                      className={`flex items-center gap-2 cursor-pointer hover:bg-muted p-2 rounded ${
+                        index === highlightedSuggestionIndex ? 'bg-muted' : ''
+                      }`}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        console.log("Mobile suggestion clicked:", suggestion);
+                        alert(`Mobile suggestion clicked: ${suggestion}`);
+                        handleSuggestionClick?.(suggestion);
+                      }}
+                    >
+                      <Search className="w-4 h-4 text-muted-foreground" />
+                      <span className="text-muted-foreground">{suggestion}</span>
+                    </div>
+                  ))}
+                </div>
+              </>
+            ) : !isAutocompleteLoading ? (
+              <div className="flex items-center justify-center py-3 text-muted-foreground">
+                <Search className="w-4 h-4 mr-2" />
+                <span>No suggestions found for "{searchQuery}"</span>
+              </div>
+            ) : null}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
