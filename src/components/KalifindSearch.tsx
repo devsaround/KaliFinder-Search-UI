@@ -311,6 +311,8 @@ const KalifindSearch: React.FC<{
         try {
           const params = new URLSearchParams();
           params.append("storeUrl", storeUrl);
+          // Set a very high limit to get ALL products for filter data
+          params.append("limit", "1000"); // High limit to get all products for filter data
 
           const response = await fetch(
             `${import.meta.env.VITE_BACKEND_URL}/v1/search?${params.toString()}`,
@@ -338,6 +340,7 @@ const KalifindSearch: React.FC<{
           }
 
           if (products && products.length > 0) {
+            console.log("Filter initialization - Total products fetched:", products.length);
             setTotalProducts(products.length);
             const prices = products
               .map((p: Product) => parseFloat(p.price))
@@ -405,6 +408,14 @@ const KalifindSearch: React.FC<{
             setColorCounts(colorCounts);
             setSizeCounts(sizeCounts);
             setTagCounts(tagCounts);
+            
+            console.log("Filter counts from ALL products:", {
+              categories: categoryCounts,
+              brands: brandCounts,
+              colors: colorCounts,
+              sizes: sizeCounts,
+              tags: tagCounts
+            });
           }
         } catch (err) {
           if (retries > 0) {
