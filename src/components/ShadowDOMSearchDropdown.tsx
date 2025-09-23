@@ -3,6 +3,8 @@ import { createRoot } from "react-dom/client";
 import { X, Search } from "lucide-react";
 import ScrollToTop from "./ScrollToTop";
 import { ShadowDOMSearchDropdownProps } from "../types";
+import KalifindSearchDesktop from "./KalifindSearchDesktop";
+import KalifindSearchMobile from "./KalifindSearchMobile";
 
 // Lazy load the EcommerceSearch component
 const EcommerceSearch = lazy(() => import("./KalifindSearch.tsx"));
@@ -22,10 +24,10 @@ const ShadowDOMSearchDropdown: React.FC<ShadowDOMSearchDropdownProps> = ({
   const inputRef = useRef<HTMLInputElement>(null);
   const searchRef = useRef<HTMLDivElement>(null);
 
-  // Check if device is mobile or tablet
+  // Check if device is mobile or tablet (using 1280px breakpoint)
   useEffect(() => {
     const checkScreenSize = () => {
-      setIsMobileOrTablet(window.innerWidth < 1024); // lg breakpoint
+      setIsMobileOrTablet(window.innerWidth < 1280); // 1280px breakpoint
     };
 
     checkScreenSize();
@@ -392,57 +394,9 @@ const ShadowDOMSearchDropdown: React.FC<ShadowDOMSearchDropdownProps> = ({
         }
       };
 
-      // Fixed search header for mobile/tablet - stays at top
-      const FixedSearchHeader = () => (
-        <div className="sticky top-0 z-50 bg-background w-full border-b border-border">
-          <div className="bg-background py-2 w-full">
-            <div className="flex justify-center lg:gap-24 mx-auto flex-col lg:flex-row w-full">
-              <div className="flex items-center gap-2 justify-between md:justify-normal">
-                <div className="lg:flex items-center hidden">
-                  <a href="/" className="s-center">
-                    <img
-                      src={`https://kalifinder-search.pages.dev/KalifindLogo.png`}
-                      alt="Kalifind"
-                      className="h-auto w-full max-w-[150px] max-h-[48px] object-contain object-center"
-                    />
-                  </a>
-                </div>
-              </div>
-
-              <div
-                className="flex-1 h-full relative w-full px-0.5 sm:px-4"
-                ref={searchRef}
-              >
-                <div className="flex items-center gap-2 flex-1 w-full h-full">
-                  <div className="w-full flex h-full">
-                    <div className="relative flex-1 w-full h-full">
-                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-5 h-5" />
-                      <input
-                        ref={inputRef}
-                        type="text"
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        onFocus={() => setShowAutocomplete(true)}
-                        onKeyDown={handleKeyDown}
-                        placeholder="Search"
-                        className="h-full w-full pl-10 pr-4 py-2 text-base text-foreground placeholder-muted-foreground focus:outline-none border-none ring-0"
-                        autoFocus
-                      />
-                    </div>
-                    <button
-                      className="rounded-lg hover:bg-muted/20 transition-colors duration-200 flex-shrink-0"
-                      aria-label="Close search"
-                      onClick={onClose}
-                    >
-                      <X className="w-5 h-5 text-muted-foreground hover:text-foreground transition-colors duration-200 mr-3" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      );
+      const handleSearch = (query: string) => {
+        setSearchQuery(query);
+      };
 
       // Custom EcommerceSearch wrapper that hides header on mobile/tablet
       const EcommerceSearchWrapper = () => (
@@ -478,10 +432,17 @@ const ShadowDOMSearchDropdown: React.FC<ShadowDOMSearchDropdownProps> = ({
           >
             <div className="w-full h-full overflow-y-auto">
               {isMobileOrTablet ? (
-                // Mobile/Tablet: Search-first UI
+                // Mobile/Tablet: Use KalifindSearchMobile component
                 <div className="w-full h-full">
-                  {/* Fixed search header at top */}
-                  <FixedSearchHeader />
+                  {/* Mobile search header at top */}
+                  <KalifindSearchMobile
+                    searchRef={searchRef}
+                    inputRef={inputRef}
+                    searchQuery={searchQuery}
+                    handleSearch={handleSearch}
+                    handleKeyDown={handleKeyDown}
+                    onClose={onClose}
+                  />
 
                   {/* Content area below search */}
                   <div className="w-full min-h-[calc(100vh-80px)]">
@@ -513,9 +474,14 @@ const ShadowDOMSearchDropdown: React.FC<ShadowDOMSearchDropdownProps> = ({
                   </div>
                 </div>
               ) : (
-                // Desktop: Normal layout
+                // Desktop: Use original EcommerceSearch component
                 <Suspense fallback={null}>
-                  <EcommerceSearch storeUrl={storeUrl} onClose={onClose} />
+                  <EcommerceSearch 
+                    storeUrl={storeUrl} 
+                    onClose={onClose}
+                    searchQuery={searchQuery}
+                    hideHeader={false}
+                  />
                 </Suspense>
               )}
             </div>
