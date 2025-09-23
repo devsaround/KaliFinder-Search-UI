@@ -99,7 +99,7 @@ const KalifindSearch: React.FC<{
     [key: string]: number;
   }>({});
   const [sortOption, setSortOption] = useState("default");
-  
+
   // State for optional filters - only show if vendor has configured them
   const [showOptionalFilters, setShowOptionalFilters] = useState({
     brands: false,
@@ -109,7 +109,6 @@ const KalifindSearch: React.FC<{
 
   // Cart functionality state
   const [addingToCart, setAddingToCart] = useState<string | null>(null);
-  const [cartMessage, setCartMessage] = useState<string | null>(null);
 
   const [filters, setFilters] = useState<FilterState>({
     categories: [],
@@ -180,21 +179,25 @@ const KalifindSearch: React.FC<{
   // Fuzzy matching function for better autocomplete
   const fuzzyMatch = (query: string, suggestion: string): boolean => {
     if (!query || !suggestion) return false;
-    
+
     const queryLower = query.toLowerCase().trim();
     const suggestionLower = suggestion.toLowerCase().trim();
-    
+
     // Exact match
     if (suggestionLower.includes(queryLower)) return true;
-    
+
     // Fuzzy matching - check if all characters in query appear in order in suggestion
     let queryIndex = 0;
-    for (let i = 0; i < suggestionLower.length && queryIndex < queryLower.length; i++) {
+    for (
+      let i = 0;
+      i < suggestionLower.length && queryIndex < queryLower.length;
+      i++
+    ) {
       if (suggestionLower[i] === queryLower[queryIndex]) {
         queryIndex++;
       }
     }
-    
+
     // If we found all characters in order, it's a match
     return queryIndex === queryLower.length;
   };
@@ -202,22 +205,22 @@ const KalifindSearch: React.FC<{
   // Function to score and sort suggestions by relevance
   const scoreSuggestion = (query: string, suggestion: string): number => {
     if (!query || !suggestion) return 0;
-    
+
     const queryLower = query.toLowerCase().trim();
     const suggestionLower = suggestion.toLowerCase().trim();
-    
+
     // Exact match gets highest score
     if (suggestionLower === queryLower) return 100;
-    
+
     // Starts with query gets high score
     if (suggestionLower.startsWith(queryLower)) return 90;
-    
+
     // Contains query gets medium score
     if (suggestionLower.includes(queryLower)) return 70;
-    
+
     // Fuzzy match gets lower score
     if (fuzzyMatch(query, suggestion)) return 50;
-    
+
     return 0;
   };
 
@@ -285,12 +288,18 @@ const KalifindSearch: React.FC<{
       }
 
       const result = await response.json();
-      
+
       // Update optional filters visibility based on vendor configuration
       setShowOptionalFilters({
-        brands: result.some((facet: any) => facet.field === 'brand' && facet.visible),
-        colors: result.some((facet: any) => facet.field === 'color' && facet.visible),
-        tags: result.some((facet: any) => facet.field === 'tags' && facet.visible),
+        brands: result.some(
+          (facet: any) => facet.field === "brand" && facet.visible,
+        ),
+        colors: result.some(
+          (facet: any) => facet.field === "color" && facet.visible,
+        ),
+        tags: result.some(
+          (facet: any) => facet.field === "tags" && facet.visible,
+        ),
       });
     } catch (error) {
       console.error("Failed to fetch facet configuration:", error);
@@ -315,7 +324,7 @@ const KalifindSearch: React.FC<{
       }
 
       const config = await configResponse.json();
-      
+
       // Only fetch recommendations if vendor has enabled them
       if (!config.enabled) {
         setRecommendations([]);
@@ -606,13 +615,13 @@ const KalifindSearch: React.FC<{
             // Apply fuzzy matching and scoring to improve suggestions
             const query = debouncedSearchQuery.trim();
             const scoredSuggestions = rawSuggestions
-              .map(suggestion => ({
+              .map((suggestion) => ({
                 text: suggestion,
-                score: scoreSuggestion(query, suggestion)
+                score: scoreSuggestion(query, suggestion),
               }))
-              .filter(item => item.score > 0) // Only include suggestions with positive scores
+              .filter((item) => item.score > 0) // Only include suggestions with positive scores
               .sort((a, b) => b.score - a.score) // Sort by score (highest first)
-              .map(item => item.text)
+              .map((item) => item.text)
               .slice(0, 10); // Limit to top 10 suggestions
 
             console.log("Raw suggestions:", rawSuggestions);
@@ -781,11 +790,11 @@ const KalifindSearch: React.FC<{
           console.log(
             `Autocomplete API call: ${import.meta.env.VITE_BACKEND_URL}/v1/autocomplete?${params.toString()}`,
           );
-          
+
           if (!response.ok) {
             throw new Error("bad response");
           }
-          
+
           const result = await response.json();
           console.log("Autocomplete API result:", result);
 
@@ -808,7 +817,12 @@ const KalifindSearch: React.FC<{
             // If result has suggestions, convert to products format
             products = result.suggestions.map((suggestion: any) => ({
               id: suggestion.id || suggestion.title || String(Math.random()),
-              title: suggestion.title || suggestion.name || suggestion.product_title || suggestion.product_name || String(suggestion),
+              title:
+                suggestion.title ||
+                suggestion.name ||
+                suggestion.product_title ||
+                suggestion.product_name ||
+                String(suggestion),
               price: suggestion.price || "0",
               image: suggestion.image || suggestion.imageUrl || "",
               imageUrl: suggestion.imageUrl || suggestion.image || "",
@@ -1241,15 +1255,28 @@ const KalifindSearch: React.FC<{
   }, [isMobile, hasMoreProducts, isLoadingMore, loadMoreProducts]);
 
   // Function to calculate discount percentage
-  const calculateDiscountPercentage = (regularPrice: string, salePrice: string): number | null => {
+  const calculateDiscountPercentage = (
+    regularPrice: string,
+    salePrice: string,
+  ): number | null => {
     try {
-      const regular = parseFloat(regularPrice.replace(/[^\d.,]/g, '').replace(',', '.'));
-      const sale = parseFloat(salePrice.replace(/[^\d.,]/g, '').replace(',', '.'));
-      
-      if (isNaN(regular) || isNaN(sale) || regular <= 0 || sale <= 0 || sale >= regular) {
+      const regular = parseFloat(
+        regularPrice.replace(/[^\d.,]/g, "").replace(",", "."),
+      );
+      const sale = parseFloat(
+        salePrice.replace(/[^\d.,]/g, "").replace(",", "."),
+      );
+
+      if (
+        isNaN(regular) ||
+        isNaN(sale) ||
+        regular <= 0 ||
+        sale <= 0 ||
+        sale >= regular
+      ) {
         return null;
       }
-      
+
       const discount = ((regular - sale) / regular) * 100;
       return Math.round(discount);
     } catch (error) {
@@ -1276,26 +1303,17 @@ const KalifindSearch: React.FC<{
     }
 
     setAddingToCart(product.id);
-    setCartMessage(null);
 
     try {
       const result = await addToCart(product, storeUrl);
-      setCartMessage(result.message || "Added to cart!");
-      
+
+      console.log(result);
       // Clear message after 3 seconds
-      setTimeout(() => {
-        setCartMessage(null);
-      }, 3000);
-      
     } catch (error) {
       console.error("Add to cart failed:", error);
       handleCartError(error, product);
-      setCartMessage("Failed to add to cart. Redirecting to product page...");
-      
+
       // Clear message after 3 seconds
-      setTimeout(() => {
-        setCartMessage(null);
-      }, 3000);
     } finally {
       setAddingToCart(null);
     }
@@ -2248,14 +2266,18 @@ const KalifindSearch: React.FC<{
                                 Featured
                               </div>
                             )}
-                            {product.salePrice && 
-                             product.salePrice !== "" && 
-                             product.salePrice !== "0" && 
-                             product.salePrice !== "0.00" &&
-                             product.regularPrice &&
-                             product.salePrice !== product.regularPrice && (
+                            {product.salePrice &&
+                              product.salePrice !== "" &&
+                              product.salePrice !== "0" &&
+                              product.salePrice !== "0.00" &&
+                              product.regularPrice &&
+                              product.salePrice !== product.regularPrice &&
                               (() => {
-                                const discountPercentage = calculateDiscountPercentage(product.regularPrice, product.salePrice);
+                                const discountPercentage =
+                                  calculateDiscountPercentage(
+                                    product.regularPrice,
+                                    product.salePrice,
+                                  );
                                 return discountPercentage ? (
                                   <div className="!absolute !top-2 !left-2 !bg-red-500 !text-white !px-2 !py-1 !rounded-full !text-xs !font-bold">
                                     -{discountPercentage}%
@@ -2265,20 +2287,19 @@ const KalifindSearch: React.FC<{
                                     Sale
                                   </div>
                                 );
-                              })()
-                            )}
+                              })()}
                           </div>
                           <h3 className="!text-[14px] sm:!text-[16px] !font-bold !text-foreground !mb-[4px] sm:!mb-[8px] h-[40px] sm:h-[48px] overflow-hidden">
                             {product.title}
                           </h3>
                           <div className="!flex !items-center !justify-between mt-auto">
                             <div className="!flex !items-center !gap-[8px]">
-                              {product.salePrice && 
-                               product.salePrice !== "" && 
-                               product.salePrice !== "0" && 
-                               product.salePrice !== "0.00" &&
-                               product.regularPrice &&
-                               product.salePrice !== product.regularPrice ? (
+                              {product.salePrice &&
+                              product.salePrice !== "" &&
+                              product.salePrice !== "0" &&
+                              product.salePrice !== "0.00" &&
+                              product.regularPrice &&
+                              product.salePrice !== product.regularPrice ? (
                                 <div className="!flex !items-center !gap-2">
                                   <span className="!text-primary !text-[14px] sm:!text-[16px] !font-bold">
                                     {product.salePrice}
@@ -2293,7 +2314,7 @@ const KalifindSearch: React.FC<{
                                 </span>
                               )}
                             </div>
-                            <button 
+                            <button
                               onClick={(e) => {
                                 e.stopPropagation();
                                 handleAddToCart(product);
@@ -2351,14 +2372,18 @@ const KalifindSearch: React.FC<{
                             Featured
                           </div>
                         )}
-                        {product.salePrice && 
-                         product.salePrice !== "" && 
-                         product.salePrice !== "0" && 
-                         product.salePrice !== "0.00" &&
-                         product.regularPrice &&
-                         product.salePrice !== product.regularPrice && (
+                        {product.salePrice &&
+                          product.salePrice !== "" &&
+                          product.salePrice !== "0" &&
+                          product.salePrice !== "0.00" &&
+                          product.regularPrice &&
+                          product.salePrice !== product.regularPrice &&
                           (() => {
-                            const discountPercentage = calculateDiscountPercentage(product.regularPrice, product.salePrice);
+                            const discountPercentage =
+                              calculateDiscountPercentage(
+                                product.regularPrice,
+                                product.salePrice,
+                              );
                             return discountPercentage ? (
                               <div className="!absolute !top-2 !left-2 !bg-red-500 !text-white !px-2 !py-1 !rounded-full !text-xs !font-bold">
                                 -{discountPercentage}%
@@ -2368,20 +2393,19 @@ const KalifindSearch: React.FC<{
                                 Sale
                               </div>
                             );
-                          })()
-                        )}
+                          })()}
                       </div>
                       <h3 className="!text-[14px] sm:!text-[16px] !font-bold !text-foreground !mb-[4px] sm:!mb-[8px] h-[40px] sm:h-[48px] overflow-hidden">
                         {product.title}
                       </h3>
                       <div className="!flex !items-center !justify-between mt-auto">
                         <div className="!flex !items-center !gap-[8px]">
-                          {product.salePrice && 
-                           product.salePrice !== "" && 
-                           product.salePrice !== "0" && 
-                           product.salePrice !== "0.00" &&
-                           product.regularPrice &&
-                           product.salePrice !== product.regularPrice ? (
+                          {product.salePrice &&
+                          product.salePrice !== "" &&
+                          product.salePrice !== "0" &&
+                          product.salePrice !== "0.00" &&
+                          product.regularPrice &&
+                          product.salePrice !== product.regularPrice ? (
                             <div className="!flex !items-center !gap-2">
                               <span className="!text-primary !text-[14px] sm:!text-[16px] !font-bold">
                                 {product.salePrice}
@@ -2396,7 +2420,7 @@ const KalifindSearch: React.FC<{
                             </span>
                           )}
                         </div>
-                        <button 
+                        <button
                           onClick={(e) => {
                             e.stopPropagation();
                             handleAddToCart(product);
@@ -2475,14 +2499,6 @@ const KalifindSearch: React.FC<{
               )}
 
             {/* Cart Message Display */}
-            {cartMessage && (
-              <div className="!fixed !top-4 !right-4 !z-[999999] !bg-primary !text-primary-foreground !px-4 !py-2 !rounded-lg !shadow-lg !max-w-sm">
-                <div className="!flex !items-center !gap-2">
-                  <div className="!w-4 !h-4 !border-2 !border-primary-foreground !border-t-transparent !rounded-full !animate-spin"></div>
-                  <span className="!text-sm !font-medium">{cartMessage}</span>
-                </div>
-              </div>
-            )}
           </div>
         </main>
       </div>
