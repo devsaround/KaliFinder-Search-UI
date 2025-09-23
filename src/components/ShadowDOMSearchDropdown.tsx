@@ -492,6 +492,7 @@ const ShadowDOMSearchDropdown: React.FC<ShadowDOMSearchDropdownProps> = ({
       };
 
       const handleSearch = (query: string) => {
+        console.log("Mobile handleSearch called with:", query);
         setSearchQuery(query);
         // Show autocomplete when user starts typing
         if (query.trim()) {

@@ -154,7 +154,7 @@ const KalifindSearch: React.FC<{
       console.log("Syncing search query from parent:", initialSearchQuery);
       setSearchQuery(initialSearchQuery);
     }
-  }, [initialSearchQuery, searchQuery]);
+  }, [initialSearchQuery]);
 
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
   const debouncedPriceRange = useDebounce(filters.priceRange, 300);
@@ -449,19 +449,18 @@ const KalifindSearch: React.FC<{
               params.append("storeUrl", storeUrl);
             }
 
-            const response = await fetch(
-              `${
-                import.meta.env.VITE_BACKEND_URL
-              }/v1/autocomplete?${params.toString()}`,
-              {},
-            );
+            const url = `${import.meta.env.VITE_BACKEND_URL}/v1/autocomplete?${params.toString()}`;
+            console.log("Autocomplete API call:", url);
+            
+            const response = await fetch(url, {});
 
             if (!response.ok) {
+              console.error("Autocomplete API error:", response.status, response.statusText);
               throw new Error("bad response");
             }
 
             const result = await response.json();
-            console.log("auto", result);
+            console.log("Autocomplete API result:", result);
             setAutocompleteSuggestions(result.map((r: Product) => r.title || r.name) || []);
             setHighlightedSuggestionIndex(-1); // Reset highlight when new suggestions arrive
           } catch (error) {
@@ -653,6 +652,7 @@ const KalifindSearch: React.FC<{
   }, [filteredProducts, sortOption]);
 
   const handleSearch = (query: string) => {
+    console.log("handleSearch called with:", query);
     setSearchQuery(query);
     
     // Show autocomplete when user starts typing
@@ -1046,7 +1046,6 @@ const KalifindSearch: React.FC<{
                                     e.preventDefault();
                                     e.stopPropagation();
                                     console.log("Desktop suggestion clicked:", suggestion);
-                                    alert(`Suggestion clicked: ${suggestion}`);
                                     handleSuggestionClick(suggestion);
                                   }}
                                 >

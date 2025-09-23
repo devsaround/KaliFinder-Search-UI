@@ -106,7 +106,6 @@ const KalifindSearchMobile: React.FC<KalifindSearchMobileProps> = ({
                         e.preventDefault();
                         e.stopPropagation();
                         console.log("Mobile suggestion clicked:", suggestion);
-                        alert(`Mobile suggestion clicked: ${suggestion}`);
                         handleSuggestionClick?.(suggestion);
                       }}
                     >
