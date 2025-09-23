@@ -15,8 +15,6 @@ const ScrollToTop: React.FC<ScrollToTopProps> = ({
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
-    const scrollContainer = containerRef?.current || window;
-    
     const toggleVisibility = () => {
       const scrollTop = containerRef?.current 
         ? containerRef.current.scrollTop 
@@ -36,8 +34,9 @@ const ScrollToTop: React.FC<ScrollToTopProps> = ({
     }
 
     return () => {
-      if (containerRef?.current) {
-        containerRef.current.removeEventListener("scroll", handleScroll);
+      const container = containerRef?.current;
+      if (container) {
+        container.removeEventListener("scroll", handleScroll);
       } else {
         window.removeEventListener("scroll", handleScroll);
       }

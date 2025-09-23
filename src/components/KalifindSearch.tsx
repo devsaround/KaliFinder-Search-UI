@@ -1,4 +1,3 @@
-import { cache } from "../embed-search.tsx";
 import React, {
   useState,
   useTransition,
@@ -29,31 +28,10 @@ import {
   Drawer,
   DrawerClose,
   DrawerContent,
-  DrawerDescription,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerTitle,
   DrawerTrigger,
 } from "@/components/ui/drawer";
 
-interface Product {
-  id: string;
-  name: string;
-  image: string;
-  originalPrice: number;
-  currentPrice: number;
-  category: string;
-}
-
-interface FilterState {
-  categories: string[];
-  priceRange: [number, number];
-  colors: string[];
-  sizes: string[];
-  brands: string[];
-  genders: string[];
-  tags: string[];
-}
+import { Product, FilterState } from "../types";
 
 const KalifindSearch: React.FC<{
   storeUrl?: string;
@@ -68,7 +46,7 @@ const KalifindSearch: React.FC<{
 }) => {
   const [searchQuery, setSearchQuery] = useState(initialSearchQuery || "");
   const [showAutocomplete, setShowAutocomplete] = useState(false);
-  const [filteredProducts, setFilteredProducts] = useState<any[]>([]);
+  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
@@ -77,6 +55,13 @@ const KalifindSearch: React.FC<{
   >([]);
   const [isAutocompleteLoading, setIsAutocompleteLoading] = useState(false);
   const [isPriceLoading, setIsPriceLoading] = useState(true);
+
+  // New state variables for search behavior
+  const [showRecommendations, setShowRecommendations] = useState(true);
+  const [hasSearched, setHasSearched] = useState(false);
+  const [recommendations, setRecommendations] = useState<Product[]>([]);
+  const [popularSearches] = useState<string[]>(["shirt", "underwear", "plan"]);
+  const [showFilters, setShowFilters] = useState(false);
   const [maxPrice, setMaxPrice] = useState<number>(10000); // Default max price
   const [availableCategories, setAvailableCategories] = useState<string[]>([]);
   const [availableBrands, setAvailableBrands] = useState<string[]>([]);
@@ -161,37 +146,64 @@ const KalifindSearch: React.FC<{
     filters.tags.length > 0 ||
     filters.priceRange[1] < maxPrice;
 
-  // ... (rest of the imports)
+  // Show filters if user has searched or filters are active
+  const shouldShowFilters = showFilters || isAnyFilterActive;
 
-  // ... (rest of the component)
+  // Fetch recommendations
+  const fetchRecommendations = async () => {
+    if (!storeUrl) return;
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_BACKEND_URL}/v1/search/recommended?storeUrl=${storeUrl}`,
+        {}
+      );
+      if (!response.ok) {
+        throw new Error("Failed to fetch recommendations");
+      }
+      const result = await response.json();
+      
+      // Handle response format
+      let products: Product[];
+      if (Array.isArray(result)) {
+        products = result;
+      } else if (result && Array.isArray(result.products)) {
+        products = result.products;
+      } else {
+        products = [];
+      }
+      
+      setRecommendations(products.slice(0, 8)); // Limit to 8 recommendations
+    } catch (error) {
+      console.error("Failed to fetch recommendations:", error);
+      setRecommendations([]);
+    }
+  };
+
+  // Search behavior state management
+  useEffect(() => {
+    if (!searchQuery && !hasSearched) {
+      // Initial state - show recommendations
+      setShowRecommendations(true);
+      setShowFilters(false);
+      fetchRecommendations();
+    } else if (!searchQuery && hasSearched) {
+      // Empty after search - show all products with filters
+      setShowRecommendations(false);
+      setShowFilters(true);
+    } else if (searchQuery) {
+      // User is typing - hide recommendations, show filters
+      setShowRecommendations(false);
+      setShowFilters(true);
+      if (!hasSearched) {
+        setHasSearched(true);
+      }
+    }
+  }, [searchQuery, hasSearched, storeUrl]);
 
   useEffect(() => {
     const initFilters = async () => {
       if (!storeUrl) return;
 
-      const cacheKey = `initialData-${storeUrl}`;
-      const cachedData = cache.get(cacheKey);
-
-      if (cachedData) {
-        setTotalProducts(cachedData.totalProducts);
-        setMaxPrice(cachedData.maxPrice);
-        setFilters((prev: any) => ({
-          ...prev,
-          priceRange: [0, cachedData.maxPrice],
-        }));
-        setAvailableCategories(cachedData.availableCategories);
-        setAvailableBrands(cachedData.availableBrands);
-        setAvailableColors(cachedData.availableColors || []);
-        setAvailableSizes(cachedData.availableSizes || []);
-        setAvailableTags(cachedData.availableTags || []);
-        setCategoryCounts(cachedData.categoryCounts);
-        setBrandCounts(cachedData.brandCounts);
-        setColorCounts(cachedData.colorCounts || {});
-        setSizeCounts(cachedData.sizeCounts || {});
-        setTagCounts(cachedData.tagCounts || {});
-        setIsPriceLoading(false);
-        return;
-      }
 
       const fetchWithRetry = async (retries = 3) => {
         try {
@@ -208,15 +220,27 @@ const KalifindSearch: React.FC<{
           }
 
           const result = await response.json();
+          
+          // Handle both array and object response formats
+          let products: Product[];
           if (Array.isArray(result)) {
-            setTotalProducts(result.length);
-            const prices = result
-              .map((p: any) => parseFloat(p.price))
+            products = result;
+          } else if (result && Array.isArray(result.products)) {
+            products = result.products;
+          } else {
+            console.error("Kalifind Search: Unexpected API response format:", result);
+            return;
+          }
+
+          if (products && products.length > 0) {
+            setTotalProducts(products.length);
+            const prices = products
+              .map((p: Product) => parseFloat(p.price))
               .filter((p) => !isNaN(p));
             if (prices.length > 0) {
               const max = Math.max(...prices);
               setMaxPrice(max);
-              setFilters((prev: any) => ({
+              setFilters((prev: FilterState) => ({
                 ...prev,
                 priceRange: [0, max],
               }));
@@ -233,7 +257,7 @@ const KalifindSearch: React.FC<{
             const sizeCounts: { [key: string]: number } = {};
             const tagCounts: { [key: string]: number } = {};
             
-            result.forEach((product: any) => {
+            products.forEach((product: Product) => {
               if (product.categories) {
                 product.categories.forEach((cat: string) => {
                   allCategories.add(cat);
@@ -276,24 +300,6 @@ const KalifindSearch: React.FC<{
             setColorCounts(colorCounts);
             setSizeCounts(sizeCounts);
             setTagCounts(tagCounts);
-
-            const initialData = {
-              totalProducts: result.length,
-              maxPrice: maxPrice,
-              availableCategories: Array.from(allCategories),
-              availableBrands: Array.from(allBrands),
-              availableColors: Array.from(allColors),
-              availableSizes: Array.from(allSizes),
-              availableTags: Array.from(allTags),
-              categoryCounts: categoryCounts,
-              brandCounts: brandCounts,
-              colorCounts: colorCounts,
-              sizeCounts: sizeCounts,
-              tagCounts: tagCounts,
-            };
-            cache.set(cacheKey, initialData);
-          } else {
-            console.error("Initial search result is not an array:", result);
           }
         } catch (err) {
           if (retries > 0) {
@@ -339,18 +345,9 @@ const KalifindSearch: React.FC<{
             if (debouncedSearchQuery) {
               params.append("q", debouncedSearchQuery);
             }
-            // if (storeId) {
-            //   params.append("storeId", storeId.toString());
-            // }
-            // if (storeType) {
-            //   params.append("storeType", storeType);
-            // }
             if (storeUrl) {
               params.append("storeUrl", storeUrl);
             }
-
-            // params.append("storeId", "28");
-            // params.append("storeType", "woocommerce");
 
             const response = await fetch(
               `${
@@ -365,7 +362,7 @@ const KalifindSearch: React.FC<{
 
             const result = await response.json();
             console.log("auto", result);
-            setAutocompleteSuggestions(result.map((r: any) => r.title) || []);
+            setAutocompleteSuggestions(result.map((r: Product) => r.name) || []);
           } catch (error) {
             console.error("Failed to fetch autocomplete suggestions:", error);
             setAutocompleteSuggestions([]);
@@ -381,8 +378,8 @@ const KalifindSearch: React.FC<{
 
   // search products
   useEffect(() => {
-    if (isPriceLoading || !storeUrl) {
-      return; // Wait for the initial price to be loaded
+    if (isPriceLoading || !storeUrl || showRecommendations) {
+      return; // Wait for the initial price to be loaded or skip if showing recommendations
     }
 
     startTransition(() => {
@@ -401,18 +398,19 @@ const KalifindSearch: React.FC<{
           const params = new URLSearchParams();
           if (debouncedSearchQuery) {
             params.append("q", debouncedSearchQuery);
+            
+            // Add popular search boosting
+            const lowerQuery = debouncedSearchQuery.toLowerCase();
+            const matchingPopularTerms = popularSearches.filter(term => 
+              lowerQuery.includes(term.toLowerCase())
+            );
+            if (matchingPopularTerms.length > 0) {
+              params.append("popularTerms", matchingPopularTerms.join(","));
+            }
           }
-          // if (storeId) {
-          //   params.append("storeId", storeId.toString());
-          // }
-          // if (storeType) {
-          //   params.append("storeType", storeType);
-          // }
           if (storeUrl) {
             params.append("storeUrl", storeUrl);
           }
-          // params.append("storeId", "28");
-          // params.append("storeType", "woocommerce");
 
           if (filters.categories.length > 0) {
             params.append("categories", filters.categories.join(","));
@@ -449,8 +447,20 @@ const KalifindSearch: React.FC<{
             throw new Error("bad response");
           }
           const result = await response.json();
-          setFilteredProducts(result);
-          console.log(result);
+          
+          // Handle both array and object response formats
+          let products: Product[];
+          if (Array.isArray(result)) {
+            products = result;
+          } else if (result && Array.isArray(result.products)) {
+            products = result.products;
+          } else {
+            console.error("Kalifind Search: Unexpected search response format:", result);
+            products = [];
+          }
+          
+          setFilteredProducts(products);
+          console.log(products);
         } catch (error) {
           console.error("Failed to fetch products:", error);
           setFilteredProducts([]);
@@ -475,6 +485,12 @@ const KalifindSearch: React.FC<{
   ]);
 
   const sortedProducts = useMemo(() => {
+    // Ensure filteredProducts is an array before processing
+    if (!Array.isArray(filteredProducts)) {
+      console.warn("Kalifind Search: filteredProducts is not an array:", filteredProducts);
+      return [];
+    }
+    
     const productsToSort = [...filteredProducts];
     switch (sortOption) {
       case "a-z":
@@ -496,6 +512,30 @@ const KalifindSearch: React.FC<{
 
   const handleSearch = (query: string) => {
     setSearchQuery(query);
+    
+    // Add to recent searches if it's a new search
+    if (query.trim() && !recentSearches.includes(query.trim())) {
+      setRecentSearches((prev) => {
+        const newSearches = [
+          query.trim(),
+          ...prev.filter((item) => item !== query.trim()),
+        ].slice(0, 10);
+        return newSearches;
+      });
+    }
+    
+    // Hide autocomplete when searching
+    setShowAutocomplete(false);
+  };
+
+  const handlePopularSearchClick = (term: string) => {
+    handleSearch(term);
+    inputRef.current?.focus();
+  };
+
+  const handleSuggestionClick = (suggestion: string) => {
+    handleSearch(suggestion);
+    inputRef.current?.blur();
   };
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
@@ -542,7 +582,7 @@ const KalifindSearch: React.FC<{
     }));
   };
 
-  const handleSizeChange = (size: number) => {
+  const handleSizeChange = (size: string) => {
     setFilters((prev) => ({
       ...prev,
       sizes: prev.sizes.includes(size)
@@ -666,7 +706,7 @@ const KalifindSearch: React.FC<{
                                   key={index}
                                   className="!flex !items-center !gap-[8px] !cursor-pointer hover:!bg-muted !p-[8px] !rounded"
                                   onClick={() => {
-                                    handleSearch(suggestion);
+                                    handleSuggestionClick(suggestion);
                                     setShowAutocomplete(false);
                                   }}
                                 >
@@ -692,7 +732,7 @@ const KalifindSearch: React.FC<{
         </div>
       )}
 
-      <div className="!fixed !bottom-[16px] !left-1/2 !-translate-x-1/2 !z-50 !block lg:!hidden">
+      <div className={`!fixed !bottom-[16px] !left-1/2 !-translate-x-1/2 !z-50 ${shouldShowFilters ? '!block lg:!hidden' : '!hidden'}`}>
         <Drawer>
           <DrawerTrigger asChild>
             <button className="!flex !items-center !gap-[8px] !px-[16px] !py-[12px] !bg-primary !text-primary-foreground !rounded-full !font-medium !shadow-lg !hover:!bg-primary-hover !transition-all !duration-300 !transform !hover:!scale-105">
@@ -783,8 +823,8 @@ const KalifindSearch: React.FC<{
                       <div className="!space-y-[16px] !pt-[16px]">
                         <Slider
                           value={[filters.priceRange[1]]}
-                          onValueChange={(value: any) =>
-                            setFilters((prev: any) => ({
+                          onValueChange={(value: number[]) =>
+                            setFilters((prev: FilterState) => ({
                               ...prev,
                               priceRange: [prev.priceRange[0], value[0]],
                             }))
@@ -917,7 +957,7 @@ const KalifindSearch: React.FC<{
       </div>
 
       <div className="!flex !w-full lg:px-[64px] !mx-auto">
-        <aside className="w-80 lg:!w-[312px] !p-[16px] !bg-filter-bg !hidden lg:!block">
+        <aside className={`w-80 lg:!w-[312px] !p-[16px] !bg-filter-bg ${shouldShowFilters ? '!hidden lg:!block' : '!hidden'}`}>
           <Accordion
             type="multiple"
             defaultValue={["category", "price", "size", "color", "brand", "tags"]}
@@ -1148,26 +1188,32 @@ const KalifindSearch: React.FC<{
                 </div>
               </div>
             )}
-            <div className="hidden lg:flex pt-[22px] pb-[4px]  !text-[14px] sm:!text-[16px] lg:text-[18px] !font-bold !text-foreground !mb-[8px] mt-[8px]">
-              {/* {isAnyFilterActive ? "Search Results" : ""} */}
-              Search Results
-            </div>
-            <div className="pt-[16px] lg:pt-[0px] !mb-[16px] flex justify-between items-center text-[12px] lg:text-[16px] !text-muted-foreground">
-              {isAnyFilterActive ? (
-                <div className="!ml-[8px]">
-                  <b className="!font-extrabold text-foreground">
-                    {filteredProducts.length}
-                  </b>{" "}
-                  products found
-                </div>
-              ) : (
-                <div className="!ml-[8px]">
-                  <b className="!font-extrabold text-foreground">
-                    {totalProducts}
-                  </b>{" "}
-                  products found
-                </div>
-              )}
+            {!showRecommendations && (
+              <div className="hidden lg:flex pt-[22px] pb-[4px]  !text-[14px] sm:!text-[16px] lg:text-[18px] !font-bold !text-foreground !mb-[8px] mt-[8px]">
+                {/* {isAnyFilterActive ? "Search Results" : ""} */}
+                Search Results
+              </div>
+            )}
+            {!showRecommendations && (
+              <div className="pt-[16px] lg:pt-[0px] !mb-[16px] flex justify-between items-center text-[12px] lg:text-[16px] !text-muted-foreground">
+                {isAnyFilterActive ? (
+                  <div className="!ml-[8px]">
+                    <b className="!font-extrabold text-foreground">
+                      {filteredProducts.length}
+                    </b>{" "}
+                    products found
+                  </div>
+                ) : (
+                  <div className="!ml-[8px]">
+                    <b className="!font-extrabold text-foreground">
+                      {totalProducts}
+                    </b>{" "}
+                    products found
+                  </div>
+                )}
+              </div>
+            )}
+            {!showRecommendations && (
               <div onClick={(e) => e.stopPropagation()}>
                 <DropdownMenu>
                   <DropdownMenuTrigger>
@@ -1233,9 +1279,77 @@ const KalifindSearch: React.FC<{
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
-            </div>
+            )}
 
-            {isLoading || isPending ? (
+            {showRecommendations ? (
+              // Show recommendations and popular searches
+              <div className="!w-full">
+                {/* Popular Searches */}
+                <div className="!mb-8">
+                  <h3 className="!text-[18px] lg:!text-[20px] !font-bold !text-foreground !mb-4">
+                    Popular Searches
+                  </h3>
+                  <div className="!flex !flex-wrap !gap-2">
+                    {popularSearches.map((term) => (
+                      <button
+                        key={term}
+                        onClick={() => handlePopularSearchClick(term)}
+                        className="!bg-muted hover:!bg-muted/80 !text-foreground !px-4 !py-2 !rounded-full !text-[14px] !font-medium !transition-colors !capitalize"
+                      >
+                        {term}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Recommendations */}
+                {recommendations.length > 0 && (
+                  <div className="!mb-8">
+                    <h3 className="!text-[18px] lg:!text-[20px] !font-bold !text-foreground !mb-4">
+                      Recommended Products
+                    </h3>
+                    <div className="!grid !grid-cols-2 sm:!grid-cols-2 xl:grid-cols-3 2xl:!grid-cols-4 !gap-[8px] sm:!gap-[16px] !w-full">
+                      {recommendations.map((product) => (
+                        <div
+                          key={product.id}
+                          className="!bg-background !border !border-border !rounded-lg !p-[8px] sm:!p-[12px] hover:!shadow-lg !transition-shadow !w-full !flex !flex-col"
+                        >
+                          <div className="!relative !mb-[8px]">
+                            <img
+                              src={product.imageUrl || product.image}
+                              alt={product.title}
+                              className="!w-full !h-[112px] sm:!h-[144px] !object-cover !rounded-md"
+                            />
+                          </div>
+                          <h3 className="!text-[14px] sm:!text-[16px] !font-bold !text-foreground !mb-[4px] sm:!mb-[8px] h-[40px] sm:h-[48px] overflow-hidden">
+                            {product.title}
+                          </h3>
+                          <div className="!flex !items-center !justify-between mt-auto">
+                            <div className="!flex !items-center !gap-[8px]">
+                              <span className="!text-muted-foreground !text-[12px] sm:!text-[14px]">
+                                {product.price}
+                              </span>
+                            </div>
+                            <button className="!bg-primary hover:!bg-primary-hover !text-primary-foreground !p-[6px] sm:!p-[8px] !rounded-md !transition-colors">
+                              <ShoppingCart className="!w-[12px] !h-[12px] sm:!w-[16px] sm:!h-[16px]" />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Empty state for recommendations */}
+                {recommendations.length === 0 && (
+                  <div className="!text-center !py-[48px] !w-full">
+                    <p className="!text-muted-foreground text-[16px] lg:text-[18px]">
+                      Loading recommendations...
+                    </p>
+                  </div>
+                )}
+              </div>
+            ) : isLoading || isPending ? (
               <LoadingSkeleton />
             ) : (
               <div className="!grid !grid-cols-2 sm:!grid-cols-2 xl:grid-cols-3 2xl:!grid-cols-4 !gap-[8px] sm:!gap-[16px] !w-full">
@@ -1246,7 +1360,7 @@ const KalifindSearch: React.FC<{
                   >
                     <div className="!relative !mb-[8px]">
                       <img
-                        src={product.imageUrl}
+                        src={product.imageUrl || product.image}
                         alt={product.title}
                         className="!w-full !h-[112px] sm:!h-[144px] !object-cover !rounded-md"
                       />
@@ -1269,7 +1383,7 @@ const KalifindSearch: React.FC<{
               </div>
             )}
 
-            {!isLoading && !isPending && sortedProducts.length === 0 && (
+            {!isLoading && !isPending && !showRecommendations && sortedProducts.length === 0 && (
               <div className="!text-center !py-[48px] !w-full">
                 <p className="!text-muted-foreground text-[16px] lg:text-[18px]">
                   No products found matching your criteria.

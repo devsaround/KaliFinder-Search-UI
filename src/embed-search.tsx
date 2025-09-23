@@ -3,19 +3,10 @@ import ReactDOM from "react-dom/client";
 import SearchDropdown from "./components/SearchDropdown.tsx";
 import ShadowDOMSearchDropdown from "./components/ShadowDOMSearchDropdown.tsx";
 import "./index.css";
-import { createCache } from "./lib/cache";
 import { injectIsolatedStyles, applyScopedStyles } from "./lib/styleIsolation";
 
-interface InitialData {
-  totalProducts: number;
-  maxPrice: number;
-  availableCategories: string[];
-  availableBrands: string[];
-  categoryCounts: { [key: string]: number };
-  brandCounts: { [key: string]: number };
-}
+import { InitialData, Product, SearchConfig, KalifindWindow } from "./types";
 
-export const cache = createCache<InitialData>();
 
 // Add comprehensive debugging at the start
 console.log("Kalifind Search: Script loaded and executing");
@@ -27,11 +18,6 @@ console.log(
 );
 
 const prefetchData = async (storeUrl: string) => {
-  const cacheKey = `initialData-${storeUrl}`;
-  if (cache.get(cacheKey)) {
-    return;
-  }
-
   try {
     const params = new URLSearchParams();
     params.append("storeUrl", storeUrl);
@@ -42,9 +28,20 @@ const prefetchData = async (storeUrl: string) => {
     );
     const result = await response.json();
 
+    // Handle both array and object response formats
+    let products: Product[];
     if (Array.isArray(result)) {
-      const prices = result
-        .map((p: any) => parseFloat(p.price))
+      products = result;
+    } else if (result && Array.isArray(result.products)) {
+      products = result.products;
+    } else {
+      console.error("Kalifind Search: Unexpected API response format:", result);
+      return;
+    }
+
+    if (products && products.length > 0) {
+      const prices = products
+        .map((p: Product) => parseFloat(p.price))
         .filter((p) => !isNaN(p));
       const maxPrice = prices.length > 0 ? Math.max(...prices) : 10000;
 
@@ -52,7 +49,7 @@ const prefetchData = async (storeUrl: string) => {
       const allBrands = new Set<string>();
       const categoryCounts: { [key: string]: number } = {};
       const brandCounts: { [key: string]: number } = {};
-      result.forEach((product: any) => {
+      products.forEach((product: Product) => {
         if (product.categories) {
           product.categories.forEach((cat: string) => {
             allCategories.add(cat);
@@ -68,7 +65,7 @@ const prefetchData = async (storeUrl: string) => {
       });
 
       const initialData: InitialData = {
-        totalProducts: result.length,
+        totalProducts: products.length,
         maxPrice,
         availableCategories: Array.from(allCategories),
         availableBrands: Array.from(allBrands),
@@ -76,7 +73,8 @@ const prefetchData = async (storeUrl: string) => {
         brandCounts,
       };
 
-      cache.set(cacheKey, initialData);
+      // Store initial data in a global variable instead of cache
+      (window as KalifindWindow).kalifindInitialData = initialData;
     }
   } catch (err) {
     console.error("Failed to prefetch initial data:", err);
@@ -86,7 +84,7 @@ const prefetchData = async (storeUrl: string) => {
 // --- Animation Manager Component ---
 const ModalManager: React.FC<{
   onUnmount: () => void;
-  [key: string]: any;
+  [key: string]: unknown;
 }> = ({ onUnmount, ...props }) => {
   const [isOpen, setIsOpen] = useState(true);
 
@@ -179,9 +177,10 @@ const removeExistingSearch = (elements: Element[]): void => {
 
 (function () {
   // Function to open the search modal
-  const openSearchModal = (config: any) => {
+  const openSearchModal = (config: SearchConfig) => {
     const existingModal = document.getElementById("kalifind-modal-container");
     if (existingModal) {
+      console.warn("Kalifind Search: Modal already exists, preventing duplicate creation");
       return;
     }
 
@@ -224,6 +223,12 @@ const removeExistingSearch = (elements: Element[]): void => {
   };
 
   const initialize = () => {
+    // Prevent multiple initializations
+    if ((window as KalifindWindow).kalifindInitialized) {
+      console.warn("Kalifind Search: Already initialized, skipping");
+      return;
+    }
+    
     console.log("Kalifind Search: Initialize function called");
     const scriptTag = document.querySelector(
       'script[src*="kalifind-search.js"]'
@@ -243,30 +248,21 @@ const removeExistingSearch = (elements: Element[]): void => {
 
     const url = new URL(scriptSrc, window.location.origin);
     const storeUrl = url.searchParams.get("storeUrl");
-    const storeId = url.searchParams.get("storeId");
-    const storeType = url.searchParams.get("storeType");
-
-    // Handle both parameter formats
-    let finalStoreUrl = storeUrl;
-    if (!finalStoreUrl && storeId && storeType) {
-      // Construct storeUrl from storeId and storeType
-      finalStoreUrl = `https://api.kalifind.com/stores/${storeId}/${storeType}`;
-    }
 
     const configFromUrl = {
-      storeUrl: finalStoreUrl || undefined,
+      storeUrl: storeUrl || undefined,
     };
 
-    if (!finalStoreUrl) {
+    if (!storeUrl) {
       console.error(
-        "Kalifind Search: Either storeUrl or both storeId and storeType parameters are required."
+        "Kalifind Search: storeUrl parameter is required."
       );
-      console.log("Available parameters:", { storeUrl, storeId, storeType });
+      console.log("Available parameters:", { storeUrl });
       return;
     }
 
-    console.log("Kalifind Search: Using storeUrl:", finalStoreUrl);
-    prefetchData(finalStoreUrl);
+    console.log("Kalifind Search: Using storeUrl:", storeUrl);
+    prefetchData(storeUrl);
 
     const triggerElements = findSearchTriggerElements();
     console.log("Kalifind Search: Found trigger elements:", triggerElements);
@@ -278,8 +274,8 @@ const removeExistingSearch = (elements: Element[]): void => {
     if (triggerElements.length > 0) {
       removeExistingSearch(triggerElements);
 
-      triggerElements.forEach((element: any) => {
-        element.style.cursor = "pointer";
+      triggerElements.forEach((element: Element) => {
+        (element as HTMLElement).style.cursor = "pointer";
         element.setAttribute("tabindex", "0");
         element.setAttribute("role", "button");
         element.setAttribute("aria-label", "Open search");
@@ -326,6 +322,9 @@ const removeExistingSearch = (elements: Element[]): void => {
         );
       }
     }
+    
+    // Mark as initialized to prevent multiple initializations
+    (window as KalifindWindow).kalifindInitialized = true;
   };
 
   if (document.readyState === "loading") {

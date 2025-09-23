@@ -1,25 +1,12 @@
-import React, { useState } from "react";
+import React from "react";
 import { Search } from "lucide-react";
 import SearchDropdown from "./SearchDropdown";
 import { useIsOpen } from "@/hooks/zustand";
+import { SearchIconProps } from "../types";
 
-const SearchIcon: React.FC<{
-  storeUrl?: string;
-}> = ({storeUrl }) => {
-  // const [isOpen, setIsOpen] = useState(false);
-  const isOpen = useIsOpen((state: any) => state.isOpen);
-  const toggleIsOpen = useIsOpen((state: any) => state.toggleIsOpen);
-
-  // const toggleSearch = () => {
-  //   // setIsOpen(!isOpen);
-  //   toggleIsOpen;
-  // };
-  //
-  // const closeSearch = () => {
-  //   // setIsOpen(false);
-  //   toggleIsOpen;
-  // };
-  console.log(isOpen);
+const SearchIcon: React.FC<SearchIconProps> = ({storeUrl }) => {
+  const isOpen = useIsOpen((state) => state.isOpen);
+  const toggleIsOpen = useIsOpen((state) => state.toggleIsOpen);
 
   return (
     <>

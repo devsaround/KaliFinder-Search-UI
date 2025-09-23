@@ -2,15 +2,10 @@ import React, { useState, useEffect, useRef, Suspense, lazy } from "react";
 import { createRoot } from "react-dom/client";
 import { X, Search } from "lucide-react";
 import ScrollToTop from "./ScrollToTop";
+import { ShadowDOMSearchDropdownProps } from "../types";
 
 // Lazy load the EcommerceSearch component
 const EcommerceSearch = lazy(() => import("./KalifindSearch.tsx"));
-
-interface ShadowDOMSearchDropdownProps {
-  isOpen: boolean;
-  onClose: () => void;
-  storeUrl?: string;
-}
 
 const ShadowDOMSearchDropdown: React.FC<ShadowDOMSearchDropdownProps> = ({
   isOpen,
@@ -19,7 +14,7 @@ const ShadowDOMSearchDropdown: React.FC<ShadowDOMSearchDropdownProps> = ({
 }) => {
   const shadowHostRef = useRef<HTMLDivElement>(null);
   const [shadowRoot, setShadowRoot] = useState<ShadowRoot | null>(null);
-  const [reactRoot, setReactRoot] = useState<any>(null);
+  const [reactRoot, setReactRoot] = useState<unknown>(null);
   const [isAnimating, setIsAnimating] = useState(false);
   const [isMobileOrTablet, setIsMobileOrTablet] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -75,9 +70,27 @@ const ShadowDOMSearchDropdown: React.FC<ShadowDOMSearchDropdownProps> = ({
   // Initialize Shadow DOM
   useEffect(() => {
     if (shadowHostRef.current && !shadowRoot && isOpen) {
-      // Create shadow root with closed mode for better isolation
-      const shadow = shadowHostRef.current.attachShadow({ mode: "closed" });
-      setShadowRoot(shadow);
+      // Check if element already has a shadow root
+      if (shadowHostRef.current.shadowRoot) {
+        console.warn("Kalifind Search: Element already has a shadow root, reusing existing one");
+        setShadowRoot(shadowHostRef.current.shadowRoot);
+        return;
+      }
+      
+      let shadow: ShadowRoot;
+      try {
+        // Create shadow root with closed mode for better isolation
+        shadow = shadowHostRef.current.attachShadow({ mode: "closed" });
+        setShadowRoot(shadow);
+      } catch (error) {
+        console.error("Kalifind Search: Failed to create shadow DOM:", error);
+        // If shadow DOM creation fails, try to find an existing shadow root
+        if (shadowHostRef.current.shadowRoot) {
+          console.warn("Kalifind Search: Using existing shadow root after error");
+          setShadowRoot(shadowHostRef.current.shadowRoot);
+        }
+        return;
+      }
 
       // Create a container div inside shadow DOM
       const shadowContainer = document.createElement("div");
@@ -359,7 +372,8 @@ const ShadowDOMSearchDropdown: React.FC<ShadowDOMSearchDropdownProps> = ({
 
     return () => {
       if (reactRoot) {
-        reactRoot.unmount();
+        (reactRoot as ReturnType<typeof createRoot>).unmount();
+        setReactRoot(null);
       }
     };
   }, [isOpen, shadowRoot, reactRoot]);
@@ -512,7 +526,7 @@ const ShadowDOMSearchDropdown: React.FC<ShadowDOMSearchDropdownProps> = ({
         </div>
       );
 
-      reactRoot.render(content);
+      (reactRoot as ReturnType<typeof createRoot>).render(content);
     }
   }, [
     reactRoot,
