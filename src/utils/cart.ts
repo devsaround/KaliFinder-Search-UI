@@ -1,4 +1,5 @@
 import { CartProduct, CartResponse, CartError, Product } from '../types';
+import { toast } from 'sonner';
 
 // Store type detection
 export const detectStoreType = (product: CartProduct): 'shopify' | 'woocommerce' => {
@@ -18,7 +19,7 @@ export const detectStoreType = (product: CartProduct): 'shopify' | 'woocommerce'
   return 'woocommerce';
 };
 
-// WooCommerce add to cart implementation
+// WooCommerce add to cart implementation using backend proxy
 export const addToWooCommerceCart = async (product: CartProduct): Promise<CartResponse> => {
   try {
     // Extract numeric product ID - try wooProductId first, then fall back to id
@@ -39,72 +40,54 @@ export const addToWooCommerceCart = async (product: CartProduct): Promise<CartRe
       throw new Error('Product ID is required for WooCommerce');
     }
 
-    // Use fetch API for more reliable cart addition
-    const formData = new FormData();
-    formData.append('product_id', productId.toString());
-    formData.append('quantity', '1');
-    
-    try {
-      const response = await fetch(`${product.storeUrl}/?wc-ajax=add_to_cart`, {
-        method: 'POST',
-        body: formData,
-        credentials: 'include', // Include cookies for session
-      });
-      
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    // Use backend proxy to avoid CORS issues
+    const response = await fetch(
+      `${import.meta.env.VITE_BACKEND_URL}/v1/cart/woocommerce/add`,
+      {
+        method: "POST",
+        headers: { 
+          "Content-Type": "application/json",
+          "Accept": "application/json"
+        },
+        body: JSON.stringify({
+          storeUrl: product.storeUrl,
+          productId: productId,
+          quantity: 1,
+        }),
       }
-      
-      const result = await response.json();
-      
-      // Check if the response indicates success
-      if (result && (result.error || result.fragments === undefined)) {
-        throw new Error(result.message || 'Failed to add to cart');
-      }
-      
-    } catch (fetchError) {
-      console.warn('Fetch method failed, falling back to form submission:', fetchError);
-      
-      // Fallback to iframe method if fetch fails
-      const iframe = document.createElement("iframe");
-      iframe.style.display = "none";
-      iframe.name = "cart-submit-" + Date.now();
-      document.body.appendChild(iframe);
-      
-      const form = document.createElement("form");
-      form.method = "POST";
-      form.action = `${product.storeUrl}/?wc-ajax=add_to_cart`;
-      form.target = iframe.name;
-      
-      const productIdField = document.createElement("input");
-      productIdField.type = "hidden";
-      productIdField.name = "product_id";
-      productIdField.value = productId.toString();
-      
-      const quantityField = document.createElement("input");
-      quantityField.type = "hidden";
-      quantityField.name = "quantity";
-      quantityField.value = "1";
-      
-      form.appendChild(productIdField);
-      form.appendChild(quantityField);
-      document.body.appendChild(form);
-      
-      form.submit();
-      
-      setTimeout(() => {
-        document.body.removeChild(form);
-        document.body.removeChild(iframe);
-      }, 5000);
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
     }
+
+    const result = await response.json();
+    
+    // Update cart fragments if successful
+    if (result.success && result.data) {
+      updateCartFragments(result.data);
+    }
+    
+    // Show success toast
+    toast.success(`${product.title} added to cart!`, {
+      duration: 2000,
+    });
     
     return {
       success: true,
-      message: `${product.title} added to cart!`
+      message: `${product.title} added to cart!`,
+      cart: result.data
     };
     
   } catch (error) {
     console.error('WooCommerce cart error:', error);
+    
+    // Show error toast
+    toast.error(`Failed to add ${product.title} to cart`, {
+      duration: 3000,
+    });
+    
     throw new Error(`Failed to add ${product.title} to cart: ${error}`);
   }
 };
@@ -114,6 +97,14 @@ export const addToShopifyCart = async (product: CartProduct): Promise<CartRespon
   try {
     // Get Shopify variant ID
     const variantId = product.shopifyVariantId || product.id;
+    
+    console.log('Shopify cart product data:', {
+      title: product.title,
+      id: product.id,
+      shopifyVariantId: product.shopifyVariantId,
+      variantId: variantId,
+      storeUrl: product.storeUrl
+    });
     
     if (!variantId) {
       throw new Error('Variant ID is required for Shopify');
@@ -252,6 +243,11 @@ export const addToCart = async (product: Product, storeUrl: string): Promise<Car
     
   } catch (error) {
     console.error("Add to cart error:", error);
+    
+    // Show error toast
+    toast.error(`Failed to add ${product.title} to cart`, {
+      duration: 3000,
+    });
     
     // Fallback: redirect to product page
     if (product.productUrl) {
