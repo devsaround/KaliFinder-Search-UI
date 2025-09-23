@@ -268,34 +268,32 @@ const KalifindSearch: React.FC<{
     }
   };
 
-  // Search behavior state management according to search.md requirements
+  // Search behavior state management according to requirements
   useEffect(() => {
     if (!searchQuery && !hasSearched) {
-      // First Open (Initial State)
-      // - Search box is empty
-      // - Show Recommendations + Popular Searches
-      // - Do NOT fetch all products yet (skip all-products fetch if showing recommendations + popular)
-      // - Filter sidebar is NOT visible
-      // - Show recent/latest searches below the search input
+      // Initial Page Load
+      // - Show recommended products and popular searches
+      // - Do not fetch or display all products
+      // - Search input is empty
       setShowRecommendations(true);
       setShowFilters(false);
       setIsInitialState(true);
       fetchRecommendations();
       fetchPopularSearches();
     } else if (!searchQuery && hasSearched) {
-      // User Clears Search (after typing at least once)
-      // - Fetch all products and display in results
-      // - Keep filter sidebar visible
-      // - Filter data is fetched/derived only once (from the first all-products fetch) and reused afterward
+      // When user clears the search input (after they have searched at least once)
+      // - Fetch all products and display them
+      // - Show filters normally
       setShowRecommendations(false);
       setShowFilters(true);
       setIsInitialState(false);
+      // Fetch all products when search is cleared
+      performSearch(""); // Empty query will fetch all products
     } else if (searchQuery) {
-      // User Starts Typing / Searching
-      // - Show filter sidebar (remains visible for subsequent searches)
-      // - Show skeleton loaders until results load
-      // - Show suggestions/autocomplete based on typed input
-      // - Clicking a suggestion: Sets the clicked value into the search input, automatically triggers a search for that value, saves the clicked value into recent searches
+      // When user types a query
+      // - Fetch products matching the query
+      // - Show skeleton loaders in the product grid while fetching
+      // - Show filters (left for desktop, top for mobile)
       setShowRecommendations(false);
       setShowFilters(true);
       setIsInitialState(false);
@@ -554,7 +552,7 @@ const KalifindSearch: React.FC<{
 
         try {
           const params = new URLSearchParams();
-          if (query) {
+          if (query && query.trim()) {
             params.append("q", query);
 
             // Add popular search boosting
@@ -566,6 +564,7 @@ const KalifindSearch: React.FC<{
               params.append("popularTerms", matchingPopularTerms.join(","));
             }
           }
+          // For empty query, we still want to fetch all products
           if (storeUrl) {
             params.append("storeUrl", storeUrl);
           }
@@ -646,6 +645,8 @@ const KalifindSearch: React.FC<{
           setDisplayedProducts(products.length);
           setHasMoreProducts(hasMore);
           console.log(products);
+
+          // If no products match the query, just show empty results (no fallback to all products)
         } catch (error) {
           console.error("Failed to fetch products:", error);
           setFilteredProducts([]);
