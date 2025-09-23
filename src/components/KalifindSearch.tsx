@@ -98,6 +98,14 @@ const KalifindSearch: React.FC<{
     [key: string]: number;
   }>({});
   const [sortOption, setSortOption] = useState("default");
+  
+  // State for optional filters - only show if vendor has configured them
+  const [showOptionalFilters, setShowOptionalFilters] = useState({
+    brands: false,
+    colors: false,
+    tags: false,
+  });
+
   const [filters, setFilters] = useState<FilterState>({
     categories: [],
     priceRange: [0, 10000], // Default price range
@@ -214,38 +222,66 @@ const KalifindSearch: React.FC<{
     }
   };
 
-  // Fetch smart recommendations
-  const fetchRecommendations = async () => {
+  // Fetch vendor facet configuration
+  const fetchFacetConfiguration = async () => {
     if (!storeUrl) return;
     try {
-      // Try to fetch AI-powered recommendations first
       const response = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/v1/search/recommended?storeUrl=${storeUrl}&type=smart`,
+        `${import.meta.env.VITE_BACKEND_URL}/v1/facets?storeUrl=${storeUrl}`,
         {},
       );
 
       if (!response.ok) {
-        // Fallback to trending products if smart recommendations fail
-        const trendingResponse = await fetch(
-          `${import.meta.env.VITE_BACKEND_URL}/v1/search/trending?storeUrl=${storeUrl}`,
-          {},
-        );
+        throw new Error("Failed to fetch facet configuration");
+      }
 
-        if (!trendingResponse.ok) {
-          throw new Error("Failed to fetch recommendations");
-        }
+      const result = await response.json();
+      
+      // Update optional filters visibility based on vendor configuration
+      setShowOptionalFilters({
+        brands: result.some((facet: any) => facet.field === 'brand' && facet.visible),
+        colors: result.some((facet: any) => facet.field === 'color' && facet.visible),
+        tags: result.some((facet: any) => facet.field === 'tags' && facet.visible),
+      });
+    } catch (error) {
+      console.error("Failed to fetch facet configuration:", error);
+      // Keep default values (all false)
+    }
+  };
 
-        const trendingResult = await trendingResponse.json();
-        let products: Product[];
-        if (Array.isArray(trendingResult)) {
-          products = trendingResult;
-        } else if (trendingResult && Array.isArray(trendingResult.products)) {
-          products = trendingResult.products;
-        } else {
-          products = [];
-        }
+  // Fetch vendor-controlled recommendations
+  const fetchRecommendations = async () => {
+    if (!storeUrl) return;
+    try {
+      // First check if vendor has configured recommendations
+      const configResponse = await fetch(
+        `${import.meta.env.VITE_BACKEND_URL}/v1/recommendations/config?storeUrl=${storeUrl}`,
+        {},
+      );
 
-        setRecommendations(products.slice(0, 8));
+      if (!configResponse.ok) {
+        // If no config exists, don't show recommendations
+        setRecommendations([]);
+        return;
+      }
+
+      const config = await configResponse.json();
+      
+      // Only fetch recommendations if vendor has enabled them
+      if (!config.enabled) {
+        setRecommendations([]);
+        return;
+      }
+
+      // Fetch only vendor-configured recommendations
+      const response = await fetch(
+        `${import.meta.env.VITE_BACKEND_URL}/v1/search/recommended?storeUrl=${storeUrl}&type=vendor-configured`,
+        {},
+      );
+
+      if (!response.ok) {
+        // If vendor-configured recommendations fail, don't show any
+        setRecommendations([]);
         return;
       }
 
@@ -268,32 +304,35 @@ const KalifindSearch: React.FC<{
     }
   };
 
-  // Search behavior state management according to requirements
+  // Search behavior state management according to search.md requirements
   useEffect(() => {
     if (!searchQuery && !hasSearched) {
-      // Initial Page Load
-      // - Show recommended products and popular searches
-      // - Do not fetch or display all products
-      // - Search input is empty
+      // First Open (Initial State)
+      // - Search box is empty
+      // - Show Recommendations + Popular Searches
+      // - Do NOT fetch all products yet (skip all-products fetch if showing recommendations + popular)
+      // - Filter sidebar is NOT visible
+      // - Show recent/latest searches below the search input
       setShowRecommendations(true);
       setShowFilters(false);
       setIsInitialState(true);
       fetchRecommendations();
       fetchPopularSearches();
+      fetchFacetConfiguration();
     } else if (!searchQuery && hasSearched) {
-      // When user clears the search input (after they have searched at least once)
-      // - Fetch all products and display them
-      // - Show filters normally
+      // User Clears Search (after typing at least once)
+      // - Fetch all products and display in results
+      // - Keep filter sidebar visible
+      // - Filter data is fetched/derived only once (from the first all-products fetch) and reused afterward
       setShowRecommendations(false);
       setShowFilters(true);
       setIsInitialState(false);
-      // Fetch all products when search is cleared
-      performSearch(""); // Empty query will fetch all products
     } else if (searchQuery) {
-      // When user types a query
-      // - Fetch products matching the query
-      // - Show skeleton loaders in the product grid while fetching
-      // - Show filters (left for desktop, top for mobile)
+      // User Starts Typing / Searching
+      // - Show filter sidebar (remains visible for subsequent searches)
+      // - Show skeleton loaders until results load
+      // - Show suggestions/autocomplete based on typed input
+      // - Clicking a suggestion: Sets the clicked value into the search input, automatically triggers a search for that value, saves the clicked value into recent searches
       setShowRecommendations(false);
       setShowFilters(true);
       setIsInitialState(false);
@@ -311,8 +350,6 @@ const KalifindSearch: React.FC<{
         try {
           const params = new URLSearchParams();
           params.append("storeUrl", storeUrl);
-          // Set a very high limit to get ALL products for filter data
-          params.append("limit", "1000"); // High limit to get all products for filter data
 
           const response = await fetch(
             `${import.meta.env.VITE_BACKEND_URL}/v1/search?${params.toString()}`,
@@ -340,7 +377,6 @@ const KalifindSearch: React.FC<{
           }
 
           if (products && products.length > 0) {
-            console.log("Filter initialization - Total products fetched:", products.length);
             setTotalProducts(products.length);
             const prices = products
               .map((p: Product) => parseFloat(p.price))
@@ -408,14 +444,6 @@ const KalifindSearch: React.FC<{
             setColorCounts(colorCounts);
             setSizeCounts(sizeCounts);
             setTagCounts(tagCounts);
-            
-            console.log("Filter counts from ALL products:", {
-              categories: categoryCounts,
-              brands: brandCounts,
-              colors: colorCounts,
-              sizes: sizeCounts,
-              tags: tagCounts
-            });
           }
         } catch (err) {
           if (retries > 0) {
@@ -563,7 +591,7 @@ const KalifindSearch: React.FC<{
 
         try {
           const params = new URLSearchParams();
-          if (query && query.trim()) {
+          if (query) {
             params.append("q", query);
 
             // Add popular search boosting
@@ -575,7 +603,6 @@ const KalifindSearch: React.FC<{
               params.append("popularTerms", matchingPopularTerms.join(","));
             }
           }
-          // For empty query, we still want to fetch all products
           if (storeUrl) {
             params.append("storeUrl", storeUrl);
           }
@@ -656,8 +683,6 @@ const KalifindSearch: React.FC<{
           setDisplayedProducts(products.length);
           setHasMoreProducts(hasMore);
           console.log(products);
-
-          // If no products match the query, just show empty results (no fallback to all products)
         } catch (error) {
           console.error("Failed to fetch products:", error);
           setFilteredProducts([]);
@@ -1060,6 +1085,23 @@ const KalifindSearch: React.FC<{
     };
   }, [isMobile, hasMoreProducts, isLoadingMore, loadMoreProducts]);
 
+  // Function to calculate discount percentage
+  const calculateDiscountPercentage = (regularPrice: string, salePrice: string): number | null => {
+    try {
+      const regular = parseFloat(regularPrice.replace(/[^\d.,]/g, '').replace(',', '.'));
+      const sale = parseFloat(salePrice.replace(/[^\d.,]/g, '').replace(',', '.'));
+      
+      if (isNaN(regular) || isNaN(sale) || regular <= 0 || sale <= 0 || sale >= regular) {
+        return null;
+      }
+      
+      const discount = ((regular - sale) / regular) * 100;
+      return Math.round(discount);
+    } catch (error) {
+      return null;
+    }
+  };
+
   const LoadingSkeleton = () => (
     <div className="!grid !grid-cols-2 sm:!grid-cols-2 xl:grid-cols-3 2xl:!grid-cols-4 !gap-[16px] !w-full">
       {Array.from({ length: 8 }).map((_, i) => (
@@ -1245,9 +1287,12 @@ const KalifindSearch: React.FC<{
                   "category",
                   "price",
                   "size",
-                  "color",
-                  "brand",
-                  "tags",
+                  "stockStatus",
+                  "featured",
+                  "sale",
+                  ...(showOptionalFilters.colors ? ["color"] : []),
+                  ...(showOptionalFilters.brands ? ["brand"] : []),
+                  ...(showOptionalFilters.tags ? ["tags"] : []),
                 ]}
                 className="!w-full"
               >
@@ -1281,36 +1326,38 @@ const KalifindSearch: React.FC<{
                     </div>
                   </AccordionContent>
                 </AccordionItem>
-                <AccordionItem value="brand">
-                  <AccordionTrigger className="!font-extrabold text-[16px]">
-                    Brand
-                  </AccordionTrigger>
-                  <AccordionContent>
-                    <div className="!space-y-[8px]">
-                      {availableBrands.map((brand) => (
-                        <label
-                          key={brand}
-                          className="!flex !items-center !justify-between !cursor-pointer !p-[4px] sm:!p-[8px] hover:!bg-muted !rounded-lg"
-                        >
-                          <div className="!flex !items-center !gap-[12px]">
-                            <input
-                              type="checkbox"
-                              checked={filters.brands.includes(brand)}
-                              onChange={() => handleBrandChange(brand)}
-                              className="!w-[16px] !h-[16px] sm:!w-5 sm:!h-5 !text-primary !bg-background !border-border !rounded "
-                            />
-                            <span className="!text-foreground !text-[14px] sm:!text-[16px] lg:leading-[16px]">
-                              {brand}
+                {showOptionalFilters.brands && (
+                  <AccordionItem value="brand">
+                    <AccordionTrigger className="!font-extrabold text-[16px]">
+                      Brand
+                    </AccordionTrigger>
+                    <AccordionContent>
+                      <div className="!space-y-[8px]">
+                        {availableBrands.map((brand) => (
+                          <label
+                            key={brand}
+                            className="!flex !items-center !justify-between !cursor-pointer !p-[4px] sm:!p-[8px] hover:!bg-muted !rounded-lg"
+                          >
+                            <div className="!flex !items-center !gap-[12px]">
+                              <input
+                                type="checkbox"
+                                checked={filters.brands.includes(brand)}
+                                onChange={() => handleBrandChange(brand)}
+                                className="!w-[16px] !h-[16px] sm:!w-5 sm:!h-5 !text-primary !bg-background !border-border !rounded "
+                              />
+                              <span className="!text-foreground !text-[14px] sm:!text-[16px] lg:leading-[16px]">
+                                {brand}
+                              </span>
+                            </div>
+                            <span className="!text-muted-foreground !text-[12px] sm:!text-[14px] !bg-muted !px-[8px] !py-[4px] !rounded">
+                              {brandCounts[brand] || 0}
                             </span>
-                          </div>
-                          <span className="!text-muted-foreground !text-[12px] sm:!text-[14px] !bg-muted !px-[8px] !py-[4px] !rounded">
-                            {brandCounts[brand] || 0}
-                          </span>
-                        </label>
-                      ))}
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
+                          </label>
+                        ))}
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+                )}
                 {!isPriceLoading && (
                   <AccordionItem value="price">
                     <AccordionTrigger className="!font-extrabold text-[16px]">
@@ -1360,59 +1407,63 @@ const KalifindSearch: React.FC<{
                     </div>
                   </AccordionContent>
                 </AccordionItem>
-                <AccordionItem value="color">
-                  <AccordionTrigger className="!font-extrabold text-[16px]">
-                    <b className="!font-extrabold">Color</b>
-                  </AccordionTrigger>
-                  <AccordionContent>
-                    <div className="!flex !gap-[8px] !flex-wrap !pt-[16px]">
-                      {availableColors.map((color) => (
-                        <button
-                          key={color}
-                          onClick={() => handleColorChange(color)}
-                          className={`!w-[32px] !h-[32px] sm:!w-[40px] sm:!h-[40px] !rounded-full !border-4 !transition-all ${
-                            filters.colors.includes(color)
-                              ? "!border-primary !scale-110 !shadow-lg"
-                              : "!border-border hover:!border-muted-foreground"
-                          }`}
-                          style={{
-                            backgroundColor: color.toLowerCase(),
-                          }}
-                        />
-                      ))}
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-                <AccordionItem value="tags">
-                  <AccordionTrigger className="!font-extrabold text-[16px]">
-                    <b className="!font-extrabold">Tags</b>
-                  </AccordionTrigger>
-                  <AccordionContent>
-                    <div className="!space-y-[8px]">
-                      {availableTags.map((tag) => (
-                        <label
-                          key={tag}
-                          className="!flex !items-center !justify-between !cursor-pointer !p-[4px] sm:!p-[8px] hover:!bg-muted !rounded-lg"
-                        >
-                          <div className="!flex !items-center !gap-[12px]">
-                            <input
-                              type="checkbox"
-                              checked={filters.tags.includes(tag)}
-                              onChange={() => handleTagChange(tag)}
-                              className="!w-[16px] !h-[16px] sm:!w-5 sm:!h-5 !text-primary !bg-background !border-border !rounded "
-                            />
-                            <span className="!text-foreground !text-[14px] sm:!text-[16px] lg:leading-[16px]">
-                              {tag}
+                {showOptionalFilters.colors && (
+                  <AccordionItem value="color">
+                    <AccordionTrigger className="!font-extrabold text-[16px]">
+                      <b className="!font-extrabold">Color</b>
+                    </AccordionTrigger>
+                    <AccordionContent>
+                      <div className="!flex !gap-[8px] !flex-wrap !pt-[16px]">
+                        {availableColors.map((color) => (
+                          <button
+                            key={color}
+                            onClick={() => handleColorChange(color)}
+                            className={`!w-[32px] !h-[32px] sm:!w-[40px] sm:!h-[40px] !rounded-full !border-4 !transition-all ${
+                              filters.colors.includes(color)
+                                ? "!border-primary !scale-110 !shadow-lg"
+                                : "!border-border hover:!border-muted-foreground"
+                            }`}
+                            style={{
+                              backgroundColor: color.toLowerCase(),
+                            }}
+                          />
+                        ))}
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+                )}
+                {showOptionalFilters.tags && (
+                  <AccordionItem value="tags">
+                    <AccordionTrigger className="!font-extrabold text-[16px]">
+                      <b className="!font-extrabold">Tags</b>
+                    </AccordionTrigger>
+                    <AccordionContent>
+                      <div className="!space-y-[8px]">
+                        {availableTags.map((tag) => (
+                          <label
+                            key={tag}
+                            className="!flex !items-center !justify-between !cursor-pointer !p-[4px] sm:!p-[8px] hover:!bg-muted !rounded-lg"
+                          >
+                            <div className="!flex !items-center !gap-[12px]">
+                              <input
+                                type="checkbox"
+                                checked={filters.tags.includes(tag)}
+                                onChange={() => handleTagChange(tag)}
+                                className="!w-[16px] !h-[16px] sm:!w-5 sm:!h-5 !text-primary !bg-background !border-border !rounded "
+                              />
+                              <span className="!text-foreground !text-[14px] sm:!text-[16px] lg:leading-[16px]">
+                                {tag}
+                              </span>
+                            </div>
+                            <span className="!text-muted-foreground !text-[12px] sm:!text-[14px] !bg-muted !px-[8px] !py-[4px] !rounded">
+                              {tagCounts[tag] || 0}
                             </span>
-                          </div>
-                          <span className="!text-muted-foreground !text-[12px] sm:!text-[14px] !bg-muted !px-[8px] !py-[4px] !rounded">
-                            {tagCounts[tag] || 0}
-                          </span>
-                        </label>
-                      ))}
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
+                          </label>
+                        ))}
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+                )}
 
                 {/* Mandatory Facets for Mobile */}
                 <AccordionItem value="stockStatus">
@@ -1541,9 +1592,12 @@ const KalifindSearch: React.FC<{
               "category",
               "price",
               "size",
-              "color",
-              "brand",
-              "tags",
+              "stockStatus",
+              "featured",
+              "sale",
+              ...(showOptionalFilters.colors ? ["color"] : []),
+              ...(showOptionalFilters.brands ? ["brand"] : []),
+              ...(showOptionalFilters.tags ? ["tags"] : []),
             ]}
           >
             <AccordionItem value="category">
@@ -1576,36 +1630,38 @@ const KalifindSearch: React.FC<{
                 </div>
               </AccordionContent>
             </AccordionItem>
-            <AccordionItem value="brand">
-              <AccordionTrigger className="text-[16px] lg:text-[18px] !font-extrabold !text-foreground">
-                <b>Brand</b>
-              </AccordionTrigger>
-              <AccordionContent>
-                <div className="!space-y-[8px]">
-                  {availableBrands.map((brand) => (
-                    <label
-                      key={brand}
-                      className="!flex !items-center !justify-between !cursor-pointer"
-                    >
-                      <div className="!flex !items-center !gap-[8px]">
-                        <input
-                          type="checkbox"
-                          checked={filters.brands.includes(brand)}
-                          onChange={() => handleBrandChange(brand)}
-                          className="!w-[16px] !h-[16px] lg:!w-5 lg:!h-5 !text-primary !bg-background !border-border !rounded "
-                        />
-                        <span className="!text-foreground text-[14px] lg:text-[16px]">
-                          {brand}
+            {showOptionalFilters.brands && (
+              <AccordionItem value="brand">
+                <AccordionTrigger className="text-[16px] lg:text-[18px] !font-extrabold !text-foreground">
+                  <b>Brand</b>
+                </AccordionTrigger>
+                <AccordionContent>
+                  <div className="!space-y-[8px]">
+                    {availableBrands.map((brand) => (
+                      <label
+                        key={brand}
+                        className="!flex !items-center !justify-between !cursor-pointer"
+                      >
+                        <div className="!flex !items-center !gap-[8px]">
+                          <input
+                            type="checkbox"
+                            checked={filters.brands.includes(brand)}
+                            onChange={() => handleBrandChange(brand)}
+                            className="!w-[16px] !h-[16px] lg:!w-5 lg:!h-5 !text-primary !bg-background !border-border !rounded "
+                          />
+                          <span className="!text-foreground text-[14px] lg:text-[16px]">
+                            {brand}
+                          </span>
+                        </div>
+                        <span className="!text-muted-foreground !text-[12px] lg:text-[14px] mr-[8px]">
+                          {brandCounts[brand] || 0}
                         </span>
-                      </div>
-                      <span className="!text-muted-foreground !text-[12px] lg:text-[14px] mr-[8px]">
-                        {brandCounts[brand] || 0}
-                      </span>
-                    </label>
-                  ))}
-                </div>
-              </AccordionContent>
-            </AccordionItem>
+                      </label>
+                    ))}
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+            )}
             {!isPriceLoading && (
               <AccordionItem value="price">
                 <AccordionTrigger className="text-[16px] lg:text-[18px] !font-[800] !text-foreground">
@@ -1653,62 +1709,66 @@ const KalifindSearch: React.FC<{
                 </div>
               </AccordionContent>
             </AccordionItem>
-            <AccordionItem value="color">
-              <AccordionTrigger className="text-[16px] lg:text-[18px] !font-[700] !text-foreground">
-                <b className="font-extrabold">Color</b>
-              </AccordionTrigger>
-              <AccordionContent>
-                <div className="!flex !gap-[8px]">
-                  {availableColors.map((color) => (
-                    <button
-                      key={color}
-                      onClick={() => handleColorChange(color)}
-                      className={`!w-[24px] !h-[24px] lg:!w-[32px] lg:!h-[32px] !rounded-full !border-2 ${
-                        filters.colors.includes(color)
-                          ? "!border-primary !scale-110"
-                          : "!border-border"
-                      }`}
-                      style={{
-                        backgroundColor: color.toLowerCase(),
-                        transform: filters.colors.includes(color)
-                          ? "scale(1.1)"
-                          : "scale(1)",
-                      }}
-                    />
-                  ))}
-                </div>
-              </AccordionContent>
-            </AccordionItem>
-            <AccordionItem value="tags">
-              <AccordionTrigger className="text-[16px] lg:text-[18px] !font-[700] !text-foreground">
-                <b className="font-extrabold">Tags</b>
-              </AccordionTrigger>
-              <AccordionContent>
-                <div className="!space-y-[8px]">
-                  {availableTags.map((tag) => (
-                    <label
-                      key={tag}
-                      className="!flex !items-center !justify-between !cursor-pointer"
-                    >
-                      <div className="!flex !items-center !gap-[10px]">
-                        <input
-                          type="checkbox"
-                          checked={filters.tags.includes(tag)}
-                          onChange={() => handleTagChange(tag)}
-                          className="!w-[16px] !h-[16px] lg:!w-5 lg:!h-5 top-0 !text-primary !bg-background !border-border !rounded "
-                        />
-                        <span className="!text-foreground text-[14px] lg:text-[16px]">
-                          {tag}
+            {showOptionalFilters.colors && (
+              <AccordionItem value="color">
+                <AccordionTrigger className="text-[16px] lg:text-[18px] !font-[700] !text-foreground">
+                  <b className="font-extrabold">Color</b>
+                </AccordionTrigger>
+                <AccordionContent>
+                  <div className="!flex !gap-[8px]">
+                    {availableColors.map((color) => (
+                      <button
+                        key={color}
+                        onClick={() => handleColorChange(color)}
+                        className={`!w-[24px] !h-[24px] lg:!w-[32px] lg:!h-[32px] !rounded-full !border-2 ${
+                          filters.colors.includes(color)
+                            ? "!border-primary !scale-110"
+                            : "!border-border"
+                        }`}
+                        style={{
+                          backgroundColor: color.toLowerCase(),
+                          transform: filters.colors.includes(color)
+                            ? "scale(1.1)"
+                            : "scale(1)",
+                        }}
+                      />
+                    ))}
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+            )}
+            {showOptionalFilters.tags && (
+              <AccordionItem value="tags">
+                <AccordionTrigger className="text-[16px] lg:text-[18px] !font-[700] !text-foreground">
+                  <b className="font-extrabold">Tags</b>
+                </AccordionTrigger>
+                <AccordionContent>
+                  <div className="!space-y-[8px]">
+                    {availableTags.map((tag) => (
+                      <label
+                        key={tag}
+                        className="!flex !items-center !justify-between !cursor-pointer"
+                      >
+                        <div className="!flex !items-center !gap-[10px]">
+                          <input
+                            type="checkbox"
+                            checked={filters.tags.includes(tag)}
+                            onChange={() => handleTagChange(tag)}
+                            className="!w-[16px] !h-[16px] lg:!w-5 lg:!h-5 top-0 !text-primary !bg-background !border-border !rounded "
+                          />
+                          <span className="!text-foreground text-[14px] lg:text-[16px]">
+                            {tag}
+                          </span>
+                        </div>
+                        <span className="!text-muted-foreground !text-[12px] lg:text-[14px] mr-[8px]">
+                          {tagCounts[tag] || 0}
                         </span>
-                      </div>
-                      <span className="!text-muted-foreground !text-[12px] lg:text-[14px] mr-[8px]">
-                        {tagCounts[tag] || 0}
-                      </span>
-                    </label>
-                  ))}
-                </div>
-              </AccordionContent>
-            </AccordionItem>
+                      </label>
+                    ))}
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+            )}
 
             {/* Mandatory Facets */}
             <AccordionItem value="stockStatus">
@@ -1988,10 +2048,24 @@ const KalifindSearch: React.FC<{
                                 Featured
                               </div>
                             )}
-                            {product.salePrice && (
-                              <div className="!absolute !top-2 !left-2 !bg-red-500 !text-white !px-2 !py-1 !rounded-full !text-xs !font-bold">
-                                Sale
-                              </div>
+                            {product.salePrice && 
+                             product.salePrice !== "" && 
+                             product.salePrice !== "0" && 
+                             product.salePrice !== "0.00" &&
+                             product.regularPrice &&
+                             product.salePrice !== product.regularPrice && (
+                              (() => {
+                                const discountPercentage = calculateDiscountPercentage(product.regularPrice, product.salePrice);
+                                return discountPercentage ? (
+                                  <div className="!absolute !top-2 !left-2 !bg-red-500 !text-white !px-2 !py-1 !rounded-full !text-xs !font-bold">
+                                    -{discountPercentage}%
+                                  </div>
+                                ) : (
+                                  <div className="!absolute !top-2 !left-2 !bg-red-500 !text-white !px-2 !py-1 !rounded-full !text-xs !font-bold">
+                                    Sale
+                                  </div>
+                                );
+                              })()
                             )}
                           </div>
                           <h3 className="!text-[14px] sm:!text-[16px] !font-bold !text-foreground !mb-[4px] sm:!mb-[8px] h-[40px] sm:h-[48px] overflow-hidden">
@@ -1999,7 +2073,12 @@ const KalifindSearch: React.FC<{
                           </h3>
                           <div className="!flex !items-center !justify-between mt-auto">
                             <div className="!flex !items-center !gap-[8px]">
-                              {product.salePrice ? (
+                              {product.salePrice && 
+                               product.salePrice !== "" && 
+                               product.salePrice !== "0" && 
+                               product.salePrice !== "0.00" &&
+                               product.regularPrice &&
+                               product.salePrice !== product.regularPrice ? (
                                 <div className="!flex !items-center !gap-2">
                                   <span className="!text-primary !text-[14px] sm:!text-[16px] !font-bold">
                                     {product.salePrice}
@@ -2060,10 +2139,24 @@ const KalifindSearch: React.FC<{
                             Featured
                           </div>
                         )}
-                        {product.salePrice && (
-                          <div className="!absolute !top-2 !left-2 !bg-red-500 !text-white !px-2 !py-1 !rounded-full !text-xs !font-bold">
-                            Sale
-                          </div>
+                        {product.salePrice && 
+                         product.salePrice !== "" && 
+                         product.salePrice !== "0" && 
+                         product.salePrice !== "0.00" &&
+                         product.regularPrice &&
+                         product.salePrice !== product.regularPrice && (
+                          (() => {
+                            const discountPercentage = calculateDiscountPercentage(product.regularPrice, product.salePrice);
+                            return discountPercentage ? (
+                              <div className="!absolute !top-2 !left-2 !bg-red-500 !text-white !px-2 !py-1 !rounded-full !text-xs !font-bold">
+                                -{discountPercentage}%
+                              </div>
+                            ) : (
+                              <div className="!absolute !top-2 !left-2 !bg-red-500 !text-white !px-2 !py-1 !rounded-full !text-xs !font-bold">
+                                Sale
+                              </div>
+                            );
+                          })()
                         )}
                       </div>
                       <h3 className="!text-[14px] sm:!text-[16px] !font-bold !text-foreground !mb-[4px] sm:!mb-[8px] h-[40px] sm:h-[48px] overflow-hidden">
@@ -2071,7 +2164,12 @@ const KalifindSearch: React.FC<{
                       </h3>
                       <div className="!flex !items-center !justify-between mt-auto">
                         <div className="!flex !items-center !gap-[8px]">
-                          {product.salePrice ? (
+                          {product.salePrice && 
+                           product.salePrice !== "" && 
+                           product.salePrice !== "0" && 
+                           product.salePrice !== "0.00" &&
+                           product.regularPrice &&
+                           product.salePrice !== product.regularPrice ? (
                             <div className="!flex !items-center !gap-2">
                               <span className="!text-primary !text-[14px] sm:!text-[16px] !font-bold">
                                 {product.salePrice}
