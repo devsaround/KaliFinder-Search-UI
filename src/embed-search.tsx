@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import ReactDOM from "react-dom/client";
-import SearchDropdown from "./components/SearchDropdown.tsx";
 import ShadowDOMSearchDropdown from "./components/ShadowDOMSearchDropdown.tsx";
 import "./index.css";
 import { injectIsolatedStyles, applyScopedStyles } from "./lib/styleIsolation";

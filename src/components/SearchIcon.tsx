@@ -1,6 +1,6 @@
 import React from "react";
 import { Search } from "lucide-react";
-import SearchDropdown from "./SearchDropdown";
+import ShadowDOMSearchDropdown from "./ShadowDOMSearchDropdown";
 import { useIsOpen } from "@/hooks/zustand";
 import { SearchIconProps } from "../types";
 
@@ -20,7 +20,7 @@ const SearchIcon: React.FC<SearchIconProps> = ({storeUrl }) => {
       </button>
 
       {/* Search Dropdown */}
-      <SearchDropdown
+      <ShadowDOMSearchDropdown
         isOpen={isOpen}
         onClose={toggleIsOpen}
         storeUrl={storeUrl}
