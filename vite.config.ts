@@ -22,7 +22,9 @@ export default defineConfig(({ mode }) => ({
   },
   define: {
     "process.env.NODE_ENV": JSON.stringify(mode),
-    "import.meta.env.VITE_BACKEND_URL": JSON.stringify("http://localhost:8000/api"),
+    "import.meta.env.VITE_BACKEND_URL": JSON.stringify(
+      "http://localhost:8000/api"
+    ),
   },
   build: {
     sourcemap: false,
