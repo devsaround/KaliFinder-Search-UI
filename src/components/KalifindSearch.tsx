@@ -1520,9 +1520,14 @@ const KalifindSearch: React.FC<{
                           </div>
                         </>
                       ) : (
-                        <div className="!flex !items-center !justify-center !py-[12px] !text-muted-foreground">
-                          <Search className="!w-4 !h-4 !mr-2" />
-                          <span>No suggestions found for "{searchQuery}"</span>
+                        <div className="!flex !flex-col !items-center !justify-center !py-6 !text-center !animate-in !fade-in !duration-300">
+                          <div className="!w-10 !h-10 !bg-muted !rounded-full !flex !items-center !justify-center !mb-3 !animate-in !zoom-in !duration-500">
+                            <Search className="!w-5 !h-5 !text-muted-foreground" />
+                          </div>
+                          <div className="!animate-in !slide-in-from-bottom-2 !duration-500">
+                            <p className="!text-foreground !font-medium !mb-1 !text-sm">Search not found</p>
+                            <p className="!text-muted-foreground !text-xs">No suggestions found for "{searchQuery}"</p>
+                          </div>
                         </div>
                       )}
                     </div>
@@ -2486,10 +2491,20 @@ const KalifindSearch: React.FC<{
               !isPending &&
               !showRecommendations &&
               sortedProducts.length === 0 && (
-                <div className="!text-center !py-[48px] !w-full">
-                  <p className="!text-muted-foreground text-[16px] lg:text-[18px]">
-                    No products found matching your criteria.
-                  </p>
+                <div className="!text-center !py-[48px] !w-full !animate-in !fade-in !duration-300">
+                  <div className="!flex !flex-col !items-center !gap-4">
+                    <div className="!w-16 !h-16 !bg-muted !rounded-full !flex !items-center !justify-center !animate-in !zoom-in !duration-500">
+                      <Search className="!w-8 !h-8 !text-muted-foreground" />
+                    </div>
+                    <div className="!animate-in !slide-in-from-bottom-2 !duration-500">
+                      <p className="!text-foreground !text-[18px] !lg:text-[20px] !font-semibold !mb-2">
+                        Search not found
+                      </p>
+                      <p className="!text-muted-foreground !text-[14px] !lg:text-[16px]">
+                        No products found matching your criteria. Try different keywords or browse our categories.
+                      </p>
+                    </div>
+                  </div>
                 </div>
               )}
 

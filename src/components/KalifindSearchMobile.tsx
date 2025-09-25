@@ -223,13 +223,6 @@ const KalifindSearchMobile: React.FC<KalifindSearchMobileProps> = ({
       </div>
 
       {/* Autocomplete dropdown for mobile */}
-      {console.log("Mobile autocomplete debug:", {
-        mobileShowAutocomplete,
-        searchQueryLength: searchQuery.length,
-        mobileIsAutocompleteLoading,
-        mobileSuggestionsLength: mobileAutocompleteSuggestions.length,
-        shouldShow: mobileShowAutocomplete && searchQuery.length > 0 && (mobileIsAutocompleteLoading || mobileAutocompleteSuggestions.length > 0)
-      })}
       {mobileShowAutocomplete &&
         searchQuery.length > 0 &&
         (mobileIsAutocompleteLoading || mobileAutocompleteSuggestions.length > 0) && (
@@ -275,9 +268,14 @@ const KalifindSearchMobile: React.FC<KalifindSearchMobileProps> = ({
                   </div>
                 </>
               ) : !mobileIsAutocompleteLoading ? (
-                <div className="flex items-center justify-center py-3 text-muted-foreground">
-                  <Search className="w-4 h-4 mr-2" />
-                  <span>No suggestions found for "{searchQuery}"</span>
+                <div className="flex flex-col items-center justify-center py-6 text-center animate-in fade-in duration-300">
+                  <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center mb-3 animate-in zoom-in duration-500">
+                    <Search className="w-6 h-6 text-muted-foreground" />
+                  </div>
+                  <div className="animate-in slide-in-from-bottom-2 duration-500">
+                    <p className="text-foreground font-medium mb-1">Search not found</p>
+                    <p className="text-muted-foreground text-sm">No suggestions found for "{searchQuery}"</p>
+                  </div>
                 </div>
               ) : null}
             </div>

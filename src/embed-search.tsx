@@ -121,41 +121,29 @@ const findSearchTriggerElements = (): Element[] => {
   }
 
   const elements: Element[] = [];
-  const allElements = header.querySelectorAll("*");
-  console.log("Kalifind Search: All elements in header:", allElements);
+  
+  // Look for specific search-related elements in header only
+  const searchSelectors = [
+    'search-button',
+    '.search-action',
+    '.search-button', 
+    '.search-trigger',
+    '[aria-label*="search" i]',
+    '[aria-label*="Search" i]',
+    '[aria-label*="Open search" i]'
+  ];
 
-  allElements.forEach((element) => {
-    const id = element.id;
-    const className = element.className;
-    console.log(
-      "Kalifind Search: Checking element:",
-      element,
-      "id:",
-      id,
-      "className:",
-      className
-    );
-
-    if (id && id.toLowerCase().includes("search")) {
-      console.log("Kalifind Search: Found element by ID:", element);
-      elements.push(element);
-      return;
-    }
-
-    if (typeof className === "string" && className) {
-      const classes = className.split(/\s+/);
-      for (const cls of classes) {
-        if (cls.toLowerCase().includes("search")) {
-          console.log(
-            "Kalifind Search: Found element by class:",
-            element,
-            "class:",
-            cls
-          );
-          elements.push(element);
-          return;
+  searchSelectors.forEach(selector => {
+    try {
+      const foundElements = header.querySelectorAll(selector);
+      foundElements.forEach(el => {
+        if (!elements.includes(el)) {
+          console.log("Kalifind Search: Found search element in header:", el, "selector:", selector);
+          elements.push(el);
         }
-      }
+      });
+    } catch (e) {
+      console.log("Kalifind Search: Selector not supported:", selector);
     }
   });
 
@@ -165,7 +153,11 @@ const findSearchTriggerElements = (): Element[] => {
 
 // Function to remove existing search functionality from elements
 const removeExistingSearch = (elements: Element[]): void => {
+  console.log("Kalifind Search: removeExistingSearch called with elements:", elements);
   elements.forEach((element) => {
+    console.log("Kalifind Search: Processing element:", element);
+    console.log("Kalifind Search: Element attributes:", Array.from(element.attributes).map(attr => `${attr.name}="${attr.value}"`));
+    // Remove standard HTML event attributes
     const eventAttributes = [
       "onclick",
       "ondblclick",
@@ -181,6 +173,48 @@ const removeExistingSearch = (elements: Element[]): void => {
     eventAttributes.forEach((attr) => {
       if (element.hasAttribute(attr)) {
         element.removeAttribute(attr);
+      }
+    });
+
+    // Remove Svelte-style event attributes (like on:click)
+    const svelteEventAttributes = [
+      "on:click",
+      "on:dblclick",
+      "on:mousedown",
+      "on:mouseup",
+      "on:mouseover",
+      "on:mouseout",
+      "on:keydown",
+      "on:keyup",
+      "on:keypress",
+      "on:touchstart",
+      "on:touchend"
+    ];
+
+    svelteEventAttributes.forEach((attr) => {
+      if (element.hasAttribute(attr)) {
+        console.log("Kalifind Search: Removing Svelte event attribute:", attr, "from element:", element);
+        element.removeAttribute(attr);
+        console.log("Kalifind Search: Attribute removed, element now:", element);
+      }
+    });
+
+    // Also check for any remaining event attributes that might contain search or modal
+    const allAttributes = Array.from(element.attributes);
+    allAttributes.forEach(attr => {
+      if (attr.name.includes('on') && (attr.value.includes('search') || attr.value.includes('modal'))) {
+        console.log("Kalifind Search: Removing event attribute with search/modal:", attr.name, "=", attr.value, "from element:", element);
+        element.removeAttribute(attr.name);
+      }
+    });
+
+    // Also check child elements for on:click attributes
+    const childButtons = element.querySelectorAll('button[on\\:click]');
+    childButtons.forEach(button => {
+      console.log("Kalifind Search: Found child button with on:click:", button);
+      if (button.hasAttribute('on:click')) {
+        console.log("Kalifind Search: Removing on:click from child button:", button);
+        button.removeAttribute('on:click');
       }
     });
   });
