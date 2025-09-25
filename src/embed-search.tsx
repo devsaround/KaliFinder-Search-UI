@@ -70,6 +70,18 @@ const prefetchData = async (storeUrl: string) => {
         availableBrands: Array.from(allBrands),
         categoryCounts,
         brandCounts,
+        // Store the actual products with cart fields for cart operations
+        products: products.map(product => ({
+          ...product,
+          // Ensure cart fields are preserved
+          shopifyVariantId: product.shopifyVariantId,
+          shopifyProductId: product.shopifyProductId,
+          wooProductId: product.wooProductId,
+          productType: product.productType,
+          storeType: product.storeType,
+          storeUrl: product.storeUrl,
+          productUrl: product.productUrl,
+        }))
       };
 
       // Store initial data in a global variable instead of cache

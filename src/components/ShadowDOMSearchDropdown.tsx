@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, Suspense, lazy } from "react";
+import React, { useState, useEffect, useRef, Suspense, lazy, useCallback } from "react";
 import { createRoot } from "react-dom/client";
 import { X, Search } from "lucide-react";
 import ScrollToTop from "./ScrollToTop";
@@ -24,12 +24,14 @@ const ShadowDOMSearchDropdown: React.FC<ShadowDOMSearchDropdownProps> = ({
   const [autocompleteSuggestions, setAutocompleteSuggestions] = useState<string[]>([]);
   const [isAutocompleteLoading, setIsAutocompleteLoading] = useState(false);
   const [highlightedSuggestionIndex, setHighlightedSuggestionIndex] = useState(-1);
+  const [hasSearched, setHasSearched] = useState(false);
+  const [isInteractingWithDropdown, setIsInteractingWithDropdown] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const searchRef = useRef<HTMLDivElement>(null);
   const shadowInitializedRef = useRef(false);
 
   // Fuzzy matching function for better autocomplete
-  const fuzzyMatch = (query: string, suggestion: string): boolean => {
+  const fuzzyMatch = useCallback((query: string, suggestion: string): boolean => {
     if (!query || !suggestion) return false;
     
     const queryLower = query.toLowerCase().trim();
@@ -48,10 +50,10 @@ const ShadowDOMSearchDropdown: React.FC<ShadowDOMSearchDropdownProps> = ({
     
     // If we found all characters in order, it's a match
     return queryIndex === queryLower.length;
-  };
+  }, []);
 
   // Function to score and sort suggestions by relevance
-  const scoreSuggestion = (query: string, suggestion: string): number => {
+  const scoreSuggestion = useCallback((query: string, suggestion: string): number => {
     if (!query || !suggestion) return 0;
     
     const queryLower = query.toLowerCase().trim();
@@ -70,7 +72,7 @@ const ShadowDOMSearchDropdown: React.FC<ShadowDOMSearchDropdownProps> = ({
     if (fuzzyMatch(query, suggestion)) return 50;
     
     return 0;
-  };
+  }, [fuzzyMatch]);
 
   // Check if device is mobile or tablet (using 1280px breakpoint)
   useEffect(() => {
@@ -124,9 +126,11 @@ const ShadowDOMSearchDropdown: React.FC<ShadowDOMSearchDropdownProps> = ({
     if (!storeUrl || !searchQuery.trim()) {
       setAutocompleteSuggestions([]);
       setIsAutocompleteLoading(false);
+      setShowAutocomplete(false);
       return;
     }
 
+    setShowAutocomplete(true);
     const debounceTimer = setTimeout(async () => {
       setIsAutocompleteLoading(true);
       try {
@@ -148,14 +152,14 @@ const ShadowDOMSearchDropdown: React.FC<ShadowDOMSearchDropdownProps> = ({
         // Better handling of different response formats
         let rawSuggestions: string[] = [];
         if (Array.isArray(result)) {
-          rawSuggestions = result.map((r: any) => {
+          rawSuggestions = result.map((r: { title: string; name: string; product_title: string; product_name: string; }) => {
             // Handle different possible field names
             return r.title || r.name || r.product_title || r.product_name || String(r);
           }).filter(Boolean);
         } else if (result && Array.isArray(result.suggestions)) {
-          rawSuggestions = result.suggestions.map((s: any) => String(s));
+          rawSuggestions = result.suggestions.map((s: string) => String(s));
         } else if (result && Array.isArray(result.products)) {
-          rawSuggestions = result.products.map((r: any) => {
+          rawSuggestions = result.products.map((r: { title: string; name: string; product_title: string; product_name: string; }) => {
             return r.title || r.name || r.product_title || r.product_name || String(r);
           }).filter(Boolean);
         }
@@ -186,7 +190,7 @@ const ShadowDOMSearchDropdown: React.FC<ShadowDOMSearchDropdownProps> = ({
     }, 300);
 
     return () => clearTimeout(debounceTimer);
-  }, [searchQuery, storeUrl]);
+  }, [searchQuery, storeUrl, scoreSuggestion]);
 
   // Click outside handler for autocomplete
   useEffect(() => {
@@ -574,11 +578,9 @@ const ShadowDOMSearchDropdown: React.FC<ShadowDOMSearchDropdownProps> = ({
       const handleSearch = (query: string) => {
         console.log("Mobile handleSearch called with:", query);
         setSearchQuery(query);
-        // Show autocomplete when user starts typing
-        if (query.trim()) {
-          setShowAutocomplete(true);
-        } else {
-          // Hide autocomplete when input is cleared
+        // Let the mobile autocomplete useEffect handle showAutocomplete state
+        if (!query.trim()) {
+          // Only hide autocomplete when input is cleared
           setShowAutocomplete(false);
           setAutocompleteSuggestions([]);
           setHighlightedSuggestionIndex(-1);
@@ -608,6 +610,9 @@ const ShadowDOMSearchDropdown: React.FC<ShadowDOMSearchDropdownProps> = ({
             storeUrl={storeUrl}
             onClose={onClose}
             searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+            hasSearched={hasSearched}
+            setHasSearched={setHasSearched}
             hideHeader={isMobileOrTablet} // Pass flag to hide header on mobile/tablet
           />
         </div>
@@ -635,9 +640,15 @@ const ShadowDOMSearchDropdown: React.FC<ShadowDOMSearchDropdownProps> = ({
           >
             <div className="w-full h-full overflow-y-auto">
               {isMobileOrTablet ? (
-                // Mobile/Tablet: Use KalifindSearchMobile component
+                // Mobile/Tablet: Use KalifindSearchMobile component for header, and KalifindSearch for content
                 <div className="w-full h-full">
                   {/* Mobile search header at top */}
+                  {console.log("ShadowDOM mobile props:", {
+                    showAutocomplete,
+                    autocompleteSuggestions,
+                    isAutocompleteLoading,
+                    searchQuery
+                  })}
                   <KalifindSearchMobile
                     searchRef={searchRef}
                     inputRef={inputRef}
@@ -645,13 +656,9 @@ const ShadowDOMSearchDropdown: React.FC<ShadowDOMSearchDropdownProps> = ({
                     handleSearch={handleSearch}
                     handleKeyDown={handleKeyDown}
                     onClose={onClose}
-                    showAutocomplete={showAutocomplete}
-                    setShowAutocomplete={setShowAutocomplete}
-                    autocompleteSuggestions={autocompleteSuggestions}
-                    isAutocompleteLoading={isAutocompleteLoading}
-                    handleSuggestionClick={handleSuggestionClick}
-                    highlightedSuggestionIndex={highlightedSuggestionIndex}
-                    setHighlightedSuggestionIndex={setHighlightedSuggestionIndex}
+                    setHasSearched={setHasSearched}
+                    isInteractingWithDropdown={isInteractingWithDropdown}
+                    setIsInteractingWithDropdown={setIsInteractingWithDropdown}
                   />
 
                   {/* Content area below search */}
@@ -679,7 +686,15 @@ const ShadowDOMSearchDropdown: React.FC<ShadowDOMSearchDropdownProps> = ({
                         </div>
                       }
                     >
-                      <EcommerceSearchWrapper />
+                      <EcommerceSearch
+                        storeUrl={storeUrl}
+                        onClose={onClose}
+                        searchQuery={searchQuery}
+                        setSearchQuery={setSearchQuery}
+                        hasSearched={hasSearched}
+                        setHasSearched={setHasSearched}
+                        hideHeader={true} // Hide header for the content part
+                      />
                     </Suspense>
                   </div>
                 </div>
@@ -690,6 +705,9 @@ const ShadowDOMSearchDropdown: React.FC<ShadowDOMSearchDropdownProps> = ({
                     storeUrl={storeUrl} 
                     onClose={onClose}
                     searchQuery={searchQuery}
+                    setSearchQuery={setSearchQuery}
+                    hasSearched={hasSearched}
+                    setHasSearched={setHasSearched}
                     hideHeader={false}
                   />
                 </Suspense>
@@ -712,6 +730,10 @@ const ShadowDOMSearchDropdown: React.FC<ShadowDOMSearchDropdownProps> = ({
     searchQuery,
     storeUrl,
     onClose,
+    autocompleteSuggestions,
+    highlightedSuggestionIndex,
+    isAutocompleteLoading,
+    showAutocomplete,
   ]);
 
   // Cleanup effect
@@ -726,7 +748,7 @@ const ShadowDOMSearchDropdown: React.FC<ShadowDOMSearchDropdownProps> = ({
         }
       }
     };
-  }, []);
+  }, [reactRoot]);
 
   if (!isOpen && !isAnimating) return null;
 

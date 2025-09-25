@@ -13,6 +13,7 @@ export interface InitialData {
   colorCounts?: { [key: string]: number };
   sizeCounts?: { [key: string]: number };
   tagCounts?: { [key: string]: number };
+  products?: Product[]; // Store products with cart fields for cart operations
 }
 
 export interface Product {
@@ -48,6 +49,7 @@ export interface Product {
   productType?: string; // "simple" or "variable"
   shopifyVariantId?: string; // Shopify variant ID
   wooProductId?: string; // WooCommerce product ID
+  shopifyProductId? :string
 }
 
 export interface FilterState {
@@ -59,18 +61,18 @@ export interface FilterState {
   genders?: string[];
   tags: string[];
   // Mandatory facets
-  stockStatus: string[];      // In Stock, Out of Stock, On Backorder
+  stockStatus: string[]; // In Stock, Out of Stock, On Backorder
   featuredProducts: boolean; // Featured vs Regular products
-  saleStatus: boolean;       // On Sale vs Regular Price
+  saleStatus: boolean; // On Sale vs Regular Price
 }
 
 // Facet configuration for mandatory and optional facets
 export interface FacetConfig {
-  field: string;        // Facet field name
-  label: string;        // Display label
-  visible: boolean;     // Show/hide facet
-  terms: number;        // Number of terms to show
-  mandatory: boolean;   // Whether this is a mandatory facet
+  field: string; // Facet field name
+  label: string; // Display label
+  visible: boolean; // Show/hide facet
+  terms: number; // Number of terms to show
+  mandatory: boolean; // Whether this is a mandatory facet
 }
 
 // Mandatory facets (Always Visible)
@@ -140,7 +142,12 @@ export interface ShadowDOMSearchDropdownProps {
 }
 
 // Sort options
-export type SortOption = 'relevance' | 'a-z' | 'z-a' | 'price-asc' | 'price-desc';
+export type SortOption =
+  | "relevance"
+  | "a-z"
+  | "z-a"
+  | "price-asc"
+  | "price-desc";
 
 // Filter counts
 export interface FilterCounts {
@@ -155,7 +162,7 @@ export interface FilterCounts {
 export interface CartProduct extends Product {
   // Required for cart operations
   storeUrl: string;
-  storeType: 'shopify' | 'woocommerce';
+  storeType: "shopify" | "woocommerce";
 }
 
 export interface CartResponse {
@@ -164,7 +171,7 @@ export interface CartResponse {
   cart?: {
     item_count: number;
     total_price: string;
-    items: any[];
+    items: Product[];
   };
 }
 

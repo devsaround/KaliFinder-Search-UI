@@ -62,6 +62,17 @@ const KalifindSearchDesktop: React.FC<KalifindSearchDesktopProps> = ({
                           setShowAutocomplete?.(true);
                         }
                       }}
+                      onBlur={(e) => {
+                        // Only close autocomplete if the blur is not caused by clicking on a suggestion
+                        // or if the input is being cleared
+                        const relatedTarget = e.relatedTarget as HTMLElement;
+                        const isClickingOnSuggestion = relatedTarget?.closest("[data-suggestion-item]") || 
+                                                      relatedTarget?.closest("[data-autocomplete-dropdown]");
+                        
+                        if (!isClickingOnSuggestion && searchQuery.length === 0) {
+                          setShowAutocomplete?.(false);
+                        }
+                      }}
                       onKeyDown={handleKeyDown}
                       placeholder="Search"
                       className="!w-full !pl-[30px] !pr-[16px] !py-[12px] !text-foreground !placeholder-muted-foreground focus:!outline-none focus:!border-none focus:!ring-0"

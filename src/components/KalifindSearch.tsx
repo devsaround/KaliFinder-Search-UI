@@ -34,20 +34,28 @@ import {
 } from "@/components/ui/drawer";
 
 import { Product, FilterState } from "../types";
+import Recommendations from "./Recommendations";
 
 const KalifindSearch: React.FC<{
   storeUrl?: string;
   onClose?: () => void;
   searchQuery?: string;
+  setSearchQuery: (query: string) => void;
+  hasSearched: boolean;
+  setHasSearched: (hasSearched: boolean) => void;
   hideHeader?: boolean;
 }> = ({
   onClose,
-  searchQuery: initialSearchQuery,
+  searchQuery,
+  setSearchQuery,
+  hasSearched,
+  setHasSearched,
   hideHeader = false,
   storeUrl = "https://findifly.kinsta.cloud",
+  // storeUrl = "https://findifly-dev.myshopify.com",
 }) => {
-  const [searchQuery, setSearchQuery] = useState(initialSearchQuery || "");
   const [showAutocomplete, setShowAutocomplete] = useState(false);
+  const [isInteractingWithDropdown, setIsInteractingWithDropdown] = useState(false);
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isPending, startTransition] = useTransition();
@@ -68,8 +76,11 @@ const KalifindSearch: React.FC<{
 
   // New state variables for search behavior
   const [showRecommendations, setShowRecommendations] = useState(true);
-  const [hasSearched, setHasSearched] = useState(false);
+  const [isSearchingFromSuggestion, setIsSearchingFromSuggestion] = useState(false);
+  const [forceSearch, setForceSearch] = useState(0);
+
   const [recommendations, setRecommendations] = useState<Product[]>([]);
+  const [recommendationsFetched, setRecommendationsFetched] = useState(false);
   const [popularSearches, setPopularSearches] = useState<string[]>([
     "shirt",
     "underwear",
@@ -98,8 +109,13 @@ const KalifindSearch: React.FC<{
   const [tagCounts, setTagCounts] = useState<{
     [key: string]: number;
   }>({});
+  const [stockStatusCounts, setStockStatusCounts] = useState<{
+    [key: string]: number;
+  }>({});
+  const [featuredCount, setFeaturedCount] = useState(0);
+  const [saleCount, setSaleCount] = useState(0);
   const [sortOption, setSortOption] = useState("default");
-  
+
   // State for optional filters - only show if vendor has configured them
   const [showOptionalFilters, setShowOptionalFilters] = useState({
     brands: false,
@@ -128,7 +144,7 @@ const KalifindSearch: React.FC<{
   // Detect mobile device
   useEffect(() => {
     const checkIsMobile = () => {
-      setIsMobile(window.innerWidth < 1024);
+      setIsMobile(window.innerWidth < 1280);
     };
 
     checkIsMobile();
@@ -163,63 +179,62 @@ const KalifindSearch: React.FC<{
     }
   }, [recentSearches]);
 
-  // Sync search query from parent (for mobile/tablet)
-  useEffect(() => {
-    if (
-      initialSearchQuery !== undefined &&
-      initialSearchQuery !== searchQuery
-    ) {
-      console.log("Syncing search query from parent:", initialSearchQuery);
-      setSearchQuery(initialSearchQuery);
-    }
-  }, [initialSearchQuery]);
-
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
   const debouncedPriceRange = useDebounce(filters.priceRange, 300);
 
   // Fuzzy matching function for better autocomplete
-  const fuzzyMatch = (query: string, suggestion: string): boolean => {
-    if (!query || !suggestion) return false;
-    
-    const queryLower = query.toLowerCase().trim();
-    const suggestionLower = suggestion.toLowerCase().trim();
-    
-    // Exact match
-    if (suggestionLower.includes(queryLower)) return true;
-    
-    // Fuzzy matching - check if all characters in query appear in order in suggestion
-    let queryIndex = 0;
-    for (let i = 0; i < suggestionLower.length && queryIndex < queryLower.length; i++) {
-      if (suggestionLower[i] === queryLower[queryIndex]) {
-        queryIndex++;
+  const fuzzyMatch = useCallback(
+    (query: string, suggestion: string): boolean => {
+      if (!query || !suggestion) return false;
+
+      const queryLower = query.toLowerCase().trim();
+      const suggestionLower = suggestion.toLowerCase().trim();
+
+      // Exact match
+      if (suggestionLower.includes(queryLower)) return true;
+
+      // Fuzzy matching - check if all characters in query appear in order in suggestion
+      let queryIndex = 0;
+      for (
+        let i = 0;
+        i < suggestionLower.length && queryIndex < queryLower.length;
+        i++
+      ) {
+        if (suggestionLower[i] === queryLower[queryIndex]) {
+          queryIndex++;
+        }
       }
-    }
-    
-    // If we found all characters in order, it's a match
-    return queryIndex === queryLower.length;
-  };
+
+      // If we found all characters in order, it's a match
+      return queryIndex === queryLower.length;
+    },
+    [],
+  );
 
   // Function to score and sort suggestions by relevance
-  const scoreSuggestion = (query: string, suggestion: string): number => {
-    if (!query || !suggestion) return 0;
-    
-    const queryLower = query.toLowerCase().trim();
-    const suggestionLower = suggestion.toLowerCase().trim();
-    
-    // Exact match gets highest score
-    if (suggestionLower === queryLower) return 100;
-    
-    // Starts with query gets high score
-    if (suggestionLower.startsWith(queryLower)) return 90;
-    
-    // Contains query gets medium score
-    if (suggestionLower.includes(queryLower)) return 70;
-    
-    // Fuzzy match gets lower score
-    if (fuzzyMatch(query, suggestion)) return 50;
-    
-    return 0;
-  };
+  const scoreSuggestion = useCallback(
+    (query: string, suggestion: string): number => {
+      if (!query || !suggestion) return 0;
+
+      const queryLower = query.toLowerCase().trim();
+      const suggestionLower = suggestion.toLowerCase().trim();
+
+      // Exact match gets highest score
+      if (suggestionLower === queryLower) return 100;
+
+      // Starts with query gets high score
+      if (suggestionLower.startsWith(queryLower)) return 90;
+
+      // Contains query gets medium score
+      if (suggestionLower.includes(queryLower)) return 70;
+
+      // Fuzzy match gets lower score
+      if (fuzzyMatch(query, suggestion)) return 50;
+
+      return 0;
+    },
+    [fuzzyMatch],
+  );
 
   const searchRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -240,7 +255,7 @@ const KalifindSearch: React.FC<{
   const shouldShowFilters = showFilters || isAnyFilterActive;
 
   // Fetch popular searches
-  const fetchPopularSearches = async () => {
+  const fetchPopularSearches = useCallback(async () => {
     if (!storeUrl) return;
     try {
       const response = await fetch(
@@ -269,10 +284,10 @@ const KalifindSearch: React.FC<{
       console.error("Failed to fetch popular searches:", error);
       // Keep default popular searches
     }
-  };
+  }, [storeUrl]);
 
   // Fetch vendor facet configuration
-  const fetchFacetConfiguration = async () => {
+  const fetchFacetConfiguration = useCallback(async () => {
     if (!storeUrl) return;
     try {
       const response = await fetch(
@@ -285,22 +300,31 @@ const KalifindSearch: React.FC<{
       }
 
       const result = await response.json();
-      
+
       // Update optional filters visibility based on vendor configuration
       setShowOptionalFilters({
-        brands: result.some((facet: any) => facet.field === 'brand' && facet.visible),
-        colors: result.some((facet: any) => facet.field === 'color' && facet.visible),
-        tags: result.some((facet: any) => facet.field === 'tags' && facet.visible),
+        brands: result.some(
+          (facet: { field: string; visible: boolean }) =>
+            facet.field === "brand" && facet.visible,
+        ),
+        colors: result.some(
+          (facet: { field: string; visible: boolean }) =>
+            facet.field === "color" && facet.visible,
+        ),
+        tags: result.some(
+          (facet: { field: string; visible: boolean }) =>
+            facet.field === "tags" && facet.visible,
+        ),
       });
     } catch (error) {
       console.error("Failed to fetch facet configuration:", error);
       // Keep default values (all false)
     }
-  };
+  }, [storeUrl]);
 
   // Fetch vendor-controlled recommendations
-  const fetchRecommendations = async () => {
-    if (!storeUrl) return;
+  const fetchRecommendations = useCallback(async () => {
+    if (!storeUrl || recommendationsFetched) return;
     try {
       // First check if vendor has configured recommendations
       const configResponse = await fetch(
@@ -315,7 +339,7 @@ const KalifindSearch: React.FC<{
       }
 
       const config = await configResponse.json();
-      
+
       // Only fetch recommendations if vendor has enabled them
       if (!config.enabled) {
         setRecommendations([]);
@@ -347,11 +371,12 @@ const KalifindSearch: React.FC<{
       }
 
       setRecommendations(products.slice(0, 8)); // Limit to 8 recommendations
+      setRecommendationsFetched(true);
     } catch (error) {
       console.error("Failed to fetch recommendations:", error);
       setRecommendations([]);
     }
-  };
+  }, [storeUrl, recommendationsFetched]);
 
   // Search behavior state management according to search.md requirements
   useEffect(() => {
@@ -365,9 +390,6 @@ const KalifindSearch: React.FC<{
       setShowRecommendations(true);
       setShowFilters(false);
       setIsInitialState(true);
-      fetchRecommendations();
-      fetchPopularSearches();
-      fetchFacetConfiguration();
     } else if (!searchQuery && hasSearched) {
       // User Clears Search (after typing at least once)
       // - Fetch all products and display in results
@@ -385,11 +407,15 @@ const KalifindSearch: React.FC<{
       setShowRecommendations(false);
       setShowFilters(true);
       setIsInitialState(false);
-      if (!hasSearched) {
-        setHasSearched(true);
-      }
+      setHasSearched(true);
     }
-  }, [searchQuery, hasSearched, storeUrl]);
+  }, [searchQuery, storeUrl, setHasSearched]);
+
+  useEffect(() => {
+    fetchRecommendations();
+    fetchPopularSearches();
+    fetchFacetConfiguration();
+  }, [fetchRecommendations, fetchPopularSearches, fetchFacetConfiguration]);
 
   useEffect(() => {
     const initFilters = async () => {
@@ -399,6 +425,7 @@ const KalifindSearch: React.FC<{
         try {
           const params = new URLSearchParams();
           params.append("storeUrl", storeUrl);
+          params.append("limit", "1000"); // Add high limit to fetch all products for filter counts
 
           const response = await fetch(
             `${import.meta.env.VITE_BACKEND_URL}/v1/search?${params.toString()}`,
@@ -449,8 +476,12 @@ const KalifindSearch: React.FC<{
             const colorCounts: { [key: string]: number } = {};
             const sizeCounts: { [key: string]: number } = {};
             const tagCounts: { [key: string]: number } = {};
+            const stockStatusCounts: { [key: string]: number } = {};
+            let featuredCount = 0;
+            let saleCount = 0;
 
-            products.forEach((product: Product) => {
+            // products.forEach((product: Product) => {
+            products.forEach((product: any) => {
               if (product.categories) {
                 product.categories.forEach((cat: string) => {
                   allCategories.add(cat);
@@ -481,6 +512,26 @@ const KalifindSearch: React.FC<{
                   tagCounts[tag] = (tagCounts[tag] || 0) + 1;
                 });
               }
+              
+              // Count stock status
+              if (product.stockStatus) {
+                stockStatusCounts[product.stockStatus] = (stockStatusCounts[product.stockStatus] || 0) + 1;
+              }
+              
+              // Count featured products
+              if (product.featured) {
+                featuredCount++;
+              }
+              
+              // Count sale products
+              if (product.salePrice && 
+                  product.salePrice !== "" && 
+                  product.salePrice !== "0" && 
+                  product.salePrice !== "0.00" && 
+                  product.regularPrice && 
+                  product.salePrice !== product.regularPrice) {
+                saleCount++;
+              }
             });
 
             setAvailableCategories(Array.from(allCategories));
@@ -493,6 +544,9 @@ const KalifindSearch: React.FC<{
             setColorCounts(colorCounts);
             setSizeCounts(sizeCounts);
             setTagCounts(tagCounts);
+            setStockStatusCounts(stockStatusCounts);
+            setFeaturedCount(featuredCount);
+            setSaleCount(saleCount);
           }
         } catch (err) {
           if (retries > 0) {
@@ -512,34 +566,41 @@ const KalifindSearch: React.FC<{
   }, [storeUrl]);
 
   // Click outside handler
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      // Check if the click is on a suggestion item
-      const target = event.target as HTMLElement;
-      const isSuggestionClick = target.closest("[data-suggestion-item]");
-
-      if (isSuggestionClick) {
-        console.log(
-          "Click detected on suggestion item, not closing autocomplete",
-        );
-        return;
-      }
-
-      // Add a small delay to allow suggestion clicks to process first
-      setTimeout(() => {
-        if (
-          searchRef.current &&
-          !searchRef.current.contains(event.target as Node)
-        ) {
-          console.log("Click outside detected, closing autocomplete");
-          setShowAutocomplete(false);
-        }
-      }, 50);
-    };
-
-    document.addEventListener("click", handleClickOutside);
-    return () => document.removeEventListener("click", handleClickOutside);
-  }, []);
+  // useEffect(() => {
+  //   const handleClickOutside = (event: MouseEvent) => {
+  //     const target = event.target as HTMLElement;
+  //
+  //     // First, check if click is on the search input itself
+  //     if (inputRef.current && inputRef.current.contains(target)) {
+  //       console.log("Click detected on search input, keeping autocomplete open");
+  //       return;
+  //     }
+  //
+  //     // Check if the click is on a suggestion item or autocomplete dropdown
+  //     const isSuggestionClick = target.closest("[data-suggestion-item]");
+  //     const isAutocompleteClick = target.closest("[data-autocomplete-dropdown]");
+  //
+  //     if (isSuggestionClick || isAutocompleteClick) {
+  //       console.log(
+  //         "Click detected on suggestion item or dropdown, not closing autocomplete",
+  //       );
+  //       return;
+  //     }
+  //
+  //     // Check if click is within the search container
+  //     if (searchRef.current && searchRef.current.contains(target)) {
+  //       console.log("Click detected within search container, keeping autocomplete open");
+  //       return;
+  //     }
+  //
+  //     // Only close if click is truly outside everything
+  //     console.log("Click outside detected, closing autocomplete");
+  //     setShowAutocomplete(false);
+  //   };
+  //
+  //   document.addEventListener("click", handleClickOutside);
+  //   return () => document.removeEventListener("click", handleClickOutside);
+  // }, []);
 
   // Autocomplete search
   useEffect(() => {
@@ -547,6 +608,7 @@ const KalifindSearch: React.FC<{
 
     // Only show autocomplete when user is typing and has a meaningful query
     if (searchQuery.length > 0 && debouncedSearchQuery.trim()) {
+      setShowAutocomplete(true);
       startTransition(() => {
         setIsAutocompleteLoading(true);
         (async () => {
@@ -576,43 +638,57 @@ const KalifindSearch: React.FC<{
             let rawSuggestions: string[] = [];
             if (Array.isArray(result)) {
               rawSuggestions = result
-                .map((r: any) => {
-                  // Handle different possible field names
-                  return (
-                    r.title ||
-                    r.name ||
-                    r.product_title ||
-                    r.product_name ||
-                    String(r)
-                  );
-                })
+                .map(
+                  (r: {
+                    title: string;
+                    name: string;
+                    product_title: string;
+                    product_name: string;
+                  }) => {
+                    // Handle different possible field names
+                    return (
+                      r.title ||
+                      r.name ||
+                      r.product_title ||
+                      r.product_name ||
+                      String(r)
+                    );
+                  },
+                )
                 .filter(Boolean);
             } else if (result && Array.isArray(result.suggestions)) {
-              rawSuggestions = result.suggestions.map((s: any) => String(s));
+              rawSuggestions = result.suggestions.map((s: string) => String(s));
             } else if (result && Array.isArray(result.products)) {
               rawSuggestions = result.products
-                .map((r: any) => {
-                  return (
-                    r.title ||
-                    r.name ||
-                    r.product_title ||
-                    r.product_name ||
-                    String(r)
-                  );
-                })
+                .map(
+                  (r: {
+                    title: string;
+                    name: string;
+                    product_title: string;
+                    product_name: string;
+                  }) => {
+                    return (
+                      r.title ||
+                      r.name ||
+                      r.product_title ||
+                      r.product_name ||
+                      String(r)
+                    );
+                  },
+                )
                 .filter(Boolean);
             }
 
             // Apply fuzzy matching and scoring to improve suggestions
             const query = debouncedSearchQuery.trim();
             const scoredSuggestions = rawSuggestions
-              .map(suggestion => ({
+              .map((suggestion) => ({
                 text: suggestion,
-                score: scoreSuggestion(query, suggestion)
+                score: scoreSuggestion(query, suggestion),
               }))
-              .filter(item => item.score > 0) // Only include suggestions with positive scores
+              .filter((item) => item.score > 0) // Only include suggestions with positive scores
               .sort((a, b) => b.score - a.score) // Sort by score (highest first)
-              .map(item => item.text)
+              .map((item) => item.text)
               .slice(0, 10); // Limit to top 10 suggestions
 
             console.log("Raw suggestions:", rawSuggestions);
@@ -630,225 +706,163 @@ const KalifindSearch: React.FC<{
       });
     } else {
       // Clear suggestions when search query is empty
+      setShowAutocomplete(false);
       setAutocompleteSuggestions([]);
       setIsAutocompleteLoading(false);
     }
-  }, [debouncedSearchQuery, storeUrl, searchQuery]);
+  }, [debouncedSearchQuery, storeUrl, searchQuery, scoreSuggestion]);
 
   // Extract search logic into a reusable function
-  const performSearch = async (query: string) => {
-    if (!storeUrl) return;
+  const performSearch = useCallback(
+    async (query: string) => {
+      if (!storeUrl) return;
 
-    startTransition(() => {
-      setIsLoading(true);
-      setCurrentPage(1);
-      setHasMoreProducts(true);
-      const fetchProducts = async () => {
-        if (
-          typeof debouncedPriceRange[0] === "undefined" ||
-          typeof debouncedPriceRange[1] === "undefined"
-        ) {
-          setFilteredProducts([]);
-          setIsLoading(false);
-          return;
-        }
+      startTransition(() => {
+        setIsLoading(true);
+        setCurrentPage(1);
+        setHasMoreProducts(true);
+        const fetchProducts = async () => {
+          if (
+            typeof debouncedPriceRange[0] === "undefined" ||
+            typeof debouncedPriceRange[1] === "undefined"
+          ) {
+            setFilteredProducts([]);
+            setIsLoading(false);
+            return;
+          }
 
-        try {
-          const params = new URLSearchParams();
-          if (query) {
-            params.append("q", query);
+          try {
+            const params = new URLSearchParams();
+            if (query) {
+              params.append("q", query);
 
-            // Add popular search boosting
-            const lowerQuery = query.toLowerCase();
-            const matchingPopularTerms = popularSearches.filter((term) =>
-              lowerQuery.includes(term.toLowerCase()),
-            );
-            if (matchingPopularTerms.length > 0) {
-              params.append("popularTerms", matchingPopularTerms.join(","));
+              // Add popular search boosting
+              const lowerQuery = query.toLowerCase();
+              const matchingPopularTerms = popularSearches.filter((term) =>
+                lowerQuery.includes(term.toLowerCase()),
+              );
+              if (matchingPopularTerms.length > 0) {
+                params.append("popularTerms", matchingPopularTerms.join(","));
+              }
             }
-          }
-          if (storeUrl) {
-            params.append("storeUrl", storeUrl);
-          }
+            if (storeUrl) {
+              params.append("storeUrl", storeUrl);
+            }
 
-          if (filters.categories.length > 0) {
-            params.append("categories", filters.categories.join(","));
-          }
-          if (filters.colors.length > 0) {
-            params.append("colors", filters.colors.join(","));
-          }
-          if (filters.sizes.length > 0) {
-            params.append("sizes", filters.sizes.join(","));
-          }
-          if (filters.brands.length > 0) {
-            params.append("brands", filters.brands.join(","));
-          }
-          if (filters.tags.length > 0) {
-            params.append("tags", filters.tags.join(","));
-          }
-          // Mandatory facets
-          if (filters.stockStatus.length > 0) {
-            params.append("stockStatus", filters.stockStatus.join(","));
-          }
-          if (filters.featuredProducts) {
-            params.append("featured", "true");
-          }
-          if (filters.saleStatus) {
-            params.append("onSale", "true");
-          }
-          params.append("minPrice", debouncedPriceRange[0].toString());
-          params.append(
-            "maxPrice",
-            debouncedPriceRange[1].toString() ?? "999999",
-          );
-          params.append("page", "1");
-          params.append("limit", "12");
-
-          const response = await fetch(
-            `${
-              import.meta.env.VITE_BACKEND_URL
-            }/v1/search?${params.toString()}`,
-            {},
-          );
-
-          console.log(
-            `${import.meta.env.VITE_BACKEND_URL}/v1/search?${params.toString()}`,
-          );
-          if (!response.ok) {
-            throw new Error("bad response");
-          }
-          const result = await response.json();
-
-          // Handle paginated response format
-          let products: Product[];
-          let total = 0;
-          let hasMore = false;
-
-          if (result && Array.isArray(result.products)) {
-            products = result.products;
-            total = result.total || 0;
-            hasMore = result.hasMore || false;
-          } else if (Array.isArray(result)) {
-            products = result;
-            total = result.length;
-            hasMore = false;
-          } else {
-            console.error(
-              "Kalifind Search: Unexpected search response format:",
-              result,
+            if (filters.categories.length > 0) {
+              params.append("categories", filters.categories.join(","));
+            }
+            if (filters.colors.length > 0) {
+              params.append("colors", filters.colors.join(","));
+            }
+            if (filters.sizes.length > 0) {
+              params.append("sizes", filters.sizes.join(","));
+            }
+            if (filters.brands.length > 0) {
+              params.append("brands", filters.brands.join(","));
+            }
+            if (filters.tags.length > 0) {
+              params.append("tags", filters.tags.join(","));
+            }
+            // Mandatory facets
+            if (filters.stockStatus.length > 0) {
+              params.append("stockStatus", filters.stockStatus.join(","));
+            }
+            if (filters.featuredProducts) {
+              params.append("featured", "true");
+            }
+            if (filters.saleStatus) {
+              params.append("onSale", "true");
+            }
+            params.append("minPrice", debouncedPriceRange[0].toString());
+            params.append(
+              "maxPrice",
+              debouncedPriceRange[1].toString() ?? "999999",
             );
-            products = [];
-            total = 0;
-            hasMore = false;
-          }
+            params.append("page", "1");
+            params.append("limit", "12");
 
-          setFilteredProducts(products);
-          setTotalProducts(total);
-          setDisplayedProducts(products.length);
-          setHasMoreProducts(hasMore);
-          console.log(products);
-        } catch (error) {
-          console.error("Failed to fetch products:", error);
-          setFilteredProducts([]);
-        } finally {
-          setIsLoading(false);
-        }
-      };
-
-      fetchProducts();
-    });
-  };
-
-  // New function to fetch products from autocomplete API
-  const performAutocompleteSearch = async (query: string) => {
-    if (!storeUrl) return;
-
-    startTransition(() => {
-      setIsLoading(true);
-      setCurrentPage(1);
-      setHasMoreProducts(true);
-      const fetchAutocompleteProducts = async () => {
-        try {
-          const params = new URLSearchParams();
-          params.append("q", query);
-          params.append("storeUrl", storeUrl);
-
-          const response = await fetch(
-            `${import.meta.env.VITE_BACKEND_URL}/v1/autocomplete?${params.toString()}`,
-            {},
-          );
-
-          console.log(
-            `Autocomplete API call: ${import.meta.env.VITE_BACKEND_URL}/v1/autocomplete?${params.toString()}`,
-          );
-          
-          if (!response.ok) {
-            throw new Error("bad response");
-          }
-          
-          const result = await response.json();
-          console.log("Autocomplete API result:", result);
-
-          // Handle different response formats from autocomplete API
-          let products: Product[] = [];
-          let total = 0;
-          let hasMore = false;
-
-          if (Array.isArray(result)) {
-            // If result is an array, treat as products
-            products = result;
-            total = result.length;
-            hasMore = false;
-          } else if (result && Array.isArray(result.products)) {
-            // If result has products property
-            products = result.products;
-            total = result.total || result.products.length;
-            hasMore = result.hasMore || false;
-          } else if (result && Array.isArray(result.suggestions)) {
-            // If result has suggestions, convert to products format
-            products = result.suggestions.map((suggestion: any) => ({
-              id: suggestion.id || suggestion.title || String(Math.random()),
-              title: suggestion.title || suggestion.name || suggestion.product_title || suggestion.product_name || String(suggestion),
-              price: suggestion.price || "0",
-              image: suggestion.image || suggestion.imageUrl || "",
-              imageUrl: suggestion.imageUrl || suggestion.image || "",
-              regularPrice: suggestion.regularPrice || suggestion.price || "0",
-              salePrice: suggestion.salePrice || "",
-              featured: suggestion.featured || false,
-              categories: suggestion.categories || [],
-              brands: suggestion.brands || [],
-              colors: suggestion.colors || [],
-              sizes: suggestion.sizes || [],
-              tags: suggestion.tags || [],
-            }));
-            total = products.length;
-            hasMore = false;
-          } else {
-            console.error(
-              "Kalifind Search: Unexpected autocomplete response format:",
-              result,
+            const response = await fetch(
+              `${
+                import.meta.env.VITE_BACKEND_URL
+              }/v1/search?${params.toString()}`,
+              {},
             );
-            products = [];
-            total = 0;
-            hasMore = false;
+
+            console.log(
+              `${import.meta.env.VITE_BACKEND_URL}/v1/search?${params.toString()}`,
+            );
+            if (!response.ok) {
+              throw new Error("bad response");
+            }
+            const result = await response.json();
+
+            // Handle paginated response format
+            let products: Product[];
+            let total = 0;
+            let hasMore = false;
+
+            if (result && Array.isArray(result.products)) {
+              products = result.products;
+              total = result.total || 0;
+              hasMore = result.hasMore || false;
+
+              // Debug: Log the first product to see what fields are available
+              if (products.length > 0) {
+                console.log("Search result product:", {
+                  id: products[0].id,
+                  title: products[0].title,
+                  shopifyVariantId: products[0].shopifyVariantId,
+                  shopifyProductId: products[0].shopifyProductId,
+                  storeType: products[0].storeType,
+                  availableFields: Object.keys(products[0]),
+                });
+              }
+            } else if (Array.isArray(result)) {
+              products = result;
+              total = result.length;
+              hasMore = false;
+
+              // Debug: Log the first product to see what fields are available
+              if (products.length > 0) {
+                console.log("Search result product (array format):", {
+                  id: products[0].id,
+                  title: products[0].title,
+                  shopifyVariantId: products[0].shopifyVariantId,
+                  shopifyProductId: products[0].shopifyProductId,
+                  storeType: products[0].storeType,
+                  availableFields: Object.keys(products[0]),
+                });
+              }
+            } else {
+              console.error(
+                "Kalifind Search: Unexpected search response format:",
+                result,
+              );
+              products = [];
+              total = 0;
+              hasMore = false;
+            }
+
+            setFilteredProducts(products);
+            setTotalProducts(total);
+            setDisplayedProducts(products.length);
+            setHasMoreProducts(hasMore);
+            console.log(products);
+          } catch (error) {
+            console.error("Failed to fetch products:", error);
+            setFilteredProducts([]);
+          } finally {
+            setIsLoading(false);
           }
+        };
 
-          setFilteredProducts(products);
-          setTotalProducts(total);
-          setDisplayedProducts(products.length);
-          setHasMoreProducts(hasMore);
-          console.log("Autocomplete products:", products);
-        } catch (error) {
-          console.error("Failed to fetch autocomplete products:", error);
-          setFilteredProducts([]);
-        } finally {
-          setIsLoading(false);
-        }
-      };
+        fetchProducts();
+      });
+    },
+    [storeUrl, debouncedPriceRange, popularSearches, filters],
+  );
 
-      fetchAutocompleteProducts();
-    });
-  };
 
   // search products
   useEffect(() => {
@@ -859,6 +873,7 @@ const KalifindSearch: React.FC<{
       isInitialState,
       debouncedSearchQuery,
       searchQuery,
+      isSearchingFromSuggestion,
     });
 
     // Skip search if we're in initial state showing recommendations
@@ -867,15 +882,23 @@ const KalifindSearch: React.FC<{
       return; // Wait for the initial price to be loaded or skip if showing recommendations or in initial state
     }
 
-    // Skip search if there's no meaningful query
-    if (!debouncedSearchQuery.trim()) {
-      console.log("Search effect skipped - no meaningful query");
+    // Skip search if we're searching from a suggestion click (already handled)
+    if (isSearchingFromSuggestion) {
+      console.log("Search effect skipped - already searching from suggestion");
+      setIsSearchingFromSuggestion(false);
       return;
     }
 
-    performSearch(debouncedSearchQuery);
+    // Fetch all products when search query is empty, or perform search with query
+    if (!debouncedSearchQuery.trim()) {
+      console.log("Search effect - fetching all products (empty query)");
+      performSearch(""); // Pass empty string to fetch all products
+    } else {
+      console.log("Search effect - performing search with query");
+      performSearch(debouncedSearchQuery);
+    }
   }, [
-    isPriceLoading, // Add this
+    isPriceLoading,
     debouncedSearchQuery,
     filters.categories,
     filters.colors,
@@ -890,6 +913,9 @@ const KalifindSearch: React.FC<{
     storeUrl,
     showRecommendations,
     isInitialState,
+    performSearch,
+    isSearchingFromSuggestion,
+    forceSearch,
   ]);
 
   const sortedProducts = useMemo(() => {
@@ -924,15 +950,18 @@ const KalifindSearch: React.FC<{
   const handleSearch = (query: string) => {
     console.log("handleSearch called with:", query);
     setSearchQuery(query);
+    setShowRecommendations(false);
 
     // Always show autocomplete when user starts typing (even for single characters)
     if (query.length > 0) {
       setShowAutocomplete(true);
+      setIsInteractingWithDropdown(false);
     } else {
       // Hide autocomplete when input is cleared
       setShowAutocomplete(false);
       setAutocompleteSuggestions([]);
       setHighlightedSuggestionIndex(-1);
+      setIsInteractingWithDropdown(false);
     }
 
     // Note: Recent searches are now only added on Enter key press or suggestion click
@@ -961,14 +990,16 @@ const KalifindSearch: React.FC<{
   const handleSuggestionClick = (suggestion: string) => {
     // Clicking a suggestion:
     // - Sets the clicked value into the search input
-    // - Automatically triggers an autocomplete search for that value
+    // - The search useEffect will automatically trigger a search for that value
     // - Saves the clicked value into recent searches via Zustand and updates localStorage
     console.log("Suggestion clicked:", suggestion);
 
-    // Close autocomplete first
+    // Close autocomplete completely
     setShowAutocomplete(false);
     setHighlightedSuggestionIndex(-1);
     setAutocompleteSuggestions([]);
+    setIsAutocompleteLoading(false);
+    setIsInteractingWithDropdown(false);
 
     // Add to recent searches
     addToRecentSearches(suggestion);
@@ -979,11 +1010,9 @@ const KalifindSearch: React.FC<{
     setIsInitialState(false);
     setHasSearched(true);
 
-    // Set the search query
+    // Set the search query and perform search directly
     setSearchQuery(suggestion);
-
-    // Perform autocomplete search immediately - fetch data from autocomplete API!
-    performAutocompleteSearch(suggestion);
+    performSearch(suggestion);
 
     // Blur input to close any mobile keyboards
     inputRef.current?.blur();
@@ -1005,25 +1034,29 @@ const KalifindSearch: React.FC<{
         return;
       }
 
+      // Always trigger search on Enter, whether query is empty or not
       if (query.trim()) {
-        // Add to recent searches only on Enter key press
+        // Add to recent searches only on Enter key press for non-empty queries
         addToRecentSearches(query);
-
-        // Close autocomplete and trigger search
-        setShowAutocomplete(false);
-        setHighlightedSuggestionIndex(-1);
-        setAutocompleteSuggestions([]);
-
-        // Trigger search immediately when Enter is pressed
-        setShowRecommendations(false);
-        setShowFilters(true);
-        setIsInitialState(false);
-        if (!hasSearched) {
-          setHasSearched(true);
-        }
-
-        inputRef.current?.blur();
       }
+
+      // Close autocomplete and trigger search
+      setShowAutocomplete(false);
+      setHighlightedSuggestionIndex(-1);
+      setAutocompleteSuggestions([]);
+
+      // Trigger search immediately when Enter is pressed
+      setShowRecommendations(false);
+      setShowFilters(true);
+      setIsInitialState(false);
+      if (!hasSearched) {
+        setHasSearched(true);
+      }
+
+      // Force a search by incrementing the forceSearch counter
+      setForceSearch(prev => prev + 1);
+
+      inputRef.current?.blur();
     } else if (event.key === "ArrowDown") {
       event.preventDefault();
       if (showAutocomplete && autocompleteSuggestions.length > 0) {
@@ -1241,15 +1274,28 @@ const KalifindSearch: React.FC<{
   }, [isMobile, hasMoreProducts, isLoadingMore, loadMoreProducts]);
 
   // Function to calculate discount percentage
-  const calculateDiscountPercentage = (regularPrice: string, salePrice: string): number | null => {
+  const calculateDiscountPercentage = (
+    regularPrice: string,
+    salePrice: string,
+  ): number | null => {
     try {
-      const regular = parseFloat(regularPrice.replace(/[^\d.,]/g, '').replace(',', '.'));
-      const sale = parseFloat(salePrice.replace(/[^\d.,]/g, '').replace(',', '.'));
-      
-      if (isNaN(regular) || isNaN(sale) || regular <= 0 || sale <= 0 || sale >= regular) {
+      const regular = parseFloat(
+        regularPrice.replace(/[^\d.,]/g, "").replace(",", "."),
+      );
+      const sale = parseFloat(
+        salePrice.replace(/[^\d.,]/g, "").replace(",", "."),
+      );
+
+      if (
+        isNaN(regular) ||
+        isNaN(sale) ||
+        regular <= 0 ||
+        sale <= 0 ||
+        sale >= regular
+      ) {
         return null;
       }
-      
+
       const discount = ((regular - sale) / regular) * 100;
       return Math.round(discount);
     } catch (error) {
@@ -1259,6 +1305,11 @@ const KalifindSearch: React.FC<{
 
   // Product click handler
   const handleProductClick = (product: Product) => {
+    // Close autocomplete dropdown when product is clicked
+    setShowAutocomplete(false);
+    setAutocompleteSuggestions([]);
+    setHighlightedSuggestionIndex(-1);
+    
     if (product.productUrl) {
       window.open(product.productUrl, "_blank");
     } else if (product.url) {
@@ -1281,17 +1332,16 @@ const KalifindSearch: React.FC<{
     try {
       const result = await addToCart(product, storeUrl);
       setCartMessage(result.message || "Added to cart!");
-      
+
       // Clear message after 3 seconds
       setTimeout(() => {
         setCartMessage(null);
       }, 3000);
-      
     } catch (error) {
       console.error("Add to cart failed:", error);
-      handleCartError(error, product);
+      handleCartError(error as Error, product);
       setCartMessage("Failed to add to cart. Redirecting to product page...");
-      
+
       // Clear message after 3 seconds
       setTimeout(() => {
         setCartMessage(null);
@@ -1353,8 +1403,27 @@ const KalifindSearch: React.FC<{
                       value={searchQuery}
                       onChange={(e) => handleSearch(e.target.value)}
                       onFocus={() => {
+                        console.log("Input focused, searchQuery length:", searchQuery.length);
                         if (searchQuery.length > 0) {
                           setShowAutocomplete(true);
+                          setIsInteractingWithDropdown(false);
+                        }
+                      }}
+                      onBlur={(e) => {
+                        console.log("Input blurred, relatedTarget:", e.relatedTarget);
+                        // Only close autocomplete if the blur is not caused by clicking on a suggestion
+                        // or if the input is being cleared
+                        const relatedTarget = e.relatedTarget as HTMLElement;
+                        const isClickingOnSuggestion = relatedTarget?.closest("[data-suggestion-item]") || 
+                                                      relatedTarget?.closest("[data-autocomplete-dropdown]");
+                        
+                        if (!isClickingOnSuggestion && !isInteractingWithDropdown) {
+                          // Small delay to allow for suggestion clicks to process
+                          setTimeout(() => {
+                            if (!isInteractingWithDropdown) {
+                              setShowAutocomplete(false);
+                            }
+                          }, 100);
                         }
                       }}
                       onKeyDown={handleKeyDown}
@@ -1384,7 +1453,12 @@ const KalifindSearch: React.FC<{
                 searchQuery.length > 0 &&
                 (isAutocompleteLoading ||
                   autocompleteSuggestions.length > 0) && (
-                  <div className="!absolute !top-full !left-0 !right-0 !bg-background !border !border-border !rounded-lg !shadow-lg !z-[9999999] !mt-[4px] !w-full">
+                  <div 
+                    data-autocomplete-dropdown="true"
+                    className="!absolute !top-full !left-0 !right-0 !bg-background !border !border-border !rounded-lg !shadow-lg !z-[9999999] !mt-[4px] !w-full"
+                    onMouseEnter={() => setIsInteractingWithDropdown(true)}
+                    onMouseLeave={() => setIsInteractingWithDropdown(false)}
+                  >
                     <div className="[&_*]:!z-[9999999] !p-[16px]">
                       {isAutocompleteLoading ? (
                         <div className="!flex !items-center !justify-center !py-[12px] !gap-[8px] !text-muted-foreground">
@@ -1419,6 +1493,7 @@ const KalifindSearch: React.FC<{
                                     );
                                     // Prevent click outside from interfering
                                     e.nativeEvent.stopImmediatePropagation();
+                                    setIsInteractingWithDropdown(false);
                                     handleSuggestionClick(suggestion);
                                     console.log(
                                       "handleSuggestionClick called successfully",
@@ -1444,12 +1519,12 @@ const KalifindSearch: React.FC<{
                             )}
                           </div>
                         </>
-                      ) : !isAutocompleteLoading ? (
+                      ) : (
                         <div className="!flex !items-center !justify-center !py-[12px] !text-muted-foreground">
                           <Search className="!w-4 !h-4 !mr-2" />
                           <span>No suggestions found for "{searchQuery}"</span>
                         </div>
-                      ) : null}
+                      )}
                     </div>
                   </div>
                 )}
@@ -1624,6 +1699,9 @@ const KalifindSearch: React.FC<{
                             }`}
                             style={{
                               backgroundColor: color.toLowerCase(),
+                              transform: filters.colors.includes(color)
+                                ? "scale(1.1)"
+                                : "scale(1)",
                             }}
                           />
                         ))}
@@ -1688,6 +1766,9 @@ const KalifindSearch: React.FC<{
                                 {status}
                               </span>
                             </div>
+                            <span className="!text-muted-foreground !text-[12px] sm:!text-[14px] !bg-muted !px-[8px] !py-[4px] !rounded">
+                              {stockStatusCounts[status] || 0}
+                            </span>
                           </label>
                         ),
                       )}
@@ -1701,15 +1782,20 @@ const KalifindSearch: React.FC<{
                   </AccordionTrigger>
                   <AccordionContent>
                     <div className="!space-y-[8px]">
-                      <label className="!flex !items-center !gap-[12px] !cursor-pointer !p-[4px] sm:!p-[8px] hover:!bg-muted !rounded-lg">
-                        <input
-                          type="checkbox"
-                          checked={filters.featuredProducts}
-                          onChange={handleFeaturedProductsChange}
-                          className="!w-[16px] !h-[16px] sm:!w-5 sm:!h-5 !text-primary !bg-background !border-border !rounded "
-                        />
-                        <span className="!text-foreground !text-[14px] sm:!text-[16px] lg:leading-[16px]">
-                          Featured Only
+                      <label className="!flex !items-center !justify-between !cursor-pointer !p-[4px] sm:!p-[8px] hover:!bg-muted !rounded-lg">
+                        <div className="!flex !items-center !gap-[12px]">
+                          <input
+                            type="checkbox"
+                            checked={filters.featuredProducts}
+                            onChange={handleFeaturedProductsChange}
+                            className="!w-[16px] !h-[16px] sm:!w-5 sm:!h-5 !text-primary !bg-background !border-border !rounded "
+                          />
+                          <span className="!text-foreground !text-[14px] sm:!text-[16px] lg:leading-[16px]">
+                            Featured Only
+                          </span>
+                        </div>
+                        <span className="!text-muted-foreground !text-[12px] sm:!text-[14px] !bg-muted !px-[8px] !py-[4px] !rounded">
+                          {featuredCount}
                         </span>
                       </label>
                     </div>
@@ -1722,15 +1808,20 @@ const KalifindSearch: React.FC<{
                   </AccordionTrigger>
                   <AccordionContent>
                     <div className="!space-y-[8px]">
-                      <label className="!flex !items-center !gap-[12px] !cursor-pointer !p-[4px] sm:!p-[8px] hover:!bg-muted !rounded-lg">
-                        <input
-                          type="checkbox"
-                          checked={filters.saleStatus}
-                          onChange={handleSaleStatusChange}
-                          className="!w-[16px] !h-[16px] sm:!w-5 sm:!h-5 !text-primary !bg-background !border-border !rounded "
-                        />
-                        <span className="!text-foreground !text-[14px] sm:!text-[16px] lg:leading-[16px]">
-                          On Sale Only
+                      <label className="!flex !items-center !justify-between !cursor-pointer !p-[4px] sm:!p-[8px] hover:!bg-muted !rounded-lg">
+                        <div className="!flex !items-center !gap-[12px]">
+                          <input
+                            type="checkbox"
+                            checked={filters.saleStatus}
+                            onChange={handleSaleStatusChange}
+                            className="!w-[16px] !h-[16px] sm:!w-5 sm:!h-5 !text-primary !bg-background !border-border !rounded "
+                          />
+                          <span className="!text-foreground !text-[14px] sm:!text-[16px] lg:leading-[16px]">
+                            On Sale Only
+                          </span>
+                        </div>
+                        <span className="!text-muted-foreground !text-[12px] sm:!text-[14px] !bg-muted !px-[8px] !py-[4px] !rounded">
+                          {saleCount}
                         </span>
                       </label>
                     </div>
@@ -1993,6 +2084,9 @@ const KalifindSearch: React.FC<{
                             {status}
                           </span>
                         </div>
+                        <span className="!text-muted-foreground !text-[12px] lg:text-[14px] mr-[8px]">
+                          {stockStatusCounts[status] || 0}
+                        </span>
                       </label>
                     ),
                   )}
@@ -2006,15 +2100,20 @@ const KalifindSearch: React.FC<{
               </AccordionTrigger>
               <AccordionContent>
                 <div className="!space-y-[8px]">
-                  <label className="!flex !items-center !gap-[10px] !cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={filters.featuredProducts}
-                      onChange={handleFeaturedProductsChange}
-                      className="!w-[16px] !h-[16px] lg:!w-5 lg:!h-5 top-0 !text-primary !bg-background !border-border !rounded "
-                    />
-                    <span className="!text-foreground text-[14px] lg:text-[16px]">
-                      Featured Only
+                  <label className="!flex !items-center !justify-between !cursor-pointer">
+                    <div className="!flex !items-center !gap-[10px]">
+                      <input
+                        type="checkbox"
+                        checked={filters.featuredProducts}
+                        onChange={handleFeaturedProductsChange}
+                        className="!w-[16px] !h-[16px] lg:!w-5 lg:!h-5 top-0 !text-primary !bg-background !border-border !rounded "
+                      />
+                      <span className="!text-foreground text-[14px] lg:text-[16px]">
+                        Featured Only
+                      </span>
+                    </div>
+                    <span className="!text-muted-foreground !text-[12px] lg:text-[14px] mr-[8px]">
+                      {featuredCount}
                     </span>
                   </label>
                 </div>
@@ -2027,15 +2126,20 @@ const KalifindSearch: React.FC<{
               </AccordionTrigger>
               <AccordionContent>
                 <div className="!space-y-[8px]">
-                  <label className="!flex !items-center !gap-[10px] !cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={filters.saleStatus}
-                      onChange={handleSaleStatusChange}
-                      className="!w-[16px] !h-[16px] lg:!w-5 lg:!h-5 top-0 !text-primary !bg-background !border-border !rounded "
-                    />
-                    <span className="!text-foreground text-[14px] lg:text-[16px]">
-                      On Sale Only
+                  <label className="!flex !items-center !justify-between !cursor-pointer">
+                    <div className="!flex !items-center !gap-[10px]">
+                      <input
+                        type="checkbox"
+                        checked={filters.saleStatus}
+                        onChange={handleSaleStatusChange}
+                        className="!w-[16px] !h-[16px] lg:!w-5 lg:!h-5 top-0 !text-primary !bg-background !border-border !rounded "
+                      />
+                      <span className="!text-foreground text-[14px] lg:text-[16px]">
+                        On Sale Only
+                      </span>
+                    </div>
+                    <span className="!text-muted-foreground !text-[12px] lg:text-[14px] mr-[8px]">
+                      {saleCount}
                     </span>
                   </label>
                 </div>
@@ -2226,101 +2330,13 @@ const KalifindSearch: React.FC<{
 
                 {/* Smart Recommendations */}
                 {recommendations.length > 0 && (
-                  <div className="!mb-8">
-                    <h3 className="!text-[18px] lg:!text-[20px] !font-bold !text-foreground !mb-4">
-                      Recommendations
-                    </h3>
-                    <div className="!grid !grid-cols-2 sm:!grid-cols-2 xl:grid-cols-3 2xl:!grid-cols-4 !gap-[8px] sm:!gap-[16px] !w-full">
-                      {recommendations.map((product) => (
-                        <div
-                          key={product.id}
-                          onClick={() => handleProductClick(product)}
-                          className="!bg-background !border !border-border !rounded-lg !p-[8px] sm:!p-[12px] hover:!shadow-lg !transition-shadow !w-full !flex !flex-col group !cursor-pointer"
-                        >
-                          <div className="!relative !mb-[8px] overflow-hidden">
-                            <img
-                              src={product.imageUrl || product.image}
-                              alt={product.title}
-                              className="!w-full !h-[112px] sm:!h-[144px] !object-cover !rounded-md group-hover:!scale-105 !transition-transform !duration-300"
-                            />
-                            {product.featured && (
-                              <div className="!absolute !top-2 !right-2 !bg-primary !text-primary-foreground !px-2 !py-1 !rounded-full !text-xs !font-bold">
-                                Featured
-                              </div>
-                            )}
-                            {product.salePrice && 
-                             product.salePrice !== "" && 
-                             product.salePrice !== "0" && 
-                             product.salePrice !== "0.00" &&
-                             product.regularPrice &&
-                             product.salePrice !== product.regularPrice && (
-                              (() => {
-                                const discountPercentage = calculateDiscountPercentage(product.regularPrice, product.salePrice);
-                                return discountPercentage ? (
-                                  <div className="!absolute !top-2 !left-2 !bg-red-500 !text-white !px-2 !py-1 !rounded-full !text-xs !font-bold">
-                                    -{discountPercentage}%
-                                  </div>
-                                ) : (
-                                  <div className="!absolute !top-2 !left-2 !bg-red-500 !text-white !px-2 !py-1 !rounded-full !text-xs !font-bold">
-                                    Sale
-                                  </div>
-                                );
-                              })()
-                            )}
-                          </div>
-                          <h3 className="!text-[14px] sm:!text-[16px] !font-bold !text-foreground !mb-[4px] sm:!mb-[8px] h-[40px] sm:h-[48px] overflow-hidden">
-                            {product.title}
-                          </h3>
-                          <div className="!flex !items-center !justify-between mt-auto">
-                            <div className="!flex !items-center !gap-[8px]">
-                              {product.salePrice && 
-                               product.salePrice !== "" && 
-                               product.salePrice !== "0" && 
-                               product.salePrice !== "0.00" &&
-                               product.regularPrice &&
-                               product.salePrice !== product.regularPrice ? (
-                                <div className="!flex !items-center !gap-2">
-                                  <span className="!text-primary !text-[14px] sm:!text-[16px] !font-bold">
-                                    {product.salePrice}
-                                  </span>
-                                  <span className="!text-muted-foreground !text-[12px] sm:!text-[14px] !line-through">
-                                    {product.regularPrice}
-                                  </span>
-                                </div>
-                              ) : (
-                                <span className="!text-muted-foreground !text-[12px] sm:!text-[14px]">
-                                  {product.price}
-                                </span>
-                              )}
-                            </div>
-                            <button 
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleAddToCart(product);
-                              }}
-                              disabled={addingToCart === product.id}
-                              className="!bg-primary hover:!bg-primary-hover !text-primary-foreground !p-[6px] sm:!p-[8px] !rounded-md !transition-colors group-hover:!scale-110 !transform !duration-200 disabled:!opacity-50 disabled:!cursor-not-allowed"
-                            >
-                              {addingToCart === product.id ? (
-                                <div className="!w-[12px] !h-[12px] sm:!w-[16px] sm:!h-[16px] !border-2 !border-primary-foreground !border-t-transparent !rounded-full !animate-spin"></div>
-                              ) : (
-                                <ShoppingCart className="!w-[12px] !h-[12px] sm:!w-[16px] sm:!h-[16px]" />
-                              )}
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Empty state for recommendations */}
-                {recommendations.length === 0 && (
-                  <div className="!text-center !py-[48px] !w-full">
-                    <p className="!text-muted-foreground text-[16px] lg:text-[18px]">
-                      Loading recommendations...
-                    </p>
-                  </div>
+                  <Recommendations
+                    recommendations={recommendations}
+                    handleProductClick={handleProductClick}
+                    calculateDiscountPercentage={calculateDiscountPercentage}
+                    addingToCart={addingToCart}
+                    handleAddToCart={handleAddToCart}
+                  />
                 )}
               </div>
             ) : isLoading || isPending ? (
@@ -2351,14 +2367,18 @@ const KalifindSearch: React.FC<{
                             Featured
                           </div>
                         )}
-                        {product.salePrice && 
-                         product.salePrice !== "" && 
-                         product.salePrice !== "0" && 
-                         product.salePrice !== "0.00" &&
-                         product.regularPrice &&
-                         product.salePrice !== product.regularPrice && (
+                        {product.salePrice &&
+                          product.salePrice !== "" &&
+                          product.salePrice !== "0" &&
+                          product.salePrice !== "0.00" &&
+                          product.regularPrice &&
+                          product.salePrice !== product.regularPrice &&
                           (() => {
-                            const discountPercentage = calculateDiscountPercentage(product.regularPrice, product.salePrice);
+                            const discountPercentage =
+                              calculateDiscountPercentage(
+                                product.regularPrice,
+                                product.salePrice,
+                              );
                             return discountPercentage ? (
                               <div className="!absolute !top-2 !left-2 !bg-red-500 !text-white !px-2 !py-1 !rounded-full !text-xs !font-bold">
                                 -{discountPercentage}%
@@ -2368,20 +2388,19 @@ const KalifindSearch: React.FC<{
                                 Sale
                               </div>
                             );
-                          })()
-                        )}
+                          })()}
                       </div>
                       <h3 className="!text-[14px] sm:!text-[16px] !font-bold !text-foreground !mb-[4px] sm:!mb-[8px] h-[40px] sm:h-[48px] overflow-hidden">
                         {product.title}
                       </h3>
                       <div className="!flex !items-center !justify-between mt-auto">
                         <div className="!flex !items-center !gap-[8px]">
-                          {product.salePrice && 
-                           product.salePrice !== "" && 
-                           product.salePrice !== "0" && 
-                           product.salePrice !== "0.00" &&
-                           product.regularPrice &&
-                           product.salePrice !== product.regularPrice ? (
+                          {product.salePrice &&
+                          product.salePrice !== "" &&
+                          product.salePrice !== "0" &&
+                          product.salePrice !== "0.00" &&
+                          product.regularPrice &&
+                          product.salePrice !== product.regularPrice ? (
                             <div className="!flex !items-center !gap-2">
                               <span className="!text-primary !text-[14px] sm:!text-[16px] !font-bold">
                                 {product.salePrice}
@@ -2396,7 +2415,7 @@ const KalifindSearch: React.FC<{
                             </span>
                           )}
                         </div>
-                        <button 
+                        <button
                           onClick={(e) => {
                             e.stopPropagation();
                             handleAddToCart(product);
