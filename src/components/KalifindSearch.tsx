@@ -103,6 +103,82 @@ const KalifindSearch: React.FC<{
   const [colorCounts, setColorCounts] = useState<{
     [key: string]: number;
   }>({});
+  
+  // Color mapping state
+  const [colorMappings, setColorMappings] = useState<{ [key: string]: string }>({});
+
+  // Function to convert color names to hex values (same as in dashboard)
+  const convertColorNameToHex = (colorName: string): string => {
+    try {
+      // Common color name mappings
+      const colorMap: { [key: string]: string } = {
+        'red': '#FF0000',
+        'blue': '#0000FF',
+        'green': '#008000',
+        'yellow': '#FFFF00',
+        'orange': '#FFA500',
+        'purple': '#800080',
+        'pink': '#FFC0CB',
+        'brown': '#A52A2A',
+        'black': '#000000',
+        'white': '#FFFFFF',
+        'gray': '#808080',
+        'grey': '#808080',
+        'cyan': '#00FFFF',
+        'magenta': '#FF00FF',
+        'lime': '#00FF00',
+        'navy': '#000080',
+        'maroon': '#800000',
+        'olive': '#808000',
+        'teal': '#008080',
+        'silver': '#C0C0C0',
+        'gold': '#FFD700',
+        'violet': '#8A2BE2',
+        'indigo': '#4B0082',
+        'coral': '#FF7F50',
+        'salmon': '#FA8072',
+        'turquoise': '#40E0D0',
+        'beige': '#F5F5DC',
+        'ivory': '#FFFFF0',
+        'khaki': '#F0E68C',
+        'lavender': '#E6E6FA',
+        'plum': '#DDA0DD',
+        'tan': '#D2B48C',
+        'wheat': '#F5DEB3',
+        'azure': '#F0FFFF',
+        'bisque': '#FFE4C4',
+        'chocolate': '#D2691E',
+        'crimson': '#DC143C',
+        'darkblue': '#00008B',
+        'darkgreen': '#006400',
+        'darkred': '#8B0000',
+        'lightblue': '#ADD8E6',
+        'lightgreen': '#90EE90',
+        'lightpink': '#FFB6C1',
+        'lightyellow': '#FFFFE0',
+        'mediumblue': '#0000CD',
+        'mediumgreen': '#32CD32',
+        'mediumred': '#CD5C5C',
+        'darkgray': '#A9A9A9',
+        'lightgray': '#D3D3D3',
+        'darkgrey': '#A9A9A9',
+        'lightgrey': '#D3D3D3',
+      };
+
+      const normalizedName = colorName.toLowerCase().trim();
+      
+      // Check if it's a known color name
+      if (colorMap[normalizedName]) {
+        return colorMap[normalizedName];
+      }
+
+      // If not found, return a default color
+      return '#808080'; // Default gray
+    } catch (error) {
+      console.warn(`Could not convert color name "${colorName}" to hex:`, error);
+      return '#808080'; // Default gray if conversion fails
+    }
+  };
   const [sizeCounts, setSizeCounts] = useState<{
     [key: string]: number;
   }>({});
@@ -300,8 +376,15 @@ const KalifindSearch: React.FC<{
       }
 
       const result = await response.json();
+      console.log("Fetched facet configuration:", result);
 
       // Update optional filters visibility based on vendor configuration
+      const showTags = result.some(
+        (facet: { field: string; visible: boolean }) =>
+          facet.field === "tags" && facet.visible,
+      );
+      console.log("Tags facet visible:", showTags);
+
       setShowOptionalFilters({
         brands: result.some(
           (facet: { field: string; visible: boolean }) =>
@@ -311,14 +394,32 @@ const KalifindSearch: React.FC<{
           (facet: { field: string; visible: boolean }) =>
             facet.field === "color" && facet.visible,
         ),
-        tags: result.some(
-          (facet: { field: string; visible: boolean }) =>
-            facet.field === "tags" && facet.visible,
-        ),
+        tags: showTags,
       });
     } catch (error) {
       console.error("Failed to fetch facet configuration:", error);
       // Keep default values (all false)
+    }
+  }, [storeUrl]);
+
+  // Fetch color mappings
+  const fetchColorMappings = useCallback(async () => {
+    if (!storeUrl) return;
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_BACKEND_URL}/v1/color-mappings/search?storeUrl=${storeUrl}`,
+        {},
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch color mappings");
+      }
+
+      const result = await response.json();
+      setColorMappings(result);
+    } catch (error) {
+      console.error("Failed to fetch color mappings:", error);
+      // Keep empty color mappings
     }
   }, [storeUrl]);
 
@@ -415,7 +516,8 @@ const KalifindSearch: React.FC<{
     fetchRecommendations();
     fetchPopularSearches();
     fetchFacetConfiguration();
-  }, [fetchRecommendations, fetchPopularSearches, fetchFacetConfiguration]);
+    fetchColorMappings();
+  }, [fetchRecommendations, fetchPopularSearches, fetchFacetConfiguration, fetchColorMappings]);
 
   useEffect(() => {
     const initFilters = async () => {
@@ -423,6 +525,21 @@ const KalifindSearch: React.FC<{
 
       const fetchWithRetry = async (retries = 3) => {
         try {
+          // First, get facet configuration to know the terms limits
+          let facetConfig: any[] = [];
+          try {
+            const facetResponse = await fetch(
+              `${import.meta.env.VITE_BACKEND_URL}/v1/facets?storeUrl=${storeUrl}`,
+              {},
+            );
+            if (facetResponse.ok) {
+              facetConfig = await facetResponse.json();
+            }
+          } catch (error) {
+            console.error("Failed to fetch facet configuration:", error);
+          }
+
+          // Then, get initial data with facet aggregations
           const params = new URLSearchParams();
           params.append("storeUrl", storeUrl);
           params.append("limit", "1000"); // Add high limit to fetch all products for filter counts
@@ -440,10 +557,12 @@ const KalifindSearch: React.FC<{
 
           // Handle both array and object response formats
           let products: Product[];
+          let facets: any = {};
           if (Array.isArray(result)) {
             products = result;
           } else if (result && Array.isArray(result.products)) {
             products = result.products;
+            facets = result.facets || {};
           } else {
             console.error(
               "Kalifind Search: Unexpected API response format:",
@@ -466,87 +585,220 @@ const KalifindSearch: React.FC<{
               }));
             }
 
-            const allCategories = new Set<string>();
-            const allBrands = new Set<string>();
-            const allColors = new Set<string>();
-            const allSizes = new Set<string>();
-            const allTags = new Set<string>();
-            const categoryCounts: { [key: string]: number } = {};
-            const brandCounts: { [key: string]: number } = {};
-            const colorCounts: { [key: string]: number } = {};
-            const sizeCounts: { [key: string]: number } = {};
-            const tagCounts: { [key: string]: number } = {};
-            const stockStatusCounts: { [key: string]: number } = {};
-            let featuredCount = 0;
-            let saleCount = 0;
+            // Use facet aggregations if available, otherwise fall back to product analysis
+            if (facets && Object.keys(facets).length > 0) {
+              console.log("Using facet aggregations for filter data:", facets);
+              console.log("Available facet keys:", Object.keys(facets));
+              
+              // Process category facets
+              if (facets.category && facets.category.buckets) {
+                const categories: string[] = [];
+                const categoryCounts: { [key: string]: number } = {};
+                facets.category.buckets.forEach((bucket: any) => {
+                  categories.push(bucket.key);
+                  categoryCounts[bucket.key] = bucket.doc_count;
+                });
+                setAvailableCategories(categories);
+                setCategoryCounts(categoryCounts);
+              }
 
-            // products.forEach((product: Product) => {
-            products.forEach((product: any) => {
-              if (product.categories) {
-                product.categories.forEach((cat: string) => {
-                  allCategories.add(cat);
-                  categoryCounts[cat] = (categoryCounts[cat] || 0) + 1;
+              // Process brand facets
+              if (facets.brand && facets.brand.buckets) {
+                const brands: string[] = [];
+                const brandCounts: { [key: string]: number } = {};
+                facets.brand.buckets.forEach((bucket: any) => {
+                  brands.push(bucket.key);
+                  brandCounts[bucket.key] = bucket.doc_count;
                 });
+                setAvailableBrands(brands);
+                setBrandCounts(brandCounts);
               }
-              if (product.brands) {
-                product.brands.forEach((brand: string) => {
-                  allBrands.add(brand);
-                  brandCounts[brand] = (brandCounts[brand] || 0) + 1;
-                });
-              }
-              if (product.colors) {
-                product.colors.forEach((color: string) => {
-                  allColors.add(color);
-                  colorCounts[color] = (colorCounts[color] || 0) + 1;
-                });
-              }
-              if (product.sizes) {
-                product.sizes.forEach((size: string) => {
-                  allSizes.add(size);
-                  sizeCounts[size] = (sizeCounts[size] || 0) + 1;
-                });
-              }
-              if (product.tags) {
-                product.tags.forEach((tag: string) => {
-                  allTags.add(tag);
-                  tagCounts[tag] = (tagCounts[tag] || 0) + 1;
-                });
-              }
-              
-              // Count stock status
-              if (product.stockStatus) {
-                stockStatusCounts[product.stockStatus] = (stockStatusCounts[product.stockStatus] || 0) + 1;
-              }
-              
-              // Count featured products
-              if (product.featured) {
-                featuredCount++;
-              }
-              
-              // Count sale products
-              if (product.salePrice && 
-                  product.salePrice !== "" && 
-                  product.salePrice !== "0" && 
-                  product.salePrice !== "0.00" && 
-                  product.regularPrice && 
-                  product.salePrice !== product.regularPrice) {
-                saleCount++;
-              }
-            });
 
-            setAvailableCategories(Array.from(allCategories));
-            setAvailableBrands(Array.from(allBrands));
-            setAvailableColors(Array.from(allColors));
-            setAvailableSizes(Array.from(allSizes));
-            setAvailableTags(Array.from(allTags));
-            setCategoryCounts(categoryCounts);
-            setBrandCounts(brandCounts);
-            setColorCounts(colorCounts);
-            setSizeCounts(sizeCounts);
-            setTagCounts(tagCounts);
-            setStockStatusCounts(stockStatusCounts);
-            setFeaturedCount(featuredCount);
-            setSaleCount(saleCount);
+              // Process color facets
+              if (facets.color && facets.color.buckets) {
+                const colors: string[] = [];
+                const colorCounts: { [key: string]: number } = {};
+                facets.color.buckets.forEach((bucket: any) => {
+                  colors.push(bucket.key);
+                  colorCounts[bucket.key] = bucket.doc_count;
+                });
+                setAvailableColors(colors);
+                setColorCounts(colorCounts);
+              }
+
+              // Process size facets
+              if (facets.size && facets.size.buckets) {
+                const sizes: string[] = [];
+                const sizeCounts: { [key: string]: number } = {};
+                facets.size.buckets.forEach((bucket: any) => {
+                  sizes.push(bucket.key);
+                  sizeCounts[bucket.key] = bucket.doc_count;
+                });
+                setAvailableSizes(sizes);
+                setSizeCounts(sizeCounts);
+              }
+
+              // Process tags facets
+              if (facets.tags && facets.tags.buckets) {
+                console.log("Processing tags facets:", facets.tags);
+                const tags: string[] = [];
+                const tagCounts: { [key: string]: number } = {};
+                facets.tags.buckets.forEach((bucket: any) => {
+                  tags.push(bucket.key);
+                  tagCounts[bucket.key] = bucket.doc_count;
+                });
+                console.log("Setting available tags:", tags);
+                setAvailableTags(tags);
+                setTagCounts(tagCounts);
+              } else {
+                console.log("No tags facets found in aggregations");
+              }
+
+              // Debug: Check if expected facets are missing
+              if (!facets.instock) {
+                console.log("Missing instock facet - available facets:", Object.keys(facets));
+              }
+              if (!facets.featured) {
+                console.log("Missing featured facet - available facets:", Object.keys(facets));
+              }
+              if (!facets.insale) {
+                console.log("Missing insale facet - available facets:", Object.keys(facets));
+              }
+
+              // Process stock status facets
+              if (facets.instock && facets.instock.buckets) {
+                console.log("Processing stock status facets:", facets.instock);
+                console.log("Stock status buckets:", facets.instock.buckets);
+                const stockStatusCounts: { [key: string]: number } = {};
+                facets.instock.buckets.forEach((bucket: any) => {
+                  console.log("Stock status bucket:", bucket);
+                  // Map backend values to frontend display values
+                  let displayKey = bucket.key;
+                  if (bucket.key === 'instock') displayKey = 'In Stock';
+                  else if (bucket.key === 'outofstock') displayKey = 'Out of Stock';
+                  else if (bucket.key === 'onbackorder') displayKey = 'On Backorder';
+                  
+                  stockStatusCounts[displayKey] = bucket.doc_count;
+                  console.log(`Mapped ${bucket.key} -> ${displayKey}: ${bucket.doc_count}`);
+                });
+                setStockStatusCounts(stockStatusCounts);
+                console.log("Final stock status counts:", stockStatusCounts);
+              }
+
+              // Process featured facets
+              if (facets.featured && facets.featured.buckets) {
+                console.log("Processing featured facets:", facets.featured);
+                console.log("Featured buckets:", facets.featured.buckets);
+                let featuredCount = 0;
+                facets.featured.buckets.forEach((bucket: any) => {
+                  console.log("Featured bucket:", bucket);
+                  if (bucket.key === true || bucket.key === 'true' || bucket.key === 1 || bucket.key_as_string === 'true') {
+                    featuredCount = bucket.doc_count;
+                    console.log(`Featured count: ${featuredCount}`);
+                  }
+                });
+                setFeaturedCount(featuredCount);
+                console.log("Final featured count:", featuredCount);
+              }
+
+              // Process sale facets
+              if (facets.insale && facets.insale.buckets) {
+                console.log("Processing sale facets:", facets.insale);
+                console.log("Sale buckets:", facets.insale.buckets);
+                let saleCount = 0;
+                facets.insale.buckets.forEach((bucket: any) => {
+                  console.log("Sale bucket:", bucket);
+                  if (bucket.key === true || bucket.key === 'true' || bucket.key === 1 || bucket.key_as_string === 'true') {
+                    saleCount = bucket.doc_count;
+                    console.log(`Sale count: ${saleCount}`);
+                  }
+                });
+                setSaleCount(saleCount);
+                console.log("Final sale count:", saleCount);
+              }
+            } else {
+              // Fallback to product analysis if no facet aggregations
+              const allCategories = new Set<string>();
+              const allBrands = new Set<string>();
+              const allColors = new Set<string>();
+              const allSizes = new Set<string>();
+              const allTags = new Set<string>();
+              const categoryCounts: { [key: string]: number } = {};
+              const brandCounts: { [key: string]: number } = {};
+              const colorCounts: { [key: string]: number } = {};
+              const sizeCounts: { [key: string]: number } = {};
+              const tagCounts: { [key: string]: number } = {};
+              const stockStatusCounts: { [key: string]: number } = {};
+              let featuredCount = 0;
+              let saleCount = 0;
+
+              products.forEach((product: any) => {
+                if (product.categories) {
+                  product.categories.forEach((cat: string) => {
+                    allCategories.add(cat);
+                    categoryCounts[cat] = (categoryCounts[cat] || 0) + 1;
+                  });
+                }
+                if (product.brands) {
+                  product.brands.forEach((brand: string) => {
+                    allBrands.add(brand);
+                    brandCounts[brand] = (brandCounts[brand] || 0) + 1;
+                  });
+                }
+                if (product.colors) {
+                  product.colors.forEach((color: string) => {
+                    allColors.add(color);
+                    colorCounts[color] = (colorCounts[color] || 0) + 1;
+                  });
+                }
+                if (product.sizes) {
+                  product.sizes.forEach((size: string) => {
+                    allSizes.add(size);
+                    sizeCounts[size] = (sizeCounts[size] || 0) + 1;
+                  });
+                }
+                if (product.tags) {
+                  product.tags.forEach((tag: string) => {
+                    allTags.add(tag);
+                    tagCounts[tag] = (tagCounts[tag] || 0) + 1;
+                  });
+                }
+                
+                // Count stock status
+                if (product.stockStatus) {
+                  stockStatusCounts[product.stockStatus] = (stockStatusCounts[product.stockStatus] || 0) + 1;
+                }
+                
+                // Count featured products
+                if (product.featured) {
+                  featuredCount++;
+                }
+                
+                // Count sale products
+                if (product.salePrice && 
+                    product.salePrice !== "" && 
+                    product.salePrice !== "0" && 
+                    product.salePrice !== "0.00" && 
+                    product.regularPrice && 
+                    product.salePrice !== product.regularPrice) {
+                  saleCount++;
+                }
+              });
+
+              setAvailableCategories(Array.from(allCategories));
+              setAvailableBrands(Array.from(allBrands));
+              setAvailableColors(Array.from(allColors));
+              setAvailableSizes(Array.from(allSizes));
+              setAvailableTags(Array.from(allTags));
+              setCategoryCounts(categoryCounts);
+              setBrandCounts(brandCounts);
+              setColorCounts(colorCounts);
+              setSizeCounts(sizeCounts);
+              setTagCounts(tagCounts);
+              setStockStatusCounts(stockStatusCounts);
+              setFeaturedCount(featuredCount);
+              setSaleCount(saleCount);
+            }
           }
         } catch (err) {
           if (retries > 0) {
@@ -801,11 +1053,13 @@ const KalifindSearch: React.FC<{
             let products: Product[];
             let total = 0;
             let hasMore = false;
+            let facets: any = {};
 
             if (result && Array.isArray(result.products)) {
               products = result.products;
               total = result.total || 0;
               hasMore = result.hasMore || false;
+              facets = result.facets || {};
 
               // Debug: Log the first product to see what fields are available
               if (products.length > 0) {
@@ -843,6 +1097,10 @@ const KalifindSearch: React.FC<{
               total = 0;
               hasMore = false;
             }
+
+            // Note: We don't update filter data from search results to keep filters static
+            // Filter data is loaded once during initialization and should remain consistent
+            // regardless of search query to provide a stable filtering experience
 
             setFilteredProducts(products);
             setTotalProducts(total);
@@ -1569,9 +1827,9 @@ const KalifindSearch: React.FC<{
                   "stockStatus",
                   "featured",
                   "sale",
-                  ...(showOptionalFilters.colors ? ["color"] : []),
-                  ...(showOptionalFilters.brands ? ["brand"] : []),
-                  ...(showOptionalFilters.tags ? ["tags"] : []),
+                  "color",
+                  "brand",
+                  "tags",
                 ]}
                 className="!w-full"
               >
@@ -1693,23 +1951,28 @@ const KalifindSearch: React.FC<{
                     </AccordionTrigger>
                     <AccordionContent>
                       <div className="!flex !gap-[8px] !flex-wrap !pt-[16px]">
-                        {availableColors.map((color) => (
-                          <button
-                            key={color}
-                            onClick={() => handleColorChange(color)}
-                            className={`!w-[32px] !h-[32px] sm:!w-[40px] sm:!h-[40px] !rounded-full !border-4 !transition-all ${
-                              filters.colors.includes(color)
-                                ? "!border-primary !scale-110 !shadow-lg"
-                                : "!border-border hover:!border-muted-foreground"
-                            }`}
-                            style={{
-                              backgroundColor: color.toLowerCase(),
-                              transform: filters.colors.includes(color)
-                                ? "scale(1.1)"
-                                : "scale(1)",
-                            }}
-                          />
-                        ))}
+                        {availableColors.map((color) => {
+                          // Get hex value from color mappings, fallback to auto-converted color
+                          const hexValue = colorMappings[color.toLowerCase()] || convertColorNameToHex(color);
+                          return (
+                            <button
+                              key={color}
+                              onClick={() => handleColorChange(color)}
+                              className={`!w-[32px] !h-[32px] sm:!w-[40px] sm:!h-[40px] !rounded-full !border-4 !transition-all ${
+                                filters.colors.includes(color)
+                                  ? "!border-primary !scale-110 !shadow-lg"
+                                  : "!border-border hover:!border-muted-foreground"
+                              }`}
+                              style={{
+                                backgroundColor: hexValue,
+                                transform: filters.colors.includes(color)
+                                  ? "scale(1.1)"
+                                  : "scale(1)",
+                              }}
+                              title={color} // Show color name on hover
+                            />
+                          );
+                        })}
                       </div>
                     </AccordionContent>
                   </AccordionItem>
@@ -1890,9 +2153,9 @@ const KalifindSearch: React.FC<{
               "stockStatus",
               "featured",
               "sale",
-              ...(showOptionalFilters.colors ? ["color"] : []),
-              ...(showOptionalFilters.brands ? ["brand"] : []),
-              ...(showOptionalFilters.tags ? ["tags"] : []),
+              "color",
+              "brand",
+              "tags",
             ]}
           >
             <AccordionItem value="category">
@@ -2011,23 +2274,28 @@ const KalifindSearch: React.FC<{
                 </AccordionTrigger>
                 <AccordionContent>
                   <div className="!flex !gap-[8px]">
-                    {availableColors.map((color) => (
-                      <button
-                        key={color}
-                        onClick={() => handleColorChange(color)}
-                        className={`!w-[24px] !h-[24px] lg:!w-[32px] lg:!h-[32px] !rounded-full !border-2 ${
-                          filters.colors.includes(color)
-                            ? "!border-primary !scale-110"
-                            : "!border-border"
-                        }`}
-                        style={{
-                          backgroundColor: color.toLowerCase(),
-                          transform: filters.colors.includes(color)
-                            ? "scale(1.1)"
-                            : "scale(1)",
-                        }}
-                      />
-                    ))}
+                    {availableColors.map((color) => {
+                      // Get hex value from color mappings, fallback to auto-converted color
+                      const hexValue = colorMappings[color.toLowerCase()] || convertColorNameToHex(color);
+                      return (
+                        <button
+                          key={color}
+                          onClick={() => handleColorChange(color)}
+                          className={`!w-[24px] !h-[24px] lg:!w-[32px] lg:!h-[32px] !rounded-full !border-2 ${
+                            filters.colors.includes(color)
+                              ? "!border-primary !scale-110"
+                              : "!border-border"
+                          }`}
+                          style={{
+                            backgroundColor: hexValue,
+                            transform: filters.colors.includes(color)
+                              ? "scale(1.1)"
+                              : "scale(1)",
+                          }}
+                          title={color} // Show color name on hover
+                        />
+                      );
+                    })}
                   </div>
                 </AccordionContent>
               </AccordionItem>
