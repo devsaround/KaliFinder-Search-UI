@@ -404,7 +404,7 @@ const KalifindSearch: React.FC<{
           let products: Product[];
           if (Array.isArray(result)) {
             products = result;
-          } else if (result && Array.isArray(result.products)) {
+          } else if (isSearchResponse(result)) {
             products = result.products;
           } else {
             console.error(
@@ -578,6 +578,8 @@ const KalifindSearch: React.FC<{
     useEffect(() => {
       if (!storeUrl) return;
 
+      let isCancelled = false;
+
       // Only show autocomplete when user is typing and has a meaningful query
       if (searchQuery && searchQuery.length > 0 && debouncedSearchQuery?.trim()) {
         setShowAutocomplete(true);
@@ -600,6 +602,10 @@ const KalifindSearch: React.FC<{
               }
 
               const result = (await response.json()) as unknown;
+              
+              // Check if component is still mounted and not cancelled
+              if (isCancelled) return;
+              
               // Autocomplete API result processed
 
               // Better handling of different response formats with type safety
@@ -612,15 +618,9 @@ const KalifindSearch: React.FC<{
                   })
                   .filter(Boolean);
               } else if (isAutocompleteResponse(result)) {
-                const { suggestions, products } = result;
+                const { suggestions } = result;
                 if (suggestions.length > 0) {
                   rawSuggestions = suggestions.map((s: string) => String(s));
-                } else if (products.length > 0) {
-                  rawSuggestions = products
-                    .map((r: Product) => {
-                      return r.title || (r.name ?? "Unknown Product");
-                    })
-                    .filter(Boolean);
                 }
               }
 
@@ -637,14 +637,19 @@ const KalifindSearch: React.FC<{
                 .slice(0, 10); // Limit to top 10 suggestions
 
               // Process suggestions
-
-              setAutocompleteSuggestions(scoredSuggestions);
-              setHighlightedSuggestionIndex(-1); // Reset highlight when new suggestions arrive
+              if (!isCancelled) {
+                setAutocompleteSuggestions(scoredSuggestions);
+                setHighlightedSuggestionIndex(-1); // Reset highlight when new suggestions arrive
+              }
             } catch (error) {
-              console.error("Failed to fetch autocomplete suggestions:", error);
-              setAutocompleteSuggestions([]);
+              if (!isCancelled) {
+                console.error("Failed to fetch autocomplete suggestions:", error);
+                setAutocompleteSuggestions([]);
+              }
             } finally {
-              setIsAutocompleteLoading(false);
+              if (!isCancelled) {
+                setIsAutocompleteLoading(false);
+              }
             }
           })();
         });
@@ -654,6 +659,10 @@ const KalifindSearch: React.FC<{
         setAutocompleteSuggestions([]);
         setIsAutocompleteLoading(false);
       }
+
+      return () => {
+        isCancelled = true;
+      };
     }, [debouncedSearchQuery, storeUrl, searchQuery, scoreSuggestion]);
 
     // Extract search logic into a reusable function
@@ -666,6 +675,7 @@ const KalifindSearch: React.FC<{
           setCurrentPage(1);
           setHasMoreProducts(true);
           const fetchProducts = async () => {
+            const abortController = new AbortController();
             if (
               typeof debouncedPriceRange[0] === "undefined" ||
               typeof debouncedPriceRange[1] === "undefined"
@@ -712,11 +722,25 @@ const KalifindSearch: React.FC<{
               if (filters.stockStatus.length > 0) {
                 params.append("stockStatus", filters.stockStatus.join(","));
               }
-              if (filters.featuredProducts.includes("Featured")) {
-                params.append("featured", "true");
+              // Handle featured products filter
+              if (filters.featuredProducts.length > 0) {
+                if (filters.featuredProducts.includes("Featured") && !filters.featuredProducts.includes("Not Featured")) {
+                  params.append("featured", "true");
+                } else if (filters.featuredProducts.includes("Not Featured") && !filters.featuredProducts.includes("Featured")) {
+                  params.append("featured", "false");
+                }
+                // If both are selected, don't add any featured filter (show all)
               }
-              if (filters.saleStatus.includes("On Sale")) {
-                params.append("onSale", "true");
+              
+              // Handle sale status filter
+              if (filters.saleStatus.length > 0) {
+                console.log("filterttttt",filters)
+                if (filters.saleStatus.includes("On Sale") && !filters.saleStatus.includes("Not On Sale")) {
+                  params.append("insale", "true");
+                } else if (filters.saleStatus.includes("Not On Sale") && !filters.saleStatus.includes("On Sale")) {
+                  params.append("insale", "false");
+                }
+                // If both are selected, don't add any sale filter (show all)
               }
               params.append("minPrice", debouncedPriceRange[0].toString());
               params.append("maxPrice", debouncedPriceRange[1].toString());
@@ -725,7 +749,7 @@ const KalifindSearch: React.FC<{
 
               const response = await fetch(
                 `${import.meta.env.VITE_BACKEND_URL}/v1/search?${params.toString()}`,
-                {}
+                { signal: abortController.signal }
               );
 
               if (!response.ok) {
@@ -738,10 +762,56 @@ const KalifindSearch: React.FC<{
             let total = 0;
             let hasMore = false;
 
-            if (result && Array.isArray(result.products)) {
+            if (isSearchResponse(result)) {
               products = result.products;
               total = result.total || 0;
               hasMore = result.hasMore || false;
+
+              // Process facet data from API response
+              if (result.facets) {
+                // Process stock status facets (simplified like featured products)
+                if (result.facets.instock && Array.isArray(result.facets.instock.buckets)) {
+                  const stockStatusCounts: { [key: string]: number } = {};
+                  result.facets.instock.buckets.forEach((bucket: any) => {
+                    const status = bucket.key;
+                    const displayName = status === "instock" ? "In Stock" : 
+                                     status === "outofstock" ? "Out of Stock" : 
+                                     status === "onbackorder" ? "On Backorder" : status;
+                    stockStatusCounts[displayName] = bucket.doc_count;
+                  });
+                  setStockStatusCounts(stockStatusCounts);
+                }
+
+                // Process featured facets
+                if (result.facets.featured && Array.isArray(result.facets.featured.buckets)) {
+                  let featuredCount = 0;
+                  let notFeaturedCount = 0;
+                  result.facets.featured.buckets.forEach((bucket: any) => {
+                    if (bucket.key_as_string === "true") {
+                      featuredCount = bucket.doc_count;
+                    } else if (bucket.key_as_string === "false") {
+                      notFeaturedCount = bucket.doc_count;
+                    }
+                  });
+                  setFeaturedCount(featuredCount);
+                  setNotFeaturedCount(notFeaturedCount);
+                }
+
+                // Process sale facets
+                if (result.facets.insale && Array.isArray(result.facets.insale.buckets)) {
+                  let saleCount = 0;
+                  let notSaleCount = 0;
+                  result.facets.insale.buckets.forEach((bucket: any) => {
+                    if (bucket.key_as_string === "true") {
+                      saleCount = bucket.doc_count;
+                    } else if (bucket.key_as_string === "false") {
+                      notSaleCount = bucket.doc_count;
+                    }
+                  });
+                  setSaleCount(saleCount);
+                  setNotSaleCount(notSaleCount);
+                }
+              }
 
               // Debug: Log the first product to see what fields are available
               if (products.length > 0) {
@@ -785,6 +855,10 @@ const KalifindSearch: React.FC<{
               setDisplayedProducts(products.length);
               setHasMoreProducts(hasMore);
             } catch (error) {
+              if (error instanceof Error && error.name === 'AbortError') {
+                console.log("Search request was cancelled");
+                return;
+              }
               console.error("Failed to fetch products:", error);
               setFilteredProducts([]);
             } finally {
@@ -820,6 +894,13 @@ const KalifindSearch: React.FC<{
     }, [
       isPriceLoading,
       debouncedSearchQuery,
+      debouncedPriceRange,
+      storeUrl,
+      showRecommendations,
+      isInitialState,
+      performSearch,
+      isSearchingFromSuggestion,
+      forceSearch,
       filters.categories,
       filters.colors,
       filters.sizes,
@@ -828,15 +909,6 @@ const KalifindSearch: React.FC<{
       filters.stockStatus,
       filters.featuredProducts,
       filters.saleStatus,
-      filters.priceRange,
-      debouncedPriceRange,
-      storeUrl,
-      showRecommendations,
-      isInitialState,
-      performSearch,
-      isSearchingFromSuggestion,
-      forceSearch,
-      searchQuery,
     ]);
 
     const sortedProducts = useMemo(() => {
@@ -1099,13 +1171,33 @@ const KalifindSearch: React.FC<{
           params.append("tags", filters.tags.join(","));
         }
         if (filters.stockStatus.length > 0) {
-          params.append("stockStatus", filters.stockStatus.join(","));
+          // Map frontend stock status values to backend boolean values
+          const stockStatusValues = filters.stockStatus.map(status => {
+            if (status === "In Stock") return "true";
+            if (status === "Out of Stock") return "false";
+            if (status === "On Backorder") return "false";
+            return "true"; // default to true for other values
+          });
+          params.append("instock", stockStatusValues.join(","));
         }
-        if (filters.featuredProducts.includes("Featured")) {
-          params.append("featured", "true");
+        // Handle featured products filter
+        if (filters.featuredProducts.length > 0) {
+          if (filters.featuredProducts.includes("Featured") && !filters.featuredProducts.includes("Not Featured")) {
+            params.append("featured", "true");
+          } else if (filters.featuredProducts.includes("Not Featured") && !filters.featuredProducts.includes("Featured")) {
+            params.append("featured", "false");
+          }
+          // If both are selected, don't add any featured filter (show all)
         }
-        if (filters.saleStatus.includes("On Sale")) {
-          params.append("onSale", "true");
+        
+        // Handle sale status filter
+        if (filters.saleStatus.length > 0) {
+          if (filters.saleStatus.includes("On Sale") && !filters.saleStatus.includes("Not On Sale")) {
+            params.append("insale", "true");
+          } else if (filters.saleStatus.includes("Not On Sale") && !filters.saleStatus.includes("On Sale")) {
+            params.append("insale", "false");
+          }
+          // If both are selected, don't add any sale filter (show all)
         }
         params.append("minPrice", debouncedPriceRange[0].toString());
         params.append("maxPrice", debouncedPriceRange[1].toString());
@@ -1415,7 +1507,7 @@ const KalifindSearch: React.FC<{
         )}
 
       <div
-        className={`!fixed !bottom-[16px] !left-1/2 !-translate-x-1/2 !z-50 ${shouldShowFilters ? "!block lg:!hidden" : "!hidden"}`}
+        className={`!fixed !bottom-[16px] !left-1/2 !-translate-x-1/2 !z-50 ${shouldShowFilters ? "!block xl:!hidden" : "!hidden"}`}
       >
         <Drawer>
           <DrawerTrigger asChild>
@@ -1767,7 +1859,7 @@ const KalifindSearch: React.FC<{
 
       <div className="!flex !w-full lg:px-[64px] !mx-auto">
         <aside
-          className={`w-80 lg:!w-[312px] !p-[16px] !bg-filter-bg ${shouldShowFilters ? "!hidden lg:!block" : "!hidden"}`}
+          className={`w-80 lg:!w-[312px] !p-[16px] !bg-filter-bg ${shouldShowFilters ? "!hidden xl:!block" : "!hidden"}`}
         >
           <Accordion
             type="multiple"

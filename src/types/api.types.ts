@@ -12,6 +12,13 @@ export interface SearchResponse {
     stockStatus?: { [key: string]: number };
     featured?: { [key: string]: number };
     insale?: { [key: string]: number };
+    instock?: {
+      buckets: Array<{
+        key: number;
+        key_as_string: string;
+        doc_count: number;
+      }>;
+    };
   };
   hasMore?: boolean;
 }
