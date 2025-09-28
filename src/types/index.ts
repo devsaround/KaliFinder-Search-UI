@@ -62,8 +62,8 @@ export interface FilterState {
   tags: string[];
   // Mandatory facets
   stockStatus: string[]; // In Stock, Out of Stock, On Backorder
-  featuredProducts: boolean; // Featured vs Regular products
-  saleStatus: boolean; // On Sale vs Regular Price
+  featuredProducts: string[]; // Featured, Not Featured
+  saleStatus: string[]; // On Sale, Not On Sale
 }
 
 // Facet configuration for mandatory and optional facets
