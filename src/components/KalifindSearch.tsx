@@ -65,16 +65,17 @@ const KalifindSearch: React.FC<{
 
     // New state variables for search behavior
     const [showRecommendations, setShowRecommendations] = useState(true);
-    const [isSearchingFromSuggestion, setIsSearchingFromSuggestion] = useState(false);
-    const [forceSearch, setForceSearch] = useState(0);
+  const [isSearchingFromSuggestion, setIsSearchingFromSuggestion] = useState(false);
+  const [forceSearch, setForceSearch] = useState(0);
+  const [isFromSuggestionSelection, setIsFromSuggestionSelection] = useState(false);
+  const lastActionRef = useRef<'typing' | 'suggestion' | null>(null);
+  const userTypingRef = useRef(false);
+  const lastSearchedQueryRef = useRef<string | null>(null);
+  const lastSearchedFiltersRef = useRef<string>("");
 
   const [recommendations, setRecommendations] = useState<Product[]>([]);
   const [recommendationsFetched, setRecommendationsFetched] = useState(false);
-  const [popularSearches, setPopularSearches] = useState<string[]>([
-    "shirt",
-    "underwear",
-    "plan",
-  ]);
+  const [popularSearches, setPopularSearches] = useState<string[]>([]);
   const [showFilters, setShowFilters] = useState(false);
   const [isInitialState, setIsInitialState] = useState(true);
   const [maxPrice, setMaxPrice] = useState<number>(10000); // Default max price
@@ -241,13 +242,6 @@ const KalifindSearch: React.FC<{
     // Show filters if user has searched or filters are active
     const shouldShowFilters = showFilters || isAnyFilterActive;
 
-    // Fetch popular searches
-    const fetchPopularSearches = useCallback(async () => {
-      if (!storeUrl) return;
-
-      const searches = await apiService.fetchPopularSearches(storeUrl);
-      setPopularSearches(searches.slice(0, 6)); // Limit to 6 popular searches
-    }, [storeUrl]);
 
     // Fetch vendor facet configuration
     const fetchFacetConfiguration = useCallback(async () => {
@@ -338,7 +332,7 @@ const KalifindSearch: React.FC<{
         console.error("Failed to fetch recommendations:", error);
         setRecommendations([]);
       }
-    }, [storeUrl, recommendationsFetched]);
+    }, [storeUrl]);
 
     // Search behavior state management according to search.md requirements
     useEffect(() => {
@@ -375,13 +369,12 @@ const KalifindSearch: React.FC<{
 
   useEffect(() => {
     fetchRecommendations();
-    fetchPopularSearches();
     fetchFacetConfiguration();
-  }, [fetchRecommendations, fetchPopularSearches, fetchFacetConfiguration]);
+  }, [fetchRecommendations, fetchFacetConfiguration]);
 
     useEffect(() => {
       const initFilters = () => {
-        if (!storeUrl) return;
+        if (!storeUrl || isInitialState) return;
 
       const fetchWithRetry = async (retries = 3) => {
         try {
@@ -535,7 +528,7 @@ const KalifindSearch: React.FC<{
       };
 
       void initFilters();
-    }, [storeUrl]);
+    }, [storeUrl, isInitialState]);
 
     // Click outside handler
     // useEffect(() => {
@@ -580,8 +573,9 @@ const KalifindSearch: React.FC<{
 
       let isCancelled = false;
 
-      // Only show autocomplete when user is typing and has a meaningful query
-      if (searchQuery && searchQuery.length > 0 && debouncedSearchQuery?.trim()) {
+      // Only show autocomplete when user is actually typing and has a meaningful query
+      // Skip autocomplete if the change is from selecting a suggestion or not from user typing
+      if (searchQuery && searchQuery.length > 0 && debouncedSearchQuery?.trim() && userTypingRef.current && !isFromSuggestionSelection) {
         setShowAutocomplete(true);
         startTransition(() => {
           setIsAutocompleteLoading(true);
@@ -663,7 +657,7 @@ const KalifindSearch: React.FC<{
       return () => {
         isCancelled = true;
       };
-    }, [debouncedSearchQuery, storeUrl, searchQuery, scoreSuggestion]);
+    }, [debouncedSearchQuery, storeUrl, searchQuery, scoreSuggestion, isFromSuggestionSelection, userTypingRef]);
 
     // Extract search logic into a reusable function
     const performSearch = useCallback(
@@ -690,20 +684,13 @@ const KalifindSearch: React.FC<{
               if (query) {
                 params.append("q", query);
 
-                // Add popular search boosting
-                const lowerQuery = query.toLowerCase();
-                const matchingPopularTerms = popularSearches.filter((term) =>
-                  lowerQuery.includes(term.toLowerCase())
-                );
-                if (matchingPopularTerms.length > 0) {
-                  params.append("popularTerms", matchingPopularTerms.join(","));
-                }
               }
               if (storeUrl) {
                 params.append("storeUrl", storeUrl);
               }
 
               if (filters.categories.length > 0) {
+                console.log("🔍 Sending categories filter:", filters.categories);
                 params.append("categories", filters.categories.join(","));
               }
               if (filters.colors.length > 0) {
@@ -869,7 +856,7 @@ const KalifindSearch: React.FC<{
           void fetchProducts();
         });
       },
-      [storeUrl, debouncedPriceRange, popularSearches, filters]
+      [storeUrl, debouncedPriceRange, filters]
     );
 
     // search products
@@ -885,6 +872,22 @@ const KalifindSearch: React.FC<{
         return;
       }
 
+      // Check if we've already searched for this exact query and filters
+      const currentQuery = debouncedSearchQuery?.trim() || "";
+      const currentFilters = JSON.stringify(filters);
+      
+      console.log("🔍 Search useEffect - Current filters:", filters);
+      console.log("🔍 Search useEffect - Current query:", currentQuery);
+      
+      if (lastSearchedQueryRef.current === currentQuery && lastSearchedFiltersRef.current === currentFilters) {
+        console.log("⏭️ Skipping search - same query and filters");
+        return; // Skip if we've already searched for this query and filters combination
+      }
+
+      // Update the last searched query and filters
+      lastSearchedQueryRef.current = currentQuery;
+      lastSearchedFiltersRef.current = currentFilters;
+
       // Fetch all products when search query is empty, or perform search with query
       if (!debouncedSearchQuery?.trim()) {
         void performSearch(""); // Pass empty string to fetch all products
@@ -898,7 +901,6 @@ const KalifindSearch: React.FC<{
       storeUrl,
       showRecommendations,
       isInitialState,
-      performSearch,
       isSearchingFromSuggestion,
       forceSearch,
       filters.categories,
@@ -938,8 +940,13 @@ const KalifindSearch: React.FC<{
       setSearchQuery(query);
       setShowRecommendations(false);
 
+      // Mark this as typing action and set user typing flag
+      lastActionRef.current = 'typing';
+      userTypingRef.current = true;
+
       // Always show autocomplete when user starts typing (even for single characters)
-      if (query.length > 0) {
+      // But not when the change is from selecting a suggestion
+      if (query.length > 0 && !isFromSuggestionSelection) {
         setShowAutocomplete(true);
         setIsInteractingWithDropdown(false);
       } else {
@@ -949,6 +956,9 @@ const KalifindSearch: React.FC<{
         setHighlightedSuggestionIndex(-1);
         setIsInteractingWithDropdown(false);
       }
+
+      // Reset the suggestion selection flag when user types (after the autocomplete logic)
+      setIsFromSuggestionSelection(false);
 
       // Note: Recent searches are now only added on Enter key press or suggestion click
       // This prevents adding to recent searches just by typing
@@ -967,11 +977,6 @@ const KalifindSearch: React.FC<{
       }
     };
 
-    const handlePopularSearchClick = (term: string) => {
-      handleSearch(term);
-      addToRecentSearches(term); // Add to recent searches when clicking popular search
-      inputRef.current?.focus();
-    };
 
     const handleSuggestionClick = (suggestion: string) => {
       // Clicking a suggestion:
@@ -979,6 +984,11 @@ const KalifindSearch: React.FC<{
       // - The search useEffect will automatically trigger a search for that value
       // - Saves the clicked value into recent searches via Zustand and updates localStorage
       // Suggestion clicked
+
+      // Set flag to prevent autocomplete from triggering
+      setIsFromSuggestionSelection(true);
+      lastActionRef.current = 'suggestion';
+      userTypingRef.current = false; // Clear user typing flag
 
       // Close autocomplete completely
       setShowAutocomplete(false);
@@ -996,9 +1006,8 @@ const KalifindSearch: React.FC<{
       setIsInitialState(false);
       setHasSearched(true);
 
-      // Set the search query and perform search directly
+      // Set the search query - the search useEffect will automatically trigger the search
       setSearchQuery(suggestion);
-      void performSearch(suggestion);
 
       // Blur input to close any mobile keyboards
       inputRef.current?.blur();
@@ -1394,7 +1403,7 @@ const KalifindSearch: React.FC<{
                         onChange={(e) => handleSearch(e.target.value)}
                         onFocus={() => {
                           // Input focused
-                          if (searchQuery && searchQuery.length > 0) {
+                          if (searchQuery && searchQuery.length > 0 && userTypingRef.current && !isFromSuggestionSelection) {
                             setShowAutocomplete(true);
                             setIsInteractingWithDropdown(false);
                           }
@@ -2289,31 +2298,6 @@ const KalifindSearch: React.FC<{
               {showRecommendations ? (
                 // Show recommendations and popular searches
                 <div className="!w-full">
-                  {/* Popular Searches */}
-                  <div className="!mb-8">
-                    <h3 className="!mb-[8px] !mt-[8px] !text-[18px] !font-bold !text-foreground lg:!text-[20px]">
-                      Popular Searches
-                    </h3>
-                    <p className="!mb-4 !text-[14px] !text-muted-foreground">
-                      Trending search terms from other customers
-                    </p>
-                    <div className="!flex !flex-wrap !gap-2">
-                      {popularSearches.map((term, index) => (
-                        <button
-                          key={term}
-                          onClick={() => handlePopularSearchClick(term)}
-                          className="!transform !rounded-full !border !border-transparent !bg-muted !px-4 !py-2 !text-[14px] !font-medium !capitalize !text-foreground !transition-all !duration-300 hover:!scale-105 hover:!border-primary hover:!bg-primary hover:!text-primary-foreground"
-                        >
-                          <span className="!flex !items-center !gap-2">
-                            <span className="!rounded-full !bg-primary/20 !px-2 !py-1 !text-xs !text-primary">
-                              #{index + 1}
-                            </span>
-                            {term}
-                          </span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
 
                   {/* Smart Recommendations */}
                   {(() => {
