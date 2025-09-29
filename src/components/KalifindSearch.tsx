@@ -43,8 +43,8 @@ const KalifindSearch: React.FC<{
   hasSearched,
   setHasSearched,
   hideHeader = false,
-  storeUrl = "https://findifly.kinsta.cloud",
-  // storeUrl = "https://findifly-dev.myshopify.com",
+  // storeUrl = "https://findifly.kinsta.cloud",
+  storeUrl = "https://findifly-dev.myshopify.com",
 }) => {
     const [showAutocomplete, setShowAutocomplete] = useState(false);
     const [isInteractingWithDropdown, setIsInteractingWithDropdown] = useState(false);
