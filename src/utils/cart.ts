@@ -397,9 +397,31 @@ export const updateCartFragments = (cart: any) => {
   });
 };
 
+// Helper function to check if product has multiple variants
+const hasMultipleVariants = (product: Product): boolean => {
+  const sizes = product.sizes || [];
+  const colors = product.colors || [];
+  
+  // If either sizes or colors have more than one option, it has multiple variants
+  return sizes.length > 1 || colors.length > 1;
+};
+
 // Main add to cart function with automatic store detection
 export const addToCart = async (product: Product, storeUrl: string): Promise<CartResponse> => {
   try {
+    // Check if product is external (always redirect to product page)
+    if (product.productType === "external") {
+      if (product.productUrl) {
+        window.open(product.productUrl, "_blank");
+        return {
+          success: true,
+          message: "Redirected to external product page"
+        };
+      } else {
+        throw new Error("External product requires product URL");
+      }
+    }
+
     // Check if product is variable (redirect to product page)
     if (product.productType === "variable") {
       if (product.productUrl) {
@@ -413,6 +435,19 @@ export const addToCart = async (product: Product, storeUrl: string): Promise<Car
       }
     }
 
+    // Check if product has multiple variants (sizes/colors) - redirect to product page
+    if (hasMultipleVariants(product)) {
+      if (product.productUrl) {
+        window.open(product.productUrl, "_blank");
+        return {
+          success: true,
+          message: "Redirected to product page for variant selection (multiple sizes/colors available)"
+        };
+      } else {
+        throw new Error("Product with multiple variants requires product URL");
+      }
+    }
+
     // Create cart product with store information
     const cartProduct: CartProduct = {
       ...product,
@@ -422,12 +457,16 @@ export const addToCart = async (product: Product, storeUrl: string): Promise<Car
 
     console.log('Adding to cart:', {
       product: cartProduct.title,
+      productType: cartProduct.productType,
       storeType: cartProduct.storeType,
       productId: cartProduct.id,
       variantId: cartProduct.shopifyVariantId,
       wooProductId: cartProduct.wooProductId,
       hasShopifyVariantId: !!cartProduct.shopifyVariantId,
-      hasWooProductId: !!cartProduct.wooProductId
+      hasWooProductId: !!cartProduct.wooProductId,
+      sizes: cartProduct.sizes,
+      colors: cartProduct.colors,
+      hasMultipleVariants: hasMultipleVariants(cartProduct)
     });
     
     // Debug: Log the full product object to see what fields are available
