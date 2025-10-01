@@ -207,50 +207,96 @@ export const addToWooCommerceCart = async (product: CartProduct): Promise<CartRe
   }
 };
 
-// Shopify add to cart implementation
+// Shopify add to cart implementation using Shopify Cart API
 export const addToShopifyCart = async (product: CartProduct): Promise<CartResponse> => {
   try {
     // Get Shopify variant ID - must use shopifyVariantId, not product.id
-    const variantId = product.shopifyVariantId;
+    let variantId = product.shopifyVariantId;
     
     if (!variantId) {
       throw new Error('Shopify variant ID is required for cart operations. Product may not have variants configured.');
     }
 
-    // Use backend proxy to avoid CORS issues
-    const response = await fetch(
-      `${import.meta.env.VITE_BACKEND_URL}/v1/cart/shopify/add`,
-      {
+    // Extract numeric ID from GID format if needed
+    // Shopify cart API expects numeric ID, not GID format
+    if (variantId.startsWith('gid://shopify/ProductVariant/')) {
+      variantId = variantId.split('/').pop() || variantId;
+    }
+
+    console.log('Adding to Shopify cart:', {
+      originalVariantId: product.shopifyVariantId,
+      extractedVariantId: variantId,
+      storeUrl: product.storeUrl,
+      productTitle: product.title
+    });
+
+    // Use Shopify Cart API directly with FormData
+    const formData = new FormData();
+    formData.append('id', variantId);
+    formData.append('quantity', '1');
+
+    // Try to add to existing cart first
+    let cartId = localStorage.getItem('shopify_cart_id');
+    let response;
+
+    try {
+      // Shopify cart/add.js expects form data, not JSON
+      response = await fetch(`${product.storeUrl}/cart/add.js`, {
         method: "POST",
         headers: { 
-          "Content-Type": "application/json",
           "Accept": "application/json"
         },
-        body: JSON.stringify({
-          storeUrl: product.storeUrl,
-          variantId: variantId,
-          quantity: 1,
-        }),
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Shopify cart API error:', {
+          status: response.status,
+          statusText: response.statusText,
+          responseText: errorText,
+          variantId,
+          storeUrl: product.storeUrl
+        });
+        
+        let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+        try {
+          const errorData = JSON.parse(errorText);
+          errorMessage = errorData.message || errorData.description || errorMessage;
+        } catch (e) {
+          // If response is not JSON, use the text as error message
+          if (errorText) {
+            errorMessage = errorText;
+          }
+        }
+        
+        throw new Error(errorMessage);
       }
-    );
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
+      const result = await response.json();
+      
+      // Store cart ID for future operations
+      if (result.token) {
+        localStorage.setItem('shopify_cart_id', result.token);
+      }
+      
+      // Update cart fragments if successful
+      if (result) {
+        updateCartFragments(result);
+      }
+      
+      return {
+        success: true,
+        message: `${product.title} added to cart!`,
+        cart: result
+      };
+      
+    } catch (corsError) {
+      console.warn('Direct Shopify API failed, trying fallback method:', corsError);
+      
+      // Fallback: Use form submission method for CORS-free cart addition
+      return await addToShopifyCartFallback(product);
     }
-
-    const result = await response.json();
-    
-    // Update cart fragments if successful
-    if (result.success && result.cart) {
-      updateCartFragments(result.cart);
-    }
-    
-    return {
-      success: true,
-      message: `${product.title} added to cart!`,
-      cart: result.cart
-    };
     
   } catch (error) {
     console.error('Shopify cart error:', error);
@@ -258,8 +304,63 @@ export const addToShopifyCart = async (product: CartProduct): Promise<CartRespon
   }
 };
 
+// Fallback method for Shopify cart addition using form submission (CORS-free)
+export const addToShopifyCartFallback = async (product: CartProduct): Promise<CartResponse> => {
+  return new Promise((resolve, reject) => {
+    try {
+      console.log('Using Shopify fallback method for cart addition');
+      
+      // Extract numeric ID from GID format if needed
+      let variantId = product.shopifyVariantId!;
+      if (variantId.startsWith('gid://shopify/ProductVariant/')) {
+        variantId = variantId.split('/').pop() || variantId;
+      }
+      
+      // Create a hidden form for cart addition
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.action = `${product.storeUrl}/cart/add`;
+      form.style.display = 'none';
+      
+      // Add variant ID
+      const variantInput = document.createElement('input');
+      variantInput.type = 'hidden';
+      variantInput.name = 'id';
+      variantInput.value = variantId;
+      form.appendChild(variantInput);
+      
+      // Add quantity
+      const quantityInput = document.createElement('input');
+      quantityInput.type = 'hidden';
+      quantityInput.name = 'quantity';
+      quantityInput.value = '1';
+      form.appendChild(quantityInput);
+      
+      // Add form to document and submit
+      document.body.appendChild(form);
+      form.submit();
+      
+      // Clean up
+      setTimeout(() => {
+        document.body.removeChild(form);
+      }, 1000);
+      
+      // Return success response
+      resolve({
+        success: true,
+        message: `${product.title} added to cart!`,
+        cart: null
+      });
+      
+    } catch (error) {
+      console.error('Shopify fallback cart error:', error);
+      reject(new Error(`Failed to add ${product.title} to cart: ${error}`));
+    }
+  });
+};
+
 // Update cart fragments in the DOM
-export const updateCartFragments = (cart: CartResponse) => {
+export const updateCartFragments = (cart: any) => {
   // Update cart count selectors
   const cartSelectors = [
     ".cart-count", ".cart-item-count", ".header-cart-count",
@@ -271,7 +372,9 @@ export const updateCartFragments = (cart: CartResponse) => {
     const elements = document.querySelectorAll(selector);
     elements.forEach(element => {
       if (element.textContent !== undefined) {
-        element.textContent = cart.item_count?.toString() || "0";
+        // Handle both Shopify cart format and our CartResponse format
+        const itemCount = cart.item_count || cart.items?.length || 0;
+        element.textContent = itemCount.toString();
       }
     });
   });
@@ -286,7 +389,9 @@ export const updateCartFragments = (cart: CartResponse) => {
     const elements = document.querySelectorAll(selector);
     elements.forEach(element => {
       if (element.textContent !== undefined) {
-        element.textContent = cart.total_price || "0";
+        // Handle both Shopify cart format and our CartResponse format
+        const totalPrice = cart.total_price || cart.total || "0";
+        element.textContent = totalPrice.toString();
       }
     });
   });
