@@ -21,29 +21,13 @@ export const injectIsolatedStyles = (container: HTMLElement) => {
       z-index: 999999 !important;
     }
 
-    /* Reset all child elements */
+    /* Reset only specific problematic styles */
     .kalifind-search-widget *,
     .kalifind-search-widget *::before,
     .kalifind-search-widget *::after {
-      all: unset !important;
-      display: revert !important;
       box-sizing: border-box !important;
       font-family: inherit !important;
       line-height: inherit !important;
-      color: inherit !important;
-      background: transparent !important;
-      border: none !important;
-      margin: 0 !important;
-      padding: 0 !important;
-      text-decoration: none !important;
-      list-style: none !important;
-      outline: none !important;
-      box-shadow: none !important;
-      text-shadow: none !important;
-      filter: none !important;
-      transform: none !important;
-      transition: none !important;
-      animation: none !important;
     }
 
     /* Restore necessary display properties */
@@ -141,17 +125,12 @@ export const applyScopedStyles = (
 ) => {
   element.classList.add(scope);
 
-  // Apply additional isolation styles
-  element.style.setProperty("all", "initial", "important");
+  // Apply minimal isolation styles
   element.style.setProperty(
     "font-family",
     "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
     "important"
   );
-  element.style.setProperty("font-size", "16px", "important");
-  element.style.setProperty("line-height", "1.5", "important");
-  element.style.setProperty("color", "#1f2937", "important");
-  element.style.setProperty("background-color", "#ffffff", "important");
   element.style.setProperty("box-sizing", "border-box", "important");
   element.style.setProperty("z-index", "999999", "important");
 };

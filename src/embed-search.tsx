@@ -122,28 +122,51 @@ const findSearchTriggerElements = (): Element[] => {
 
   const elements: Element[] = [];
   
-  // Look for specific search-related elements in header only
+  // Look for specific search icon/button elements only - be more restrictive
   const searchSelectors = [
+    // Shopify specific - target the actual search buttons
     'search-button',
     '.search-action',
     '.search-button', 
     '.search-trigger',
-    '[aria-label*="search" i]',
-    '[aria-label*="Search" i]',
-    '[aria-label*="Open search" i]'
+    'button.search-modal__button',
+    'button[class*="search"]',
+    // Generic search buttons/icons
+    'button[aria-label*="search" i]',
+    'button[aria-label*="Search" i]',
+    'button[aria-label*="Open search" i]',
+    // WordPress specific - but only buttons, not divs
+    'button.search-toggle',
+    'button[data-toggle-target*="search"]',
+    'button[data-toggle-target*="Search"]'
   ];
 
   searchSelectors.forEach(selector => {
     try {
       const foundElements = header.querySelectorAll(selector);
       foundElements.forEach(el => {
-        if (!elements.includes(el)) {
+        // Only include actual buttons or clickable elements, not containers
+        if ((el.tagName === 'BUTTON' || el.tagName === 'A' || el.hasAttribute('onclick')) && !elements.includes(el)) {
           console.log("Kalifind Search: Found search element in header:", el, "selector:", selector);
           elements.push(el);
         }
       });
     } catch (e) {
       console.log("Kalifind Search: Selector not supported:", selector);
+    }
+  });
+
+  // Also look for buttons with search-related text content (but be more specific)
+  const allButtons = header.querySelectorAll('button');
+  allButtons.forEach(button => {
+    const text = button.textContent?.toLowerCase().trim() || '';
+    const ariaLabel = button.getAttribute('aria-label')?.toLowerCase() || '';
+    const className = button.className?.toLowerCase() || '';
+    
+    // Only include buttons that are clearly search buttons
+    if ((text === 'search' || text === 'open search' || ariaLabel.includes('search') || className.includes('search')) && !elements.includes(button)) {
+      console.log("Kalifind Search: Found search button by text content:", button);
+      elements.push(button);
     }
   });
 
@@ -157,6 +180,13 @@ const removeExistingSearch = (elements: Element[]): void => {
   elements.forEach((element) => {
     console.log("Kalifind Search: Processing element:", element);
     console.log("Kalifind Search: Element attributes:", Array.from(element.attributes).map(attr => `${attr.name}="${attr.value}"`));
+    
+    // Remove all event listeners by cloning the element (this removes all attached event listeners)
+    const newElement = element.cloneNode(true) as Element;
+    if (element.parentNode) {
+      element.parentNode.replaceChild(newElement, element);
+    }
+    
     // Remove standard HTML event attributes
     const eventAttributes = [
       "onclick",
@@ -171,8 +201,8 @@ const removeExistingSearch = (elements: Element[]): void => {
     ];
 
     eventAttributes.forEach((attr) => {
-      if (element.hasAttribute(attr)) {
-        element.removeAttribute(attr);
+      if (newElement.hasAttribute(attr)) {
+        newElement.removeAttribute(attr);
       }
     });
 
@@ -192,24 +222,24 @@ const removeExistingSearch = (elements: Element[]): void => {
     ];
 
     svelteEventAttributes.forEach((attr) => {
-      if (element.hasAttribute(attr)) {
-        console.log("Kalifind Search: Removing Svelte event attribute:", attr, "from element:", element);
-        element.removeAttribute(attr);
-        console.log("Kalifind Search: Attribute removed, element now:", element);
+      if (newElement.hasAttribute(attr)) {
+        console.log("Kalifind Search: Removing Svelte event attribute:", attr, "from element:", newElement);
+        newElement.removeAttribute(attr);
+        console.log("Kalifind Search: Attribute removed, element now:", newElement);
       }
     });
 
     // Also check for any remaining event attributes that might contain search or modal
-    const allAttributes = Array.from(element.attributes);
+    const allAttributes = Array.from(newElement.attributes);
     allAttributes.forEach(attr => {
       if (attr.name.includes('on') && (attr.value.includes('search') || attr.value.includes('modal'))) {
-        console.log("Kalifind Search: Removing event attribute with search/modal:", attr.name, "=", attr.value, "from element:", element);
-        element.removeAttribute(attr.name);
+        console.log("Kalifind Search: Removing event attribute with search/modal:", attr.name, "=", attr.value, "from element:", newElement);
+        newElement.removeAttribute(attr.name);
       }
     });
 
     // Also check child elements for on:click attributes
-    const childButtons = element.querySelectorAll('button[on\\:click]');
+    const childButtons = newElement.querySelectorAll('button[on\\:click]');
     childButtons.forEach(button => {
       console.log("Kalifind Search: Found child button with on:click:", button);
       if (button.hasAttribute('on:click')) {
@@ -217,6 +247,49 @@ const removeExistingSearch = (elements: Element[]): void => {
         button.removeAttribute('on:click');
       }
     });
+
+    // For WordPress, also remove any data attributes that might trigger search
+    const dataAttributes = Array.from(newElement.attributes).filter(attr => 
+      attr.name.startsWith('data-') && 
+      (attr.value.includes('search') || attr.value.includes('modal') || attr.value.includes('toggle'))
+    );
+    dataAttributes.forEach(attr => {
+      console.log("Kalifind Search: Removing data attribute:", attr.name, "=", attr.value);
+      newElement.removeAttribute(attr.name);
+    });
+
+    // Remove any WordPress-specific classes that might trigger search
+    const searchClasses = ['search-modal', 'cover-modal', 'header-footer-group'];
+    searchClasses.forEach(className => {
+      if (newElement.classList.contains(className)) {
+        console.log("Kalifind Search: Removing search class:", className);
+        newElement.classList.remove(className);
+      }
+    });
+
+    // Remove Shopify-specific classes and attributes
+    const shopifySearchClasses = ['search-modal__button', 'search-action', 'search-trigger'];
+    shopifySearchClasses.forEach(className => {
+      if (newElement.classList.contains(className)) {
+        console.log("Kalifind Search: Removing Shopify search class:", className);
+        newElement.classList.remove(className);
+      }
+    });
+
+    // Remove any Shopify-specific data attributes
+    const shopifyDataAttributes = ['data-modal', 'data-search', 'data-toggle'];
+    shopifyDataAttributes.forEach(attr => {
+      if (newElement.hasAttribute(attr)) {
+        console.log("Kalifind Search: Removing Shopify data attribute:", attr);
+        newElement.removeAttribute(attr);
+      }
+    });
+
+    // Update the elements array to use the new element
+    const index = elements.indexOf(element);
+    if (index !== -1) {
+      elements[index] = newElement;
+    }
   });
 };
 
@@ -331,6 +404,18 @@ const removeExistingSearch = (elements: Element[]): void => {
             e.preventDefault();
             e.stopPropagation();
             e.stopImmediatePropagation();
+            
+            // Prevent any Shopify search modal from opening
+            const existingShopifyModal = document.querySelector('.search-modal, [data-modal], .modal');
+            if (existingShopifyModal) {
+              existingShopifyModal.style.display = 'none';
+              existingShopifyModal.remove();
+            }
+            
+            // Prevent body scroll lock that Shopify might apply
+            document.body.style.overflow = 'unset';
+            document.body.classList.remove('search-modal-open', 'modal-open');
+            
             openSearchModal(configFromUrl);
           },
           true
