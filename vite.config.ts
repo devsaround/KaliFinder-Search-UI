@@ -22,11 +22,6 @@ export default defineConfig(({ mode }) => ({
   },
   define: {
     "process.env.NODE_ENV": JSON.stringify(mode),
-    "import.meta.env.VITE_BACKEND_URL": JSON.stringify(
-      mode === "production" 
-        ? "https://api.kalifind.com" 
-        : "http://localhost:8000"
-    ),
   },
   build: {
     sourcemap: false,
