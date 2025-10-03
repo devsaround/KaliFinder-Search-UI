@@ -2,6 +2,7 @@ import { ChevronDown, Filter, Search, ShoppingCart, X } from "lucide-react";
 import React, { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 
 import { apiService } from "@/services/api.service";
+import { getUBIClient } from "@/analytics/ubiClient";
 
 import {
   Accordion,
@@ -46,6 +47,9 @@ const KalifindSearch: React.FC<{
   // storeUrl = "https://findifly.kinsta.cloud",
   storeUrl = "https://findifly-dev.myshopify.com",
 }) => {
+    // Determine if this is a Shopify store
+    const isShopifyStore = storeUrl?.includes('myshopify.com') || storeUrl?.includes('shopify');
+    
     const [showAutocomplete, setShowAutocomplete] = useState(false);
     const [isInteractingWithDropdown, setIsInteractingWithDropdown] = useState(false);
     const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
@@ -325,8 +329,8 @@ const KalifindSearch: React.FC<{
           products = [];
         }
 
-        console.log("Setting recommendations:", products.slice(0, 8));
-        setRecommendations(products.slice(0, 8)); // Limit to 8 recommendations
+        console.log("Setting recommendations:", products);
+        setRecommendations(products); // Show all recommendations
         setRecommendationsFetched(true);
       } catch (error) {
         console.error("Failed to fetch recommendations:", error);
@@ -939,6 +943,12 @@ const KalifindSearch: React.FC<{
       // Handle search called
       setSearchQuery(query);
       setShowRecommendations(false);
+      
+      // Track search submission with UBI
+      const ubiClient = getUBIClient();
+      if (ubiClient && query.trim()) {
+        ubiClient.trackSearchSubmitted(query.trim());
+      }
 
       // Mark this as typing action and set user typing flag
       lastActionRef.current = 'typing';
@@ -1085,6 +1095,12 @@ const KalifindSearch: React.FC<{
           ? prev.categories.filter((c) => c !== category)
           : [...prev.categories, category],
       }));
+      
+      // Track filter click with UBI
+      const ubiClient = getUBIClient();
+      if (ubiClient) {
+        ubiClient.trackFilterClick('category', category);
+      }
     };
 
     const handleBrandChange = (brand: string) => {
@@ -1094,6 +1110,12 @@ const KalifindSearch: React.FC<{
           ? prev.brands.filter((b) => b !== brand)
           : [...prev.brands, brand],
       }));
+      
+      // Track filter click with UBI
+      const ubiClient = getUBIClient();
+      if (ubiClient) {
+        ubiClient.trackFilterClick('brand', brand);
+      }
     };
 
     const handleSizeChange = (size: string) => {
@@ -1103,6 +1125,12 @@ const KalifindSearch: React.FC<{
           ? prev.sizes.filter((s) => s !== size)
           : [...prev.sizes, size],
       }));
+      
+      // Track filter click with UBI
+      const ubiClient = getUBIClient();
+      if (ubiClient) {
+        ubiClient.trackFilterClick('size', size);
+      }
     };
 
     const handleColorChange = (color: string) => {
@@ -1112,6 +1140,12 @@ const KalifindSearch: React.FC<{
           ? prev.colors.filter((c) => c !== color)
           : [...prev.colors, color],
       }));
+      
+      // Track filter click with UBI
+      const ubiClient = getUBIClient();
+      if (ubiClient) {
+        ubiClient.trackFilterClick('color', color);
+      }
     };
 
     const handleTagChange = (tag: string) => {
@@ -1119,6 +1153,12 @@ const KalifindSearch: React.FC<{
         ...prev,
         tags: prev.tags.includes(tag) ? prev.tags.filter((t) => t !== tag) : [...prev.tags, tag],
       }));
+      
+      // Track filter click with UBI
+      const ubiClient = getUBIClient();
+      if (ubiClient) {
+        ubiClient.trackFilterClick('tag', tag);
+      }
     };
 
     // Mandatory facet handlers
@@ -1310,6 +1350,13 @@ const KalifindSearch: React.FC<{
       setShowAutocomplete(false);
       setAutocompleteSuggestions([]);
       setHighlightedSuggestionIndex(-1);
+      
+      // Track result click with UBI
+      const ubiClient = getUBIClient();
+      if (ubiClient) {
+        const position = sortedProducts.findIndex(p => p.id === product.id) + 1;
+        ubiClient.trackResultClick(product.id, position);
+      }
 
       if (product.productUrl) {
         window.open(product.productUrl, "_blank");
@@ -1544,11 +1591,11 @@ const KalifindSearch: React.FC<{
                   "price",
                   "size",
                   "stockStatus",
-                  "featured",
+                  ...(isShopifyStore ? [] : ["featured"]),
                   "sale",
-                  ...(showOptionalFilters.colors ? ["color"] : []),
-                  ...(showOptionalFilters.brands ? ["brand"] : []),
-                  ...(showOptionalFilters.tags ? ["tags"] : []),
+                  "color",
+                  "brand",
+                  "tags",
                 ]}
                 className="!w-full"
               >
@@ -1756,36 +1803,38 @@ const KalifindSearch: React.FC<{
                     </AccordionContent>
                   </AccordionItem>
 
-                  <AccordionItem value="featured">
-                    <AccordionTrigger className="text-[16px] !font-extrabold">
-                      <b className="!font-extrabold">Featured Products</b>
-                    </AccordionTrigger>
-                    <AccordionContent>
-                      <div className="!space-y-[8px]">
-                        {["Featured", "Not Featured"].map((status) => (
-                          <label
-                            key={status}
-                            className="!flex !cursor-pointer !items-center !justify-between !rounded-lg !p-[4px] hover:!bg-muted sm:!p-[8px]"
-                          >
-                            <div className="!flex !items-center !gap-[12px]">
-                              <input
-                                type="checkbox"
-                                checked={filters.featuredProducts.includes(status)}
-                                onChange={() => handleFeaturedProductsChange(status)}
-                                className="!h-[16px] !w-[16px] !rounded !border-border !bg-background !text-primary sm:!h-5 sm:!w-5 "
-                              />
-                              <span className="!text-[14px] !text-foreground sm:!text-[16px] lg:leading-[16px]">
-                                {status}
+                  {!isShopifyStore && (
+                    <AccordionItem value="featured">
+                      <AccordionTrigger className="text-[16px] !font-extrabold">
+                        <b className="!font-extrabold">Featured Products</b>
+                      </AccordionTrigger>
+                      <AccordionContent>
+                        <div className="!space-y-[8px]">
+                          {["Featured", "Not Featured"].map((status) => (
+                            <label
+                              key={status}
+                              className="!flex !cursor-pointer !items-center !justify-between !rounded-lg !p-[4px] hover:!bg-muted sm:!p-[8px]"
+                            >
+                              <div className="!flex !items-center !gap-[12px]">
+                                <input
+                                  type="checkbox"
+                                  checked={filters.featuredProducts.includes(status)}
+                                  onChange={() => handleFeaturedProductsChange(status)}
+                                  className="!h-[16px] !w-[16px] !rounded !border-border !bg-background !text-primary sm:!h-5 sm:!w-5 "
+                                />
+                                <span className="!text-[14px] !text-foreground sm:!text-[16px] lg:leading-[16px]">
+                                  {status}
+                                </span>
+                              </div>
+                              <span className="!rounded !bg-muted !px-[8px] !py-[4px] !text-[12px] !text-muted-foreground sm:!text-[14px]">
+                                {status === "Featured" ? featuredCount : notFeaturedCount}
                               </span>
-                            </div>
-                            <span className="!rounded !bg-muted !px-[8px] !py-[4px] !text-[12px] !text-muted-foreground sm:!text-[14px]">
-                              {status === "Featured" ? featuredCount : notFeaturedCount}
-                            </span>
-                          </label>
-                        ))}
-                      </div>
-                    </AccordionContent>
-                  </AccordionItem>
+                            </label>
+                          ))}
+                        </div>
+                      </AccordionContent>
+                    </AccordionItem>
+                  )}
 
                   <AccordionItem value="sale">
                     <AccordionTrigger className="text-[16px] !font-extrabold">
@@ -1877,11 +1926,11 @@ const KalifindSearch: React.FC<{
               "price",
               "size",
               "stockStatus",
-              "featured",
+              ...(isShopifyStore ? [] : ["featured"]),
               "sale",
-              ...(showOptionalFilters.colors ? ["color"] : []),
-              ...(showOptionalFilters.brands ? ["brand"] : []),
-              ...(showOptionalFilters.tags ? ["tags"] : []),
+              "color",
+              "brand",
+              "tags",
             ]}
           >
             <AccordionItem value="category">
@@ -2086,36 +2135,38 @@ const KalifindSearch: React.FC<{
                 </AccordionContent>
               </AccordionItem>
 
-              <AccordionItem value="featured">
-                <AccordionTrigger className="text-[16px] !font-[700] !text-foreground lg:text-[18px]">
-                  <b className="font-extrabold">Featured Products</b>
-                </AccordionTrigger>
-                <AccordionContent>
-                  <div className="!space-y-[8px]">
-                    {["Featured", "Not Featured"].map((status) => (
-                      <label
-                        key={status}
-                        className="!flex !cursor-pointer !items-center !justify-between"
-                      >
-                        <div className="!flex !items-center !gap-[10px]">
-                          <input
-                            type="checkbox"
-                            checked={filters.featuredProducts.includes(status)}
-                            onChange={() => handleFeaturedProductsChange(status)}
-                            className="top-0 !h-[16px] !w-[16px] !rounded !border-border !bg-background !text-primary lg:!h-5 lg:!w-5 "
-                          />
-                          <span className="text-[14px] !text-foreground lg:text-[16px]">
-                            {status}
+              {!isShopifyStore && (
+                <AccordionItem value="featured">
+                  <AccordionTrigger className="text-[16px] !font-[700] !text-foreground lg:text-[18px]">
+                    <b className="font-extrabold">Featured Products</b>
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <div className="!space-y-[8px]">
+                      {["Featured", "Not Featured"].map((status) => (
+                        <label
+                          key={status}
+                          className="!flex !cursor-pointer !items-center !justify-between"
+                        >
+                          <div className="!flex !items-center !gap-[10px]">
+                            <input
+                              type="checkbox"
+                              checked={filters.featuredProducts.includes(status)}
+                              onChange={() => handleFeaturedProductsChange(status)}
+                              className="top-0 !h-[16px] !w-[16px] !rounded !border-border !bg-background !text-primary lg:!h-5 lg:!w-5 "
+                            />
+                            <span className="text-[14px] !text-foreground lg:text-[16px]">
+                              {status}
+                            </span>
+                          </div>
+                          <span className="mr-[8px] !text-[12px] !text-muted-foreground lg:text-[14px]">
+                            {status === "Featured" ? featuredCount : notFeaturedCount}
                           </span>
-                        </div>
-                        <span className="mr-[8px] !text-[12px] !text-muted-foreground lg:text-[14px]">
-                          {status === "Featured" ? featuredCount : notFeaturedCount}
-                        </span>
-                      </label>
-                    ))}
-                  </div>
-                </AccordionContent>
-              </AccordionItem>
+                        </label>
+                      ))}
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              )}
 
               <AccordionItem value="sale">
                 <AccordionTrigger className="text-[16px] !font-[700] !text-foreground lg:text-[18px]">

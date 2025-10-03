@@ -26,12 +26,12 @@ class ApiServiceImpl implements ApiService {
 
   async fetchFacetConfiguration(storeUrl: string): Promise<any[]> {
     try {
-      const response = await fetch(`${this.baseUrl}/v1/facets/configured?storeUrl=${encodeURIComponent(storeUrl)}`);
+      const response = await fetch(`${this.baseUrl}/v1/facets?storeUrl=${encodeURIComponent(storeUrl)}`);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       const data = await response.json();
-      return data.facets || [];
+      return data || [];
     } catch (error) {
       console.error('Failed to fetch facet configuration:', error);
       return [];
