@@ -243,8 +243,8 @@ const KalifindSearch: React.FC<{
       filters.featuredProducts.length > 0 ||
       filters.saleStatus.length > 0;
 
-    // Show filters if user has searched or filters are active
-    const shouldShowFilters = showFilters || isAnyFilterActive;
+    // Show filters if user has searched, has typed something, or filters are active
+    const shouldShowFilters = showFilters || isAnyFilterActive || (searchQuery && searchQuery.trim().length > 0);
 
 
     // Fetch vendor facet configuration
@@ -1917,7 +1917,12 @@ const KalifindSearch: React.FC<{
 
       <div className="!flex !w-full lg:px-[64px] !mx-auto">
         <aside
-          className={`w-80 lg:!w-[312px] !p-[16px] !bg-filter-bg ${shouldShowFilters ? "!hidden xl:!block" : "!hidden"}`}
+          className="w-80 lg:!w-[312px] !p-[16px] !bg-filter-bg !hidden xl:!block"
+          style={{ 
+            opacity: shouldShowFilters ? 1 : 0,
+            pointerEvents: shouldShowFilters ? 'auto' : 'none',
+            transition: 'opacity 0.3s ease-in-out'
+          }}
         >
           <Accordion
             type="multiple"
