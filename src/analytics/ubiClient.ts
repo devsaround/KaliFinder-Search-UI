@@ -70,6 +70,48 @@ class UBIClient {
     });
   }
   
+  // Track add-to-cart events
+  trackAddToCart(productId: string, productTitle: string, price: number, quantity: number = 1) {
+    this.addEvent({
+      event_name: 'add_to_cart',
+      event_details: { 
+        product_id: productId,
+        product_title: productTitle,
+        price: price,
+        quantity: quantity,
+        cart_value: price * quantity
+      },
+      timestamp: new Date().toISOString()
+    });
+  }
+  
+  // Track checkout initiation
+  trackCheckoutInitiated(cartValue: number, itemCount: number, productIds: string[]) {
+    this.addEvent({
+      event_name: 'checkout_initiated',
+      event_details: { 
+        cart_value: cartValue,
+        item_count: itemCount,
+        product_ids: productIds
+      },
+      timestamp: new Date().toISOString()
+    });
+  }
+  
+  // Track purchase completion
+  trackPurchaseCompleted(orderId: string, revenue: number, productIds: string[], currency: string = 'USD') {
+    this.addEvent({
+      event_name: 'purchase_completed',
+      event_details: { 
+        order_id: orderId,
+        revenue: revenue,
+        product_ids: productIds,
+        currency: currency
+      },
+      timestamp: new Date().toISOString()
+    });
+  }
+  
   // Add event to batch
   private addEvent(event: any) {
     this.events.push({
@@ -119,10 +161,10 @@ class UBIClient {
         const blob = new Blob([JSON.stringify(eventsToSend)], {
           type: 'application/json'
         });
-                navigator.sendBeacon('http://localhost:8000/api/ubi/collect', blob);
+                navigator.sendBeacon(`${import.meta.env.VITE_BACKEND_URL}/api/ubi/collect`, blob);
       } else {
         // Fallback to fetch
-        await fetch('http://localhost:8000/api/ubi/collect', {
+        await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/ubi/collect`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(eventsToSend)

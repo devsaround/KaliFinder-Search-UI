@@ -496,6 +496,22 @@ export const addToCart = async (product: Product, storeUrl: string): Promise<Car
         })
       );
 
+      // ADD UBI TRACKING HERE
+      try {
+        const { getUBIClient } = await import('../analytics/ubiClient');
+        const ubiClient = getUBIClient();
+        if (ubiClient) {
+          ubiClient.trackAddToCart(
+            cartProduct.id,
+            cartProduct.title,
+            parseFloat(cartProduct.price) || 0,
+            1
+          );
+        }
+      } catch (ubiError) {
+        console.warn('UBI tracking failed:', ubiError);
+      }
+
       return result;
       
     } catch (cartError) {

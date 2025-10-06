@@ -462,4 +462,46 @@ const removeExistingSearch = (elements: Element[]): void => {
   } else {
     initialize();
   }
+
+  // Listen for Shopify checkout completion
+  if (window.Shopify && window.Shopify.checkout) {
+    window.addEventListener('shopify:checkout:complete', (event: any) => {
+      try {
+        const { getUBIClient } = require('../analytics/ubiClient');
+        const ubiClient = getUBIClient();
+        if (ubiClient && event.detail) {
+          const { order_id, total_price, line_items } = event.detail;
+          const productIds = line_items?.map((item: any) => item.product_id) || [];
+          ubiClient.trackPurchaseCompleted(
+            order_id,
+            parseFloat(total_price) || 0,
+            productIds,
+            'USD'
+          );
+        }
+      } catch (error) {
+        console.warn('Shopify purchase tracking failed:', error);
+      }
+    });
+  }
+
+  // Listen for WooCommerce checkout completion
+  window.addEventListener('woocommerce_order_completed', (event: any) => {
+    try {
+      const { getUBIClient } = require('../analytics/ubiClient');
+      const ubiClient = getUBIClient();
+      if (ubiClient && event.detail) {
+        const { order_id, total, items } = event.detail;
+        const productIds = items?.map((item: any) => item.product_id) || [];
+        ubiClient.trackPurchaseCompleted(
+          order_id,
+          parseFloat(total) || 0,
+          productIds,
+          'USD'
+        );
+      }
+    } catch (error) {
+      console.warn('WooCommerce purchase tracking failed:', error);
+    }
+  });
 })();
