@@ -155,20 +155,32 @@ class UBIClient {
       this.flushTimer = null;
     }
     
+    // Use default backend URL if environment variable is not set
+    const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000/api';
+    const collectUrl = `${backendUrl}/ubi/collect`;
+    
+    console.log('UBI Client: Flushing events to backend:', {
+      count: eventsToSend.length,
+      events: eventsToSend,
+      backendUrl: collectUrl
+    });
+    
     try {
       // Use sendBeacon for reliability during page unload
       if (navigator.sendBeacon) {
         const blob = new Blob([JSON.stringify(eventsToSend)], {
           type: 'application/json'
         });
-                navigator.sendBeacon(`${import.meta.env.VITE_BACKEND_URL}/api/ubi/collect`, blob);
+        const success = navigator.sendBeacon(collectUrl, blob);
+        console.log('UBI Client: SendBeacon result:', success);
       } else {
         // Fallback to fetch
-        await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/ubi/collect`, {
+        const response = await fetch(collectUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(eventsToSend)
         });
+        console.log('UBI Client: Fetch response:', response.status, response.statusText);
       }
     } catch (error) {
       console.error('Failed to send UBI events:', error);
@@ -220,14 +232,19 @@ class UBIClient {
     // Try to get from data attributes or global variables
     const vendorElement = document.querySelector('[data-vendor-id]');
     if (vendorElement) {
-      return vendorElement.getAttribute('data-vendor-id') || 'unknown';
+      const vendorId = vendorElement.getAttribute('data-vendor-id') || 'unknown';
+      console.log('UBI Client: Found vendor ID from data attribute:', vendorId);
+      return vendorId;
     }
     
     // Check for global variable
     if ((window as any).KALIFIND_VENDOR_ID) {
-      return (window as any).KALIFIND_VENDOR_ID;
+      const vendorId = (window as any).KALIFIND_VENDOR_ID;
+      console.log('UBI Client: Found vendor ID from global variable:', vendorId);
+      return vendorId;
     }
     
+    console.warn('UBI Client: No vendor ID found, using unknown');
     return 'unknown';
   }
   
@@ -236,14 +253,19 @@ class UBIClient {
     // Try to get from data attributes or global variables
     const storeElement = document.querySelector('[data-store-id]');
     if (storeElement) {
-      return storeElement.getAttribute('data-store-id') || 'unknown';
+      const storeId = storeElement.getAttribute('data-store-id') || 'unknown';
+      console.log('UBI Client: Found store ID from data attribute:', storeId);
+      return storeId;
     }
     
     // Check for global variable
     if ((window as any).KALIFIND_STORE_ID) {
-      return (window as any).KALIFIND_STORE_ID;
+      const storeId = (window as any).KALIFIND_STORE_ID;
+      console.log('UBI Client: Found store ID from global variable:', storeId);
+      return storeId;
     }
     
+    console.warn('UBI Client: No store ID found, using unknown');
     return 'unknown';
   }
   

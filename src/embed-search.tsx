@@ -21,8 +21,9 @@ const prefetchData = async (storeUrl: string) => {
     const params = new URLSearchParams();
     params.append("storeUrl", storeUrl);
 
+    const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000/api';
     const response = await fetch(
-      `${import.meta.env.VITE_BACKEND_URL}/v1/search?${params.toString()}`,
+      `${backendUrl}/v1/search?${params.toString()}`,
       {}
     );
     const result = await response.json();
@@ -369,6 +370,8 @@ const removeExistingSearch = (elements: Element[]): void => {
 
     const configFromUrl = {
       storeUrl: storeUrl || undefined,
+      vendorId: url.searchParams.get("vendorId") || undefined,
+      storeId: url.searchParams.get("storeId") || undefined,
     };
 
     if (!storeUrl) {
@@ -380,6 +383,17 @@ const removeExistingSearch = (elements: Element[]): void => {
     }
 
     console.log("Kalifind Search: Using storeUrl:", storeUrl);
+    console.log("Kalifind Search: Using vendorId:", configFromUrl.vendorId);
+    console.log("Kalifind Search: Using storeId:", configFromUrl.storeId);
+    
+    // Set global variables for UBI client
+    if (configFromUrl.vendorId) {
+      (window as any).KALIFIND_VENDOR_ID = configFromUrl.vendorId;
+    }
+    if (configFromUrl.storeId) {
+      (window as any).KALIFIND_STORE_ID = configFromUrl.storeId;
+    }
+    
     prefetchData(storeUrl);
 
     const triggerElements = findSearchTriggerElements();
@@ -393,7 +407,9 @@ const removeExistingSearch = (elements: Element[]): void => {
       removeExistingSearch(triggerElements);
 
       triggerElements.forEach((element: Element) => {
-        (element as HTMLElement).style.cursor = "pointer";
+        if (element instanceof HTMLElement) {
+          element.style.cursor = "pointer";
+        }
         element.setAttribute("tabindex", "0");
         element.setAttribute("role", "button");
         element.setAttribute("aria-label", "Open search");
@@ -406,7 +422,7 @@ const removeExistingSearch = (elements: Element[]): void => {
             e.stopImmediatePropagation();
             
             // Prevent any Shopify search modal from opening
-            const existingShopifyModal = document.querySelector('.search-modal, [data-modal], .modal');
+            const existingShopifyModal = document.querySelector('.search-modal, [data-modal], .modal') as HTMLElement;
             if (existingShopifyModal) {
               existingShopifyModal.style.display = 'none';
               existingShopifyModal.remove();
@@ -464,7 +480,7 @@ const removeExistingSearch = (elements: Element[]): void => {
   }
 
   // Listen for Shopify checkout completion
-  if (window.Shopify && window.Shopify.checkout) {
+  if ((window as any).Shopify && (window as any).Shopify.checkout) {
     window.addEventListener('shopify:checkout:complete', (event: any) => {
       try {
         const { getUBIClient } = require('../analytics/ubiClient');

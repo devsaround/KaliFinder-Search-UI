@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Get Vendor Information</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #333;
+        }
+        .section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #007bff;
+        }
+        .section h3 {
+            margin-top: 0;
+            color: #007bff;
+        }
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .info-card {
+            background: white;
+            padding: 15px;
+            border-radius: 6px;
+            border: 1px solid #ddd;
+        }
+        .info-card h4 {
+            margin-top: 0;
+            color: #495057;
+        }
+        .script-tag {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+            word-break: break-all;
+            border: 1px solid #dee2e6;
+        }
+        .copy-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            margin-top: 5px;
+        }
+        .copy-btn:hover {
+            background: #218838;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 4px;
+            border: 1px solid #f5c6cb;
+        }
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #6c757d;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 4px;
+            border: 1px solid #c3e6cb;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔧 KaliFind Analytics Setup</h1>
+            <p>Get your vendor and store information to configure analytics tracking</p>
+        </div>
+
+        <div id="content">
+            <div class="loading">
+                <p>Loading your vendor information...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function getVendorInfo() {
+            try {
+                const response = await fetch('/api/vendor-info', {
+                    credentials: 'include',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        throw new Error('Please log in to your dashboard first');
+                    }
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                
+                if (!data.success) {
+                    throw new Error(data.error || 'Failed to fetch vendor information');
+                }
+
+                displayVendorInfo(data.data);
+                
+            } catch (error) {
+                displayError(error.message);
+            }
+        }
+
+        function displayVendorInfo(data) {
+            const content = document.getElementById('content');
+            
+            content.innerHTML = `
+                <div class="success">
+                    <h3>✅ Vendor Information Retrieved Successfully!</h3>
+                </div>
+
+                <div class="section">
+                    <h3>👤 User Information</h3>
+                    <div class="info-card">
+                        <h4>User Details</h4>
+                        <p><strong>ID:</strong> ${data.user.id}</p>
+                        <p><strong>Email:</strong> ${data.user.email}</p>
+                        <p><strong>Name:</strong> ${data.user.name || 'N/A'}</p>
+                        <p><strong>Role:</strong> ${data.user.role}</p>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h3>🏪 Vendor Information</h3>
+                    <div class="info-card">
+                        <h4>Vendor Details</h4>
+                        <p><strong>Vendor ID:</strong> ${data.vendor.id}</p>
+                        <p><strong>Name:</strong> ${data.vendor.name}</p>
+                        <p><strong>Contact Email:</strong> ${data.vendor.contactEmail || 'N/A'}</p>
+                        <p><strong>Store Type:</strong> ${data.vendor.storeType}</p>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h3>🛍️ Store Information</h3>
+                    <div class="info-grid">
+                        ${data.stores.shopify.length > 0 ? `
+                            <div class="info-card">
+                                <h4>Shopify Stores (${data.stores.shopify.length})</h4>
+                                ${data.stores.shopify.map(store => `
+                                    <p><strong>${store.name}</strong></p>
+                                    <p>ID: ${store.id}</p>
+                                    <p>URL: ${store.url}</p>
+                                    <p>Status: ${store.status}</p>
+                                `).join('')}
+                            </div>
+                        ` : ''}
+                        
+                        ${data.stores.woocommerce.length > 0 ? `
+                            <div class="info-card">
+                                <h4>WooCommerce Stores (${data.stores.woocommerce.length})</h4>
+                                ${data.stores.woocommerce.map(store => `
+                                    <p><strong>${store.name}</strong></p>
+                                    <p>ID: ${store.id}</p>
+                                    <p>URL: ${store.url}</p>
+                                    <p>Status: ${store.status}</p>
+                                `).join('')}
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h3>📝 Search Script Configuration</h3>
+                    <p>Copy and paste these script tags into your store websites to enable analytics tracking:</p>
+                    
+                    ${data.searchScripts.map((script, index) => `
+                        <div class="info-card">
+                            <h4>${script.platform.toUpperCase()} Store: ${script.storeName}</h4>
+                            <p><strong>Store URL:</strong> ${script.storeUrl}</p>
+                            <div class="script-tag">
+                                ${script.scriptTag}
+                            </div>
+                            <button class="copy-btn" onclick="copyToClipboard('script-${index}')">Copy Script</button>
+                            <textarea id="script-${index}" style="display: none;">${script.scriptTag}</textarea>
+                        </div>
+                    `).join('')}
+                </div>
+
+                <div class="section">
+                    <h3>🧪 Testing Instructions</h3>
+                    <div class="info-card">
+                        <h4>How to Test Analytics</h4>
+                        <ol>
+                            <li>Copy one of the script tags above</li>
+                            <li>Replace "https://your-cdn-domain.com" with your actual CDN URL</li>
+                            <li>Add the script to your store website</li>
+                            <li>Visit your store and use the search functionality</li>
+                            <li>Check your dashboard - analytics should update in real-time</li>
+                            <li>Open browser console to see UBI client logs</li>
+                        </ol>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h3>🔍 Debug Information</h3>
+                    <div class="info-card">
+                        <h4>Key IDs for Debugging</h4>
+                        <p><strong>User ID (for dashboard):</strong> ${data.user.id}</p>
+                        <p><strong>Vendor ID (for search script):</strong> ${data.vendor.id}</p>
+                        <p><strong>Store IDs:</strong> ${[...data.stores.shopify, ...data.stores.woocommerce].map(s => s.id).join(', ')}</p>
+                    </div>
+                </div>
+            `;
+        }
+
+        function displayError(message) {
+            const content = document.getElementById('content');
+            content.innerHTML = `
+                <div class="error">
+                    <h3>❌ Error Loading Vendor Information</h3>
+                    <p>${message}</p>
+                    <p><strong>Possible solutions:</strong></p>
+                    <ul>
+                        <li>Make sure you're logged in to your KaliFind dashboard</li>
+                        <li>Check that your backend server is running</li>
+                        <li>Verify your authentication session is valid</li>
+                    </ul>
+                </div>
+            `;
+        }
+
+        function copyToClipboard(elementId) {
+            const textArea = document.getElementById(elementId);
+            textArea.select();
+            document.execCommand('copy');
+            
+            // Show feedback
+            const button = event.target;
+            const originalText = button.textContent;
+            button.textContent = 'Copied!';
+            button.style.background = '#28a745';
+            
+            setTimeout(() => {
+                button.textContent = originalText;
+                button.style.background = '#28a745';
+            }, 2000);
+        }
+
+        // Load vendor info when page loads
+        window.addEventListener('load', getVendorInfo);
+    </script>
+</body>
+</html>

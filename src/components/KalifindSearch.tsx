@@ -45,7 +45,8 @@ const KalifindSearch: React.FC<{
   setHasSearched,
   hideHeader = false,
   // storeUrl = "https://findifly.kinsta.cloud",
-  storeUrl = "https://findifly-dev.myshopify.com",
+  // storeUrl = "https://findifly-dev.myshopify.com",
+  storeUrl = "http://3.228.193.93",
 }) => {
     // Determine if this is a Shopify store
     const isShopifyStore = storeUrl?.includes('myshopify.com') || storeUrl?.includes('shopify');
@@ -280,8 +281,9 @@ const KalifindSearch: React.FC<{
       if (!storeUrl || recommendationsFetched) return;
       try {
         // First check if vendor has configured recommendations
+        const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000/api';
         const configResponse = await fetch(
-          `${import.meta.env.VITE_BACKEND_URL}/v1/recommendations/config?storeUrl=${storeUrl}`,
+          `${backendUrl}/v1/recommendations/config?storeUrl=${storeUrl}`,
           {}
         );
 
@@ -301,7 +303,7 @@ const KalifindSearch: React.FC<{
 
         // Fetch only vendor-configured recommendations
         const response = await fetch(
-          `${import.meta.env.VITE_BACKEND_URL}/v1/search/recommended?storeUrl=${storeUrl}&type=vendor-configured`,
+          `${backendUrl}/v1/search/recommended?storeUrl=${storeUrl}&type=vendor-configured`,
           {}
         );
 
@@ -386,8 +388,9 @@ const KalifindSearch: React.FC<{
           params.append("storeUrl", storeUrl);
           params.append("limit", "1000"); // Add high limit to fetch all products for filter counts
 
+            const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000/api';
             const response = await fetch(
-              `${import.meta.env.VITE_BACKEND_URL}/v1/search?${params.toString()}`,
+              `${backendUrl}/v1/search?${params.toString()}`,
               {}
             );
 
@@ -589,7 +592,8 @@ const KalifindSearch: React.FC<{
               params.append("q", debouncedSearchQuery.trim());
               params.append("storeUrl", storeUrl);
 
-              const url = `${import.meta.env.VITE_BACKEND_URL}/v1/autocomplete?${params.toString()}`;
+              const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000/api';
+              const url = `${backendUrl}/v1/autocomplete?${params.toString()}`;
               // Autocomplete API call
 
               const response = await fetch(url, {});
@@ -738,8 +742,9 @@ const KalifindSearch: React.FC<{
               params.append("page", "1");
               params.append("limit", "12");
 
+              const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000/api';
               const response = await fetch(
-                `${import.meta.env.VITE_BACKEND_URL}/v1/search?${params.toString()}`,
+                `${backendUrl}/v1/search?${params.toString()}`,
                 { signal: abortController.signal }
               );
 
@@ -1254,8 +1259,9 @@ const KalifindSearch: React.FC<{
         params.append("page", (currentPage + 1).toString());
         params.append("limit", "12");
 
+        const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000/api';
         const response = await fetch(
-          `${import.meta.env.VITE_BACKEND_URL}/v1/search?${params.toString()}`,
+          `${backendUrl}/v1/search?${params.toString()}`,
           {}
         );
 
