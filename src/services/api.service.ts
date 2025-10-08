@@ -53,7 +53,7 @@ class ApiServiceImpl implements ApiService {
 
   async fetchAutocomplete(query: string, storeUrl: string): Promise<any> {
     try {
-      const response = await fetch(`${this.baseUrl}/v1/search/autocomplete?query=${encodeURIComponent(query)}&storeUrl=${encodeURIComponent(storeUrl)}`);
+      const response = await fetch(`${this.baseUrl}/v1/search/autocomplete?q=${encodeURIComponent(query)}&storeUrl=${encodeURIComponent(storeUrl)}`);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
