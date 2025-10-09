@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Filter Visibility Test - Kalifind Search</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-title {
+            color: #333;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 10px;
+        }
+        .test-description {
+            color: #666;
+            margin: 10px 0;
+        }
+        .test-steps {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .test-steps ol {
+            margin: 0;
+            padding-left: 20px;
+        }
+        .test-steps li {
+            margin: 5px 0;
+        }
+        .expected-result {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .console-info {
+            background: #e7f3ff;
+            border: 1px solid #b3d9ff;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Filter Visibility Test - Kalifind Search</h1>
+    
+    <div class="test-section">
+        <h2 class="test-title">Test 1: No Facet Configuration</h2>
+        <div class="test-description">
+            This test verifies that when a vendor hasn't configured any facets in the DashboardVendorFacets, 
+            no filters should be visible in the search interface.
+        </div>
+        
+        <div class="test-steps">
+            <h3>Steps to Test:</h3>
+            <ol>
+                <li>Open browser developer tools (F12)</li>
+                <li>Go to the Console tab</li>
+                <li>Navigate to the search page</li>
+                <li>Look for console logs starting with "🔧 Fetched facet configuration:"</li>
+                <li>Check that the configuration is empty: <code>[]</code></li>
+                <li>Look for logs showing "🎛️ Optional filters visibility:" and "🎛️ Mandatory filters visibility:"</li>
+                <li>Verify all values are <code>false</code></li>
+            </ol>
+        </div>
+        
+        <div class="expected-result">
+            <strong>Expected Result:</strong> No filter sections should be visible in the sidebar. 
+            The sidebar should be empty or show a message indicating no filters are configured.
+        </div>
+        
+        <div class="console-info">
+            <strong>Console Logs to Look For:</strong><br>
+            🔧 Fetched facet configuration: []<br>
+            🎛️ Optional filters visibility: {brands: false, colors: false, sizes: false, tags: false}<br>
+            🎛️ Mandatory filters visibility: {categories: false, price: false, stockStatus: false, featured: false, sale: false}
+        </div>
+    </div>
+    
+    <div class="test-section">
+        <h2 class="test-title">Test 2: Partial Facet Configuration</h2>
+        <div class="test-description">
+            This test verifies that only configured facets are visible. 
+            Configure some facets in DashboardVendorFacets and verify only those show up.
+        </div>
+        
+        <div class="test-steps">
+            <h3>Steps to Test:</h3>
+            <ol>
+                <li>Go to DashboardVendorFacets in the admin panel</li>
+                <li>Add and configure only "Brand" and "Color" facets</li>
+                <li>Set their visibility to true</li>
+                <li>Save the configuration</li>
+                <li>Go back to the search page</li>
+                <li>Check the console logs for the facet configuration</li>
+                <li>Verify only Brand and Color filters are visible</li>
+            </ol>
+        </div>
+        
+        <div class="expected-result">
+            <strong>Expected Result:</strong> Only Brand and Color filter sections should be visible. 
+            All other filters (Category, Price, Size, Tags, Stock Status, etc.) should be hidden.
+        </div>
+    </div>
+    
+    <div class="test-section">
+        <h2 class="test-title">Test 3: Mobile Filter Visibility</h2>
+        <div class="test-description">
+            This test verifies that the mobile filter drawer also respects the facet configuration.
+        </div>
+        
+        <div class="test-steps">
+            <h3>Steps to Test:</h3>
+            <ol>
+                <li>Open the search page on a mobile device or use browser dev tools mobile view</li>
+                <li>Click the filter button (hamburger menu or filter icon)</li>
+                <li>Check that the mobile drawer only shows configured filters</li>
+                <li>Verify the accordion doesn't have any sections expanded by default</li>
+            </ol>
+        </div>
+        
+        <div class="expected-result">
+            <strong>Expected Result:</strong> The mobile filter drawer should only show the configured filter sections, 
+            and none should be expanded by default.
+        </div>
+    </div>
+    
+    <div class="test-section">
+        <h2 class="test-title">Test 4: Accordion Default Behavior</h2>
+        <div class="test-description">
+            This test verifies that the accordion doesn't expand all sections by default.
+        </div>
+        
+        <div class="test-steps">
+            <h3>Steps to Test:</h3>
+            <ol>
+                <li>Configure some facets in DashboardVendorFacets</li>
+                <li>Go to the search page</li>
+                <li>Check that the filter accordion sections are collapsed by default</li>
+                <li>Verify that only the configured sections are visible, but collapsed</li>
+            </ol>
+        </div>
+        
+        <div class="expected-result">
+            <strong>Expected Result:</strong> All accordion sections should be collapsed by default. 
+            Users should need to click to expand them.
+        </div>
+    </div>
+    
+    <div class="test-section">
+        <h2 class="test-title">🔧 Debugging Information</h2>
+        <div class="test-description">
+            If filters are still showing when they shouldn't, check these things:
+        </div>
+        
+        <div class="test-steps">
+            <h3>Debugging Steps:</h3>
+            <ol>
+                <li>Check browser console for any errors</li>
+                <li>Verify the API call to <code>/v1/facets</code> is returning the expected data</li>
+                <li>Check that the facet configuration is being applied correctly</li>
+                <li>Verify that the component state is updating after the API call</li>
+                <li>Check if there are any cached responses that might be interfering</li>
+            </ol>
+        </div>
+        
+        <div class="console-info">
+            <strong>API Endpoint to Check:</strong><br>
+            GET /v1/facets?storeUrl=YOUR_STORE_URL<br><br>
+            <strong>Expected Response Format:</strong><br>
+            [<br>
+            &nbsp;&nbsp;{<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;"field": "brand",<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;"visible": true,<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;"label": "Brand"<br>
+            &nbsp;&nbsp;}<br>
+            ]
+        </div>
+    </div>
+    
+    <script>
+        // Add some helpful debugging information
+        console.log('🧪 Filter Visibility Test Page Loaded');
+        console.log('📋 Test Instructions:');
+        console.log('1. Open browser dev tools (F12)');
+        console.log('2. Go to Console tab');
+        console.log('3. Navigate to your search page');
+        console.log('4. Look for logs starting with 🔧 and 🎛️');
+        console.log('5. Verify the facet configuration matches your expectations');
+        
+        // Check if we're on the right page
+        if (window.location.href.includes('localhost:8080')) {
+            console.log('✅ You are on the test page');
+        } else {
+            console.log('⚠️ Make sure you are testing on the correct search page');
+        }
+    </script>
+</body>
+</html>

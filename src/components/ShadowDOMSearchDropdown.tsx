@@ -176,8 +176,6 @@ const ShadowDOMSearchDropdown: React.FC<ShadowDOMSearchDropdownProps> = ({
           .map(item => item.text)
           .slice(0, 10); // Limit to top 10 suggestions
 
-        console.log("Mobile raw suggestions:", rawSuggestions);
-        console.log("Mobile filtered and scored suggestions:", scoredSuggestions);
         
         setAutocompleteSuggestions(scoredSuggestions);
         setHighlightedSuggestionIndex(-1); // Reset highlight when new suggestions arrive
@@ -576,7 +574,6 @@ const ShadowDOMSearchDropdown: React.FC<ShadowDOMSearchDropdownProps> = ({
       };
 
       const handleSearch = (query: string) => {
-        console.log("Mobile handleSearch called with:", query);
         setSearchQuery(query);
         // Let the mobile autocomplete useEffect handle showAutocomplete state
         if (!query.trim()) {
@@ -588,7 +585,6 @@ const ShadowDOMSearchDropdown: React.FC<ShadowDOMSearchDropdownProps> = ({
       };
 
       const handleSuggestionClick = (suggestion: string) => {
-        console.log("Mobile suggestion clicked:", suggestion);
         
         try {
           setSearchQuery(suggestion);
@@ -643,12 +639,6 @@ const ShadowDOMSearchDropdown: React.FC<ShadowDOMSearchDropdownProps> = ({
                 // Mobile/Tablet: Use KalifindSearchMobile component for header, and KalifindSearch for content
                 <div className="w-full h-full">
                   {/* Mobile search header at top */}
-                  {console.log("ShadowDOM mobile props:", {
-                    showAutocomplete,
-                    autocompleteSuggestions,
-                    isAutocompleteLoading,
-                    searchQuery
-                  })}
                   <KalifindSearchMobile
                     searchRef={searchRef}
                     inputRef={inputRef}
@@ -656,6 +646,7 @@ const ShadowDOMSearchDropdown: React.FC<ShadowDOMSearchDropdownProps> = ({
                     handleSearch={handleSearch}
                     handleKeyDown={handleKeyDown}
                     onClose={onClose}
+                    storeUrl={storeUrl}
                     setHasSearched={setHasSearched}
                     isInteractingWithDropdown={isInteractingWithDropdown}
                     setIsInteractingWithDropdown={setIsInteractingWithDropdown}

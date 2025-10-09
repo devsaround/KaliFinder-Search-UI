@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import { Search, X } from "lucide-react";
 
 interface KalifindSearchMobileProps {
@@ -8,6 +8,7 @@ interface KalifindSearchMobileProps {
   handleSearch: (query: string) => void;
   handleKeyDown: (event: React.KeyboardEvent<HTMLInputElement>) => void;
   onClose: () => void;
+  storeUrl?: string;
   showAutocomplete?: boolean;
   setShowAutocomplete?: (show: boolean) => void;
   autocompleteSuggestions?: string[];
@@ -27,6 +28,7 @@ const KalifindSearchMobile: React.FC<KalifindSearchMobileProps> = ({
   handleSearch,
   handleKeyDown,
   onClose,
+  storeUrl = "http://3.228.193.93",
   showAutocomplete = false,
   setShowAutocomplete,
   autocompleteSuggestions = [],
@@ -42,10 +44,14 @@ const KalifindSearchMobile: React.FC<KalifindSearchMobileProps> = ({
   const [mobileShowAutocomplete, setMobileShowAutocomplete] = useState(false);
   const [mobileAutocompleteSuggestions, setMobileAutocompleteSuggestions] = useState<string[]>([]);
   const [mobileIsAutocompleteLoading, setMobileIsAutocompleteLoading] = useState(false);
+  
+  // Track if query change is from suggestion selection
+  const isFromSuggestionClickRef = useRef(false);
 
   // Mobile autocomplete logic - self-contained like desktop
   useEffect(() => {
-    if (!searchQuery.trim()) {
+    // Don't show autocomplete if query is empty or change is from suggestion click
+    if (!searchQuery.trim() || isFromSuggestionClickRef.current) {
       setMobileAutocompleteSuggestions([]);
       setMobileIsAutocompleteLoading(false);
       setMobileShowAutocomplete(false);
@@ -58,7 +64,7 @@ const KalifindSearchMobile: React.FC<KalifindSearchMobileProps> = ({
       try {
         const params = new URLSearchParams();
         params.append("q", searchQuery);
-        params.append("storeUrl", "https://findifly.kinsta.cloud"); // Use the store URL
+        params.append("storeUrl", storeUrl); // Use storeUrl with fallback
 
         const response = await fetch(
           `${import.meta.env.VITE_BACKEND_URL}/v1/autocomplete?${params.toString()}`,
@@ -95,7 +101,8 @@ const KalifindSearchMobile: React.FC<KalifindSearchMobileProps> = ({
 
   // Mobile suggestion click handler - same as desktop
   const handleMobileSuggestionClick = (suggestion: string) => {
-    console.log("Mobile suggestion clicked:", suggestion);
+    // Mark that this change is from a suggestion click
+    isFromSuggestionClickRef.current = true;
     
     // Close autocomplete
     setMobileShowAutocomplete(false);
@@ -110,6 +117,11 @@ const KalifindSearchMobile: React.FC<KalifindSearchMobileProps> = ({
     
     // Blur input to close mobile keyboard
     inputRef.current?.blur();
+    
+    // Reset the flag after a short delay
+    setTimeout(() => {
+      isFromSuggestionClickRef.current = false;
+    }, 100);
   };
 
   // Mobile-specific click outside handler - same as desktop
@@ -186,7 +198,6 @@ const KalifindSearchMobile: React.FC<KalifindSearchMobileProps> = ({
                       }
                     }}
                     onBlur={(e) => {
-                      console.log("Mobile: Input blurred, relatedTarget:", e.relatedTarget);
                       // Only close autocomplete if the blur is not caused by clicking on a suggestion
                       const relatedTarget = e.relatedTarget as HTMLElement;
                       const isClickingOnSuggestion =
@@ -197,7 +208,6 @@ const KalifindSearchMobile: React.FC<KalifindSearchMobileProps> = ({
                         // Longer delay to allow for autocomplete to show and user to interact
                         setTimeout(() => {
                           if (!isInteractingWithDropdown) {
-                            console.log("Mobile: Closing autocomplete after blur delay");
                             setMobileShowAutocomplete(false);
                           }
                         }, 300);
@@ -254,7 +264,6 @@ const KalifindSearchMobile: React.FC<KalifindSearchMobileProps> = ({
                         onClick={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
-                          console.log("Mobile suggestion clicked:", suggestion);
                           // Use mobile's own suggestion click handler
                           handleMobileSuggestionClick(suggestion);
                         }}

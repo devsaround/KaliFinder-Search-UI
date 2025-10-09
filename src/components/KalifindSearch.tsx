@@ -48,8 +48,10 @@ const KalifindSearch: React.FC<{
   // storeUrl = "https://findifly-dev.myshopify.com",
   storeUrl = "http://3.228.193.93",
 }) => {
+    const [storeType, setStoreType] = useState<'shopify' | 'woocommerce' | null>(null);
+    
     // Determine if this is a Shopify store
-    const isShopifyStore = storeUrl?.includes('myshopify.com') || storeUrl?.includes('shopify');
+    const isShopifyStore = storeType === 'shopify' || storeUrl?.includes('myshopify.com') || storeUrl?.includes('shopify');
     
     const [showAutocomplete, setShowAutocomplete] = useState(false);
     const [isInteractingWithDropdown, setIsInteractingWithDropdown] = useState(false);
@@ -60,18 +62,24 @@ const KalifindSearch: React.FC<{
     const [autocompleteSuggestions, setAutocompleteSuggestions] = useState<string[]>([]);
     const [isAutocompleteLoading, setIsAutocompleteLoading] = useState(false);
     const [highlightedSuggestionIndex, setHighlightedSuggestionIndex] = useState(-1);
-    const [isPriceLoading, setIsPriceLoading] = useState(true);
+    const [isPriceLoading, setIsPriceLoading] = useState(false);
     const [isLoadingMore, setIsLoadingMore] = useState(false);
     const [hasMoreProducts, setHasMoreProducts] = useState(true);
     const [currentPage, setCurrentPage] = useState(1);
-    const [isMobile, setIsMobile] = useState(false);
+    const [isMobile, setIsMobile] = useState(() => {
+      if (typeof window !== 'undefined') {
+        return window.innerWidth < 1280;
+      }
+      return false;
+    });
     const [totalProducts, setTotalProducts] = useState(0);
     const [displayedProducts, setDisplayedProducts] = useState(0);
 
     // New state variables for search behavior
     const [showRecommendations, setShowRecommendations] = useState(true);
-  const [isSearchingFromSuggestion, setIsSearchingFromSuggestion] = useState(false);
+    const [isSearchingFromSuggestion, setIsSearchingFromSuggestion] = useState(false);
   const [forceSearch, setForceSearch] = useState(0);
+  const [searchAbortController, setSearchAbortController] = useState<AbortController | null>(null);
   const [isFromSuggestionSelection, setIsFromSuggestionSelection] = useState(false);
   const lastActionRef = useRef<'typing' | 'suggestion' | null>(null);
   const userTypingRef = useRef(false);
@@ -112,12 +120,23 @@ const KalifindSearch: React.FC<{
   const [saleCount, setSaleCount] = useState(0);
   const [notSaleCount, setNotSaleCount] = useState(0);
   const [sortOption, setSortOption] = useState("default");
+  const [globalFacetsFetched, setGlobalFacetsFetched] = useState(false);
 
     // State for optional filters - only show if vendor has configured them
     const [showOptionalFilters, setShowOptionalFilters] = useState({
       brands: false,
       colors: false,
+      sizes: false,
       tags: false,
+    });
+
+    // State for mandatory filters - only show if vendor has configured them
+    const [showMandatoryFilters, setShowMandatoryFilters] = useState({
+      categories: false, // Default to false, will be set based on vendor config
+      price: false, // Default to false, will be set based on vendor config
+      stockStatus: false, // Default to false, will be set based on vendor config
+      featured: false, // Default to false, will be set based on vendor config
+      sale: false, // Default to false, will be set based on vendor config
     });
 
     // Cart functionality state
@@ -180,7 +199,8 @@ const KalifindSearch: React.FC<{
     }, [recentSearches]);
 
     const debouncedSearchQuery = useDebounce(searchQuery, 300);
-    const debouncedPriceRange = useDebounce(filters.priceRange, 300);
+    const debouncedPriceRange = useDebounce(filters.priceRange, 500);
+    const debouncedFilters = useDebounce(filters, 500);
 
     // Fuzzy matching function for better autocomplete
     const fuzzyMatch = useCallback((query: string, suggestion: string): boolean => {
@@ -231,6 +251,8 @@ const KalifindSearch: React.FC<{
 
     const searchRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
+    const loadMoreTriggerRef = useRef<HTMLDivElement>(null);
+    const searchRequestIdRef = useRef(0);
 
     const isAnyFilterActive =
       !!debouncedSearchQuery ||
@@ -254,9 +276,10 @@ const KalifindSearch: React.FC<{
 
       try {
         const result = await apiService.fetchFacetConfiguration(storeUrl);
+        console.log("🔧 Fetched facet configuration:", result);
 
         // Update optional filters visibility based on vendor configuration
-        setShowOptionalFilters({
+        const optionalFilters = {
           brands: result.some(
             (facet: { field: string; visible: boolean }) =>
               facet.field === "brand" && facet.visible,
@@ -265,16 +288,173 @@ const KalifindSearch: React.FC<{
             (facet: { field: string; visible: boolean }) =>
               facet.field === "color" && facet.visible,
           ),
+          sizes: result.some(
+            (facet: { field: string; visible: boolean }) =>
+              facet.field === "size" && facet.visible,
+          ),
           tags: result.some(
             (facet: { field: string; visible: boolean }) =>
               facet.field === "tags" && facet.visible,
           ),
-        });
+        };
+        setShowOptionalFilters(optionalFilters);
+        console.log("🎛️ Optional filters visibility:", optionalFilters);
+
+        // Update mandatory filters visibility based on vendor configuration
+        const mandatoryFilters = {
+          categories: result.some(
+            (facet: { field: string; visible: boolean }) =>
+              facet.field === "category" && facet.visible,
+          ),
+          price: result.some(
+            (facet: { field: string; visible: boolean }) =>
+              facet.field === "price" && facet.visible,
+          ),
+          stockStatus: result.some(
+            (facet: { field: string; visible: boolean }) =>
+              facet.field === "instock" && facet.visible,
+          ),
+          featured: result.some(
+            (facet: { field: string; visible: boolean }) =>
+              facet.field === "featured" && facet.visible,
+          ),
+          sale: result.some(
+            (facet: { field: string; visible: boolean }) =>
+              facet.field === "insale" && facet.visible,
+          ),
+        };
+        setShowMandatoryFilters(mandatoryFilters);
+        console.log("🎛️ Mandatory filters visibility:", mandatoryFilters);
       } catch (error) {
         console.error("Failed to fetch facet configuration:", error);
-        // Keep default values (all false)
+        // Keep default values (all false for both optional and mandatory filters)
       }
     }, [storeUrl]);
+
+    // Fetch global facets once on mount (static counts that don't change with search query)
+    const fetchGlobalFacets = useCallback(async () => {
+      if (!storeUrl || globalFacetsFetched) return;
+      
+      try {
+        const params = new URLSearchParams();
+        params.append("storeUrl", storeUrl);
+        params.append("page", "1");
+        params.append("limit", "1"); // Minimal products, we mainly need facets
+        
+        const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000/api';
+        const response = await fetch(`${backendUrl}/v1/search?${params.toString()}`);
+        
+        if (!response.ok) {
+          console.error("Failed to fetch global facets");
+          return;
+        }
+        
+        const result = await response.json();
+        
+        // Process facet data from API response (same logic as search, but only once)
+        if (result.facets) {
+          // Process stock status facets
+          if (result.facets.instock && Array.isArray(result.facets.instock.buckets)) {
+            const stockStatusCounts: { [key: string]: number } = {};
+            result.facets.instock.buckets.forEach((bucket: any) => {
+              const status = bucket.key;
+              const displayName = status === "instock" ? "In Stock" : 
+                               status === "outofstock" ? "Out of Stock" : 
+                               status === "onbackorder" ? "On Backorder" : status;
+              stockStatusCounts[displayName] = bucket.doc_count;
+            });
+            setStockStatusCounts(stockStatusCounts);
+          }
+
+        // Process featured facets
+        if (result.facets.featured && Array.isArray(result.facets.featured.buckets)) {
+          let featuredCount = 0;
+          let notFeaturedCount = 0;
+          result.facets.featured.buckets.forEach((bucket: any) => {
+            // OpenSearch returns boolean fields as 1 (true) or 0 (false) in bucket.key
+            if (bucket.key === 1 || bucket.key === true) {
+              featuredCount = bucket.doc_count;
+            } else if (bucket.key === 0 || bucket.key === false) {
+              notFeaturedCount = bucket.doc_count;
+            }
+          });
+          setFeaturedCount(featuredCount);
+          setNotFeaturedCount(notFeaturedCount);
+        }
+
+          // Process sale facets
+          if (result.facets.insale && Array.isArray(result.facets.insale.buckets)) {
+            let saleCount = 0;
+            let notSaleCount = 0;
+            result.facets.insale.buckets.forEach((bucket: any) => {
+              // OpenSearch returns boolean fields as 1 (true) or 0 (false) in bucket.key
+              if (bucket.key === 1 || bucket.key === true) {
+                saleCount = bucket.doc_count;
+              } else if (bucket.key === 0 || bucket.key === false) {
+                notSaleCount = bucket.doc_count;
+              }
+            });
+            setSaleCount(saleCount);
+            setNotSaleCount(notSaleCount);
+          }
+
+          // Process category facets
+          if (result.facets.category && Array.isArray(result.facets.category.buckets)) {
+            const categoryCounts: { [key: string]: number } = {};
+            result.facets.category.buckets.forEach((bucket: any) => {
+              categoryCounts[bucket.key] = bucket.doc_count;
+            });
+            setCategoryCounts(categoryCounts);
+            setAvailableCategories(Object.keys(categoryCounts));
+          }
+
+          // Process brand facets
+          if (result.facets.brands && Array.isArray(result.facets.brands.buckets)) {
+            const brandCounts: { [key: string]: number } = {};
+            result.facets.brands.buckets.forEach((bucket: any) => {
+              brandCounts[bucket.key] = bucket.doc_count;
+            });
+            setBrandCounts(brandCounts);
+            setAvailableBrands(Object.keys(brandCounts));
+          }
+
+          // Process color facets
+          if (result.facets.colors && Array.isArray(result.facets.colors.buckets)) {
+            const colorCounts: { [key: string]: number } = {};
+            result.facets.colors.buckets.forEach((bucket: any) => {
+              colorCounts[bucket.key] = bucket.doc_count;
+            });
+            setColorCounts(colorCounts);
+            setAvailableColors(Object.keys(colorCounts));
+          }
+
+          // Process size facets
+          if (result.facets.sizes && Array.isArray(result.facets.sizes.buckets)) {
+            const sizeCounts: { [key: string]: number } = {};
+            result.facets.sizes.buckets.forEach((bucket: any) => {
+              sizeCounts[bucket.key] = bucket.doc_count;
+            });
+            setSizeCounts(sizeCounts);
+            setAvailableSizes(Object.keys(sizeCounts));
+          }
+
+          // Process tag facets
+          if (result.facets.tags && Array.isArray(result.facets.tags.buckets)) {
+            const tagCounts: { [key: string]: number } = {};
+            result.facets.tags.buckets.forEach((bucket: any) => {
+              tagCounts[bucket.key] = bucket.doc_count;
+            });
+            setTagCounts(tagCounts);
+            setAvailableTags(Object.keys(tagCounts));
+          }
+        }
+        
+        setGlobalFacetsFetched(true);
+        console.log("✅ Global facets fetched and will remain static");
+      } catch (error) {
+        console.error("Failed to fetch global facets:", error);
+      }
+    }, [storeUrl, globalFacetsFetched]);
 
     // Fetch vendor-controlled recommendations
     const fetchRecommendations = useCallback(async () => {
@@ -314,7 +494,6 @@ const KalifindSearch: React.FC<{
         }
 
         const result = (await response.json()) as unknown;
-        console.log("Recommendations API response:", result);
 
         // Handle response format with type safety
         let products: Product[];
@@ -327,11 +506,9 @@ const KalifindSearch: React.FC<{
           // Handle recommendations response format
           products = (result as any).products;
         } else {
-          console.log("No products found in recommendations response");
           products = [];
         }
 
-        console.log("Setting recommendations:", products);
         setRecommendations(products); // Show all recommendations
         setRecommendationsFetched(true);
       } catch (error) {
@@ -373,169 +550,32 @@ const KalifindSearch: React.FC<{
       }
     }, [searchQuery, storeUrl, setHasSearched, hasSearched]);
 
+  // Consolidated initial data loading with Promise.all for better performance
   useEffect(() => {
-    fetchRecommendations();
-    fetchFacetConfiguration();
-  }, [fetchRecommendations, fetchFacetConfiguration]);
+    if (!storeUrl) return;
+    
+    // Reset store type when store changes
+    setStoreType(null);
+    
+    const loadInitialData = async () => {
+      try {
+        // Load recommendations, facet configuration, and global facets in parallel
+        await Promise.all([
+          fetchRecommendations(),
+          fetchFacetConfiguration(),
+          fetchGlobalFacets()
+        ]);
+      } catch (error) {
+        console.error("❌ Failed to load initial data:", error);
+      }
+    };
 
-    useEffect(() => {
-      const initFilters = () => {
-        if (!storeUrl || isInitialState) return;
+    loadInitialData();
+  }, [storeUrl, fetchRecommendations, fetchFacetConfiguration, fetchGlobalFacets]);
 
-      const fetchWithRetry = async (retries = 3) => {
-        try {
-          const params = new URLSearchParams();
-          params.append("storeUrl", storeUrl);
-          params.append("limit", "1000"); // Add high limit to fetch all products for filter counts
-
-            const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000/api';
-            const response = await fetch(
-              `${backendUrl}/v1/search?${params.toString()}`,
-              {}
-            );
-
-            if (!response.ok) {
-              throw new Error("bad response");
-            }
-
-            const result = (await response.json()) as unknown;
-
-          // Handle both array and object response formats
-          let products: Product[];
-          if (Array.isArray(result)) {
-            products = result;
-          } else if (isSearchResponse(result)) {
-            products = result.products;
-          } else {
-            console.error(
-              "Kalifind Search: Unexpected API response format:",
-              result,
-            );
-            return;
-          }
-
-            if (products.length > 0) {
-              setTotalProducts(products.length);
-              const prices = products
-                .map((p: Product) => parseFloat(p.price))
-                .filter((p) => !isNaN(p));
-              if (prices.length > 0) {
-                const max = Math.max(...prices);
-                setMaxPrice(max);
-                setFilters((prev: FilterState) => ({
-                  ...prev,
-                  priceRange: [0, max],
-                }));
-              }
-
-            const allCategories = new Set<string>();
-            const allBrands = new Set<string>();
-            const allColors = new Set<string>();
-            const allSizes = new Set<string>();
-            const allTags = new Set<string>();
-            const categoryCounts: { [key: string]: number } = {};
-            const brandCounts: { [key: string]: number } = {};
-            const colorCounts: { [key: string]: number } = {};
-            const sizeCounts: { [key: string]: number } = {};
-            const tagCounts: { [key: string]: number } = {};
-            const stockStatusCounts: { [key: string]: number } = {};
-            let featuredCount = 0;
-            let notFeaturedCount = 0;
-            let saleCount = 0;
-            let notSaleCount = 0;
-
-            // products.forEach((product: Product) => {
-            products.forEach((product: any) => {
-              if (product.categories) {
-                product.categories.forEach((cat: string) => {
-                  allCategories.add(cat);
-                  categoryCounts[cat] = (categoryCounts[cat] || 0) + 1;
-                });
-              }
-              if (product.brands) {
-                product.brands.forEach((brand: string) => {
-                  allBrands.add(brand);
-                  brandCounts[brand] = (brandCounts[brand] || 0) + 1;
-                });
-              }
-              if (product.colors) {
-                product.colors.forEach((color: string) => {
-                  allColors.add(color);
-                  colorCounts[color] = (colorCounts[color] || 0) + 1;
-                });
-              }
-              if (product.sizes) {
-                product.sizes.forEach((size: string) => {
-                  allSizes.add(size);
-                  sizeCounts[size] = (sizeCounts[size] || 0) + 1;
-                });
-              }
-              if (product.tags) {
-                product.tags.forEach((tag: string) => {
-                  allTags.add(tag);
-                  tagCounts[tag] = (tagCounts[tag] || 0) + 1;
-                });
-              }
-              
-              // Count stock status
-              if (product.stockStatus) {
-                stockStatusCounts[product.stockStatus] = (stockStatusCounts[product.stockStatus] || 0) + 1;
-              }
-              
-              // Count featured products
-              if (product.featured) {
-                featuredCount++;
-              } else {
-                notFeaturedCount++;
-              }
-              
-              // Count sale products - updated logic
-              const isOnSale = product.salePrice && 
-                  product.salePrice !== "" && 
-                  product.salePrice !== "0" && 
-                  product.salePrice !== "0.00" && 
-                  product.regularPrice && 
-                  parseFloat(product.salePrice) < parseFloat(product.regularPrice);
-              
-              if (isOnSale) {
-                saleCount++;
-              } else {
-                notSaleCount++;
-              }
-            });
-
-            setAvailableCategories(Array.from(allCategories));
-            setAvailableBrands(Array.from(allBrands));
-            setAvailableColors(Array.from(allColors));
-            setAvailableSizes(Array.from(allSizes));
-            setAvailableTags(Array.from(allTags));
-            setCategoryCounts(categoryCounts);
-            setBrandCounts(brandCounts);
-            setColorCounts(colorCounts);
-            setSizeCounts(sizeCounts);
-            setTagCounts(tagCounts);
-            setStockStatusCounts(stockStatusCounts);
-            setFeaturedCount(featuredCount);
-            setNotFeaturedCount(notFeaturedCount);
-            setSaleCount(saleCount);
-            setNotSaleCount(notSaleCount);
-          }
-        } catch (err) {
-          if (retries > 0) {
-            setTimeout(() => fetchWithRetry(retries - 1), 1000);
-          } else {
-            console.error("Failed to fetch initial filter data:", err);
-          }
-        } finally {
-          setIsPriceLoading(false);
-        }
-      };
-
-        void fetchWithRetry();
-      };
-
-      void initFilters();
-    }, [storeUrl, isInitialState]);
+  // Removed heavy 1000-product fetch - filter counts now come from search API aggregations
+  // This eliminates the major performance bottleneck on initial page load
+  // Filter counts are populated when the first search is performed
 
     // Click outside handler
     // useEffect(() => {
@@ -582,7 +622,7 @@ const KalifindSearch: React.FC<{
 
       // Only show autocomplete when user is actually typing and has a meaningful query
       // Skip autocomplete if the change is from selecting a suggestion or not from user typing
-      if (searchQuery && searchQuery.length > 0 && debouncedSearchQuery?.trim() && userTypingRef.current && !isFromSuggestionSelection) {
+      if (debouncedSearchQuery && debouncedSearchQuery.trim().length > 0 && userTypingRef.current && !isFromSuggestionSelection) {
         setShowAutocomplete(true);
         startTransition(() => {
           setIsAutocompleteLoading(true);
@@ -665,19 +705,29 @@ const KalifindSearch: React.FC<{
       return () => {
         isCancelled = true;
       };
-    }, [debouncedSearchQuery, storeUrl, searchQuery, scoreSuggestion, isFromSuggestionSelection, userTypingRef]);
+    }, [debouncedSearchQuery, storeUrl, scoreSuggestion, isFromSuggestionSelection, userTypingRef]);
 
     // Extract search logic into a reusable function
     const performSearch = useCallback(
       (query: string) => {
         if (!storeUrl) return;
 
+        // Cancel any existing search request
+        if (searchAbortController) {
+          searchAbortController.abort();
+        }
+
+        const newAbortController = new AbortController();
+        setSearchAbortController(newAbortController);
+
         startTransition(() => {
           setIsLoading(true);
           setCurrentPage(1);
           setHasMoreProducts(true);
+          setDisplayedProducts(0);
+          setFilteredProducts([]); // ✅ Clear products immediately
           const fetchProducts = async () => {
-            const abortController = new AbortController();
+            const currentRequestId = ++searchRequestIdRef.current; // Generate unique ID
             if (
               typeof debouncedPriceRange[0] === "undefined" ||
               typeof debouncedPriceRange[1] === "undefined"
@@ -697,42 +747,40 @@ const KalifindSearch: React.FC<{
                 params.append("storeUrl", storeUrl);
               }
 
-              if (filters.categories.length > 0) {
-                console.log("🔍 Sending categories filter:", filters.categories);
-                params.append("categories", filters.categories.join(","));
+              if (debouncedFilters.categories.length > 0) {
+                params.append("categories", debouncedFilters.categories.join(","));
               }
-              if (filters.colors.length > 0) {
-                params.append("colors", filters.colors.join(","));
+              if (debouncedFilters.colors.length > 0) {
+                params.append("colors", debouncedFilters.colors.join(","));
               }
-              if (filters.sizes.length > 0) {
-                params.append("sizes", filters.sizes.join(","));
+              if (debouncedFilters.sizes.length > 0) {
+                params.append("sizes", debouncedFilters.sizes.join(","));
               }
-              if (filters.brands.length > 0) {
-                params.append("brands", filters.brands.join(","));
+              if (debouncedFilters.brands.length > 0) {
+                params.append("brands", debouncedFilters.brands.join(","));
               }
-              if (filters.tags.length > 0) {
-                params.append("tags", filters.tags.join(","));
+              if (debouncedFilters.tags.length > 0) {
+                params.append("tags", debouncedFilters.tags.join(","));
               }
               // Mandatory facets
-              if (filters.stockStatus.length > 0) {
-                params.append("stockStatus", filters.stockStatus.join(","));
+              if (debouncedFilters.stockStatus.length > 0) {
+                params.append("stockStatus", debouncedFilters.stockStatus.join(","));
               }
               // Handle featured products filter
-              if (filters.featuredProducts.length > 0) {
-                if (filters.featuredProducts.includes("Featured") && !filters.featuredProducts.includes("Not Featured")) {
+              if (debouncedFilters.featuredProducts.length > 0) {
+                if (debouncedFilters.featuredProducts.includes("Featured") && !debouncedFilters.featuredProducts.includes("Not Featured")) {
                   params.append("featured", "true");
-                } else if (filters.featuredProducts.includes("Not Featured") && !filters.featuredProducts.includes("Featured")) {
+                } else if (debouncedFilters.featuredProducts.includes("Not Featured") && !debouncedFilters.featuredProducts.includes("Featured")) {
                   params.append("featured", "false");
                 }
                 // If both are selected, don't add any featured filter (show all)
               }
               
               // Handle sale status filter
-              if (filters.saleStatus.length > 0) {
-                console.log("filterttttt",filters)
-                if (filters.saleStatus.includes("On Sale") && !filters.saleStatus.includes("Not On Sale")) {
+              if (debouncedFilters.saleStatus.length > 0) {
+                if (debouncedFilters.saleStatus.includes("On Sale") && !debouncedFilters.saleStatus.includes("Not On Sale")) {
                   params.append("insale", "true");
-                } else if (filters.saleStatus.includes("Not On Sale") && !filters.saleStatus.includes("On Sale")) {
+                } else if (debouncedFilters.saleStatus.includes("Not On Sale") && !debouncedFilters.saleStatus.includes("On Sale")) {
                   params.append("insale", "false");
                 }
                 // If both are selected, don't add any sale filter (show all)
@@ -740,12 +788,12 @@ const KalifindSearch: React.FC<{
               params.append("minPrice", debouncedPriceRange[0].toString());
               params.append("maxPrice", debouncedPriceRange[1].toString());
               params.append("page", "1");
-              params.append("limit", "12");
+              params.append("limit", isMobile ? "8" : "9");
 
               const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000/api';
               const response = await fetch(
                 `${backendUrl}/v1/search?${params.toString()}`,
-                { signal: abortController.signal }
+                { signal: newAbortController.signal }
               );
 
               if (!response.ok) {
@@ -763,78 +811,28 @@ const KalifindSearch: React.FC<{
               total = result.total || 0;
               hasMore = result.hasMore || false;
 
-              // Process facet data from API response
-              if (result.facets) {
-                // Process stock status facets (simplified like featured products)
-                if (result.facets.instock && Array.isArray(result.facets.instock.buckets)) {
-                  const stockStatusCounts: { [key: string]: number } = {};
-                  result.facets.instock.buckets.forEach((bucket: any) => {
-                    const status = bucket.key;
-                    const displayName = status === "instock" ? "In Stock" : 
-                                     status === "outofstock" ? "Out of Stock" : 
-                                     status === "onbackorder" ? "On Backorder" : status;
-                    stockStatusCounts[displayName] = bucket.doc_count;
-                  });
-                  setStockStatusCounts(stockStatusCounts);
-                }
+              // NOTE: Facet processing removed - facets are now fetched once on mount
+              // via fetchGlobalFacets() and remain static regardless of search query
+              // This provides a better UX where filter counts don't change as users type
 
-                // Process featured facets
-                if (result.facets.featured && Array.isArray(result.facets.featured.buckets)) {
-                  let featuredCount = 0;
-                  let notFeaturedCount = 0;
-                  result.facets.featured.buckets.forEach((bucket: any) => {
-                    if (bucket.key_as_string === "true") {
-                      featuredCount = bucket.doc_count;
-                    } else if (bucket.key_as_string === "false") {
-                      notFeaturedCount = bucket.doc_count;
-                    }
-                  });
-                  setFeaturedCount(featuredCount);
-                  setNotFeaturedCount(notFeaturedCount);
-                }
-
-                // Process sale facets
-                if (result.facets.insale && Array.isArray(result.facets.insale.buckets)) {
-                  let saleCount = 0;
-                  let notSaleCount = 0;
-                  result.facets.insale.buckets.forEach((bucket: any) => {
-                    if (bucket.key_as_string === "true") {
-                      saleCount = bucket.doc_count;
-                    } else if (bucket.key_as_string === "false") {
-                      notSaleCount = bucket.doc_count;
-                    }
-                  });
-                  setSaleCount(saleCount);
-                  setNotSaleCount(notSaleCount);
-                }
-              }
-
-              // Debug: Log the first product to see what fields are available
+              // Detect store type from first product if available
               if (products.length > 0) {
-                console.log("Search result product:", {
-                  id: products[0].id,
-                  title: products[0].title,
-                  shopifyVariantId: products[0].shopifyVariantId,
-                  shopifyProductId: products[0].shopifyProductId,
-                  storeType: products[0].storeType,
-                  availableFields: Object.keys(products[0]),
-                });
+                const firstProductStoreType = products[0].storeType;
+                if (firstProductStoreType && (firstProductStoreType === 'shopify' || firstProductStoreType === 'woocommerce') && firstProductStoreType !== storeType) {
+                  setStoreType(firstProductStoreType);
+                }
               }
             } else if (Array.isArray(result)) {
               products = result;
               total = result.length;
               hasMore = false;
 
-              // Debug: Log the first product to see what fields are available
+              // Detect store type from first product if available
               if (products.length > 0) {
-                console.log("Search result product (array format):", {
-                  id: products[0].id,
-                  title: products[0].title,
-                  shopifyVariantId: products[0].shopifyVariantId,
-                  shopifyProductId: products[0].shopifyProductId,
-                  storeType: products[0].storeType,
-                  availableFields: Object.keys(products[0]),
-                });
+                const firstProductStoreType = products[0].storeType;
+                if (firstProductStoreType && (firstProductStoreType === 'shopify' || firstProductStoreType === 'woocommerce') && firstProductStoreType !== storeType) {
+                  setStoreType(firstProductStoreType);
+                }
               }
             } else {
               console.error(
@@ -846,26 +844,32 @@ const KalifindSearch: React.FC<{
               hasMore = false;
             }
 
+            // Validate this response is from the current request
+            if (currentRequestId !== searchRequestIdRef.current) {
+              // This response is from an old request, ignore it
+              return;
+            }
+
               setFilteredProducts(products);
               setTotalProducts(total);
               setDisplayedProducts(products.length);
               setHasMoreProducts(hasMore);
             } catch (error) {
               if (error instanceof Error && error.name === 'AbortError') {
-                console.log("Search request was cancelled");
                 return;
               }
               console.error("Failed to fetch products:", error);
               setFilteredProducts([]);
             } finally {
               setIsLoading(false);
+              setSearchAbortController(null);
             }
           };
 
           void fetchProducts();
         });
       },
-      [storeUrl, debouncedPriceRange, filters]
+      [storeUrl, debouncedPriceRange, debouncedFilters, searchAbortController]
     );
 
     // search products
@@ -883,13 +887,10 @@ const KalifindSearch: React.FC<{
 
       // Check if we've already searched for this exact query and filters
       const currentQuery = debouncedSearchQuery?.trim() || "";
-      const currentFilters = JSON.stringify(filters);
+      const currentFilters = JSON.stringify(debouncedFilters);
       
-      console.log("🔍 Search useEffect - Current filters:", filters);
-      console.log("🔍 Search useEffect - Current query:", currentQuery);
       
       if (lastSearchedQueryRef.current === currentQuery && lastSearchedFiltersRef.current === currentFilters) {
-        console.log("⏭️ Skipping search - same query and filters");
         return; // Skip if we've already searched for this query and filters combination
       }
 
@@ -907,19 +908,12 @@ const KalifindSearch: React.FC<{
       isPriceLoading,
       debouncedSearchQuery,
       debouncedPriceRange,
+      debouncedFilters,
       storeUrl,
       showRecommendations,
       isInitialState,
       isSearchingFromSuggestion,
       forceSearch,
-      filters.categories,
-      filters.colors,
-      filters.sizes,
-      filters.brands,
-      filters.tags,
-      filters.stockStatus,
-      filters.featuredProducts,
-      filters.saleStatus,
     ]);
 
     const sortedProducts = useMemo(() => {
@@ -1209,24 +1203,24 @@ const KalifindSearch: React.FC<{
         }
 
         // Add all current filters
-        if (filters.categories.length > 0) {
-          params.append("categories", filters.categories.join(","));
+        if (debouncedFilters.categories.length > 0) {
+          params.append("categories", debouncedFilters.categories.join(","));
         }
-        if (filters.colors.length > 0) {
-          params.append("colors", filters.colors.join(","));
+        if (debouncedFilters.colors.length > 0) {
+          params.append("colors", debouncedFilters.colors.join(","));
         }
-        if (filters.sizes.length > 0) {
-          params.append("sizes", filters.sizes.join(","));
+        if (debouncedFilters.sizes.length > 0) {
+          params.append("sizes", debouncedFilters.sizes.join(","));
         }
-        if (filters.brands.length > 0) {
-          params.append("brands", filters.brands.join(","));
+        if (debouncedFilters.brands.length > 0) {
+          params.append("brands", debouncedFilters.brands.join(","));
         }
-        if (filters.tags.length > 0) {
-          params.append("tags", filters.tags.join(","));
+        if (debouncedFilters.tags.length > 0) {
+          params.append("tags", debouncedFilters.tags.join(","));
         }
-        if (filters.stockStatus.length > 0) {
+        if (debouncedFilters.stockStatus.length > 0) {
           // Map frontend stock status values to backend boolean values
-          const stockStatusValues = filters.stockStatus.map(status => {
+          const stockStatusValues = debouncedFilters.stockStatus.map(status => {
             if (status === "In Stock") return "true";
             if (status === "Out of Stock") return "false";
             if (status === "On Backorder") return "false";
@@ -1235,20 +1229,20 @@ const KalifindSearch: React.FC<{
           params.append("instock", stockStatusValues.join(","));
         }
         // Handle featured products filter
-        if (filters.featuredProducts.length > 0) {
-          if (filters.featuredProducts.includes("Featured") && !filters.featuredProducts.includes("Not Featured")) {
+        if (debouncedFilters.featuredProducts.length > 0) {
+          if (debouncedFilters.featuredProducts.includes("Featured") && !debouncedFilters.featuredProducts.includes("Not Featured")) {
             params.append("featured", "true");
-          } else if (filters.featuredProducts.includes("Not Featured") && !filters.featuredProducts.includes("Featured")) {
+          } else if (debouncedFilters.featuredProducts.includes("Not Featured") && !debouncedFilters.featuredProducts.includes("Featured")) {
             params.append("featured", "false");
           }
           // If both are selected, don't add any featured filter (show all)
         }
         
         // Handle sale status filter
-        if (filters.saleStatus.length > 0) {
-          if (filters.saleStatus.includes("On Sale") && !filters.saleStatus.includes("Not On Sale")) {
+        if (debouncedFilters.saleStatus.length > 0) {
+          if (debouncedFilters.saleStatus.includes("On Sale") && !debouncedFilters.saleStatus.includes("Not On Sale")) {
             params.append("insale", "true");
-          } else if (filters.saleStatus.includes("Not On Sale") && !filters.saleStatus.includes("On Sale")) {
+          } else if (debouncedFilters.saleStatus.includes("Not On Sale") && !debouncedFilters.saleStatus.includes("On Sale")) {
             params.append("insale", "false");
           }
           // If both are selected, don't add any sale filter (show all)
@@ -1257,7 +1251,7 @@ const KalifindSearch: React.FC<{
         params.append("maxPrice", debouncedPriceRange[1].toString());
 
         params.append("page", (currentPage + 1).toString());
-        params.append("limit", "12");
+        params.append("limit", isMobile ? "8" : "9");
 
         const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000/api';
         const response = await fetch(
@@ -1304,7 +1298,7 @@ const KalifindSearch: React.FC<{
       debouncedSearchQuery,
       storeUrl,
       currentPage,
-      filters,
+      debouncedFilters,
       debouncedPriceRange,
     ]);
 
@@ -1314,14 +1308,15 @@ const KalifindSearch: React.FC<{
 
       const observer = new IntersectionObserver(
         (entries) => {
-          if (entries[0]?.isIntersecting && hasMoreProducts && !isLoadingMore) {
+          // Don't trigger during initial load or when already loading main search
+          if (entries[0]?.isIntersecting && hasMoreProducts && !isLoadingMore && !isLoading) {
             void loadMoreProducts();
           }
         },
         { threshold: 0.1 }
       );
 
-      const loadMoreTrigger = document.getElementById("load-more-trigger");
+      const loadMoreTrigger = loadMoreTriggerRef.current;
       if (loadMoreTrigger) {
         observer.observe(loadMoreTrigger);
       }
@@ -1331,7 +1326,16 @@ const KalifindSearch: React.FC<{
           observer.unobserve(loadMoreTrigger);
         }
       };
-    }, [isMobile, hasMoreProducts, isLoadingMore, loadMoreProducts]);
+    }, [isMobile, hasMoreProducts, isLoadingMore, isLoading, loadMoreProducts]);
+
+    // Cleanup effect to cancel any pending requests
+    useEffect(() => {
+      return () => {
+        if (searchAbortController) {
+          searchAbortController.abort();
+        }
+      };
+    }, [searchAbortController]);
 
     // Function to calculate discount percentage
     const calculateDiscountPercentage = (regularPrice: string, salePrice: string): number | null => {
@@ -1934,46 +1938,48 @@ const KalifindSearch: React.FC<{
             type="multiple"
             defaultValue={[
               "category",
-              "price",
+              "price", 
               "size",
-              "stockStatus",
-              ...(isShopifyStore ? [] : ["featured"]),
-              "sale",
               "color",
               "brand",
               "tags",
+              "stockStatus",
+              "featured",
+              "sale"
             ]}
           >
-            <AccordionItem value="category">
-              <AccordionTrigger className="text-[16px] lg:text-[18px] !text-foreground">
-                <b>Category</b>
-              </AccordionTrigger>
-              <AccordionContent>
-                <div className="!space-y-[8px]">
-                  {availableCategories.map((category) => (
-                    <label
-                      key={category}
-                      className="!flex !items-center !justify-between !cursor-pointer"
-                    >
-                      <div className="!flex !items-center !gap-[10px]">
-                        <input
-                          type="checkbox"
-                          checked={filters.categories.includes(category)}
-                          onChange={() => handleCategoryChange(category)}
-                          className="!w-[16px] !h-[16px] lg:!w-5 lg:!h-5 top-0 !text-primary !bg-background !border-border !rounded "
-                        />
-                        <span className="!text-foreground text-[14px] lg:text-[16px]">
-                          {category}
+            {showMandatoryFilters.categories && (
+              <AccordionItem value="category">
+                <AccordionTrigger className="text-[16px] lg:text-[18px] !text-foreground">
+                  <b>Category</b>
+                </AccordionTrigger>
+                <AccordionContent>
+                  <div className="!space-y-[8px]">
+                    {availableCategories.map((category) => (
+                      <label
+                        key={category}
+                        className="!flex !items-center !justify-between !cursor-pointer"
+                      >
+                        <div className="!flex !items-center !gap-[10px]">
+                          <input
+                            type="checkbox"
+                            checked={filters.categories.includes(category)}
+                            onChange={() => handleCategoryChange(category)}
+                            className="!w-[16px] !h-[16px] lg:!w-5 lg:!h-5 top-0 !text-primary !bg-background !border-border !rounded "
+                          />
+                          <span className="!text-foreground text-[14px] lg:text-[16px]">
+                            {category}
+                          </span>
+                        </div>
+                        <span className="!text-muted-foreground !text-[12px] lg:text-[14px] mr-[8px]">
+                          {categoryCounts[category] || 0}
                         </span>
-                      </div>
-                      <span className="!text-muted-foreground !text-[12px] lg:text-[14px] mr-[8px]">
-                        {categoryCounts[category] || 0}
-                      </span>
-                    </label>
-                  ))}
-                </div>
-              </AccordionContent>
-            </AccordionItem>
+                      </label>
+                    ))}
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+            )}
             {showOptionalFilters.brands && (
               <AccordionItem value="brand">
                 <AccordionTrigger className="text-[16px] lg:text-[18px] !font-extrabold !text-foreground">
@@ -2006,7 +2012,7 @@ const KalifindSearch: React.FC<{
                 </AccordionContent>
               </AccordionItem>
             )}
-            {!isPriceLoading && (
+            {showMandatoryFilters.price && !isPriceLoading && (
               <AccordionItem value="price">
                 <AccordionTrigger className="text-[16px] lg:text-[18px] !font-[800] !text-foreground">
                   <b className="font-extrabold">Price</b>
@@ -2031,28 +2037,30 @@ const KalifindSearch: React.FC<{
                 </AccordionContent>
               </AccordionItem>
             )}
-            <AccordionItem value="size">
-              <AccordionTrigger className="text-[16px] lg:text-[18px] !font-[700] !text-foreground">
-                <b className="font-extrabold">Size</b>
-              </AccordionTrigger>
-              <AccordionContent>
-                <div className="!grid !grid-cols-4 !gap-[8px]">
-                  {availableSizes.map((size) => (
-                    <button
-                      key={size}
-                      onClick={() => handleSizeChange(size)}
-                      className={`my-border !rounded !py-[8px] !text-[12px] lg:text-[14px] !font-medium ${
-                        filters.sizes.includes(size)
-                          ? "!bg-primary !text-primary-foreground"
-                          : ""
-                      }`}
-                    >
-                      {size}
-                    </button>
-                  ))}
-                </div>
-              </AccordionContent>
-            </AccordionItem>
+            {showOptionalFilters.sizes && (
+              <AccordionItem value="size">
+                <AccordionTrigger className="text-[16px] lg:text-[18px] !font-[700] !text-foreground">
+                  <b className="font-extrabold">Size</b>
+                </AccordionTrigger>
+                <AccordionContent>
+                  <div className="!grid !grid-cols-4 !gap-[8px]">
+                    {availableSizes.map((size) => (
+                      <button
+                        key={size}
+                        onClick={() => handleSizeChange(size)}
+                        className={`my-border !rounded !py-[8px] !text-[12px] lg:text-[14px] !font-medium ${
+                          filters.sizes.includes(size)
+                            ? "!bg-primary !text-primary-foreground"
+                            : ""
+                        }`}
+                      >
+                        {size}
+                      </button>
+                    ))}
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+            )}
             {showOptionalFilters.colors && (
               <AccordionItem value="color">
                 <AccordionTrigger className="text-[16px] lg:text-[18px] !font-[700] !text-foreground">
@@ -2115,38 +2123,40 @@ const KalifindSearch: React.FC<{
             )}
 
               {/* Mandatory Facets */}
-              <AccordionItem value="stockStatus">
-                <AccordionTrigger className="text-[16px] !font-[700] !text-foreground lg:text-[18px]">
-                  <b className="font-extrabold">Stock Status</b>
-                </AccordionTrigger>
-                <AccordionContent>
-                  <div className="!space-y-[8px]">
-                    {["In Stock", "Out of Stock", "On Backorder"].map((status) => (
-                      <label
-                        key={status}
-                        className="!flex !cursor-pointer !items-center !justify-between"
-                      >
-                        <div className="!flex !items-center !gap-[10px]">
-                          <input
-                            type="checkbox"
-                            checked={filters.stockStatus.includes(status)}
-                            onChange={() => handleStockStatusChange(status)}
-                            className="top-0 !h-[16px] !w-[16px] !rounded !border-border !bg-background !text-primary lg:!h-5 lg:!w-5 "
-                          />
-                          <span className="text-[14px] !text-foreground lg:text-[16px]">
-                            {status}
+              {showMandatoryFilters.stockStatus && (
+                <AccordionItem value="stockStatus">
+                  <AccordionTrigger className="text-[16px] !font-[700] !text-foreground lg:text-[18px]">
+                    <b className="font-extrabold">Stock Status</b>
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <div className="!space-y-[8px]">
+                      {["In Stock", "Out of Stock", "On Backorder"].map((status) => (
+                        <label
+                          key={status}
+                          className="!flex !cursor-pointer !items-center !justify-between"
+                        >
+                          <div className="!flex !items-center !gap-[10px]">
+                            <input
+                              type="checkbox"
+                              checked={filters.stockStatus.includes(status)}
+                              onChange={() => handleStockStatusChange(status)}
+                              className="top-0 !h-[16px] !w-[16px] !rounded !border-border !bg-background !text-primary lg:!h-5 lg:!w-5 "
+                            />
+                            <span className="text-[14px] !text-foreground lg:text-[16px]">
+                              {status}
+                            </span>
+                          </div>
+                          <span className="mr-[8px] !text-[12px] !text-muted-foreground lg:text-[14px]">
+                            {stockStatusCounts[status] ?? 0}
                           </span>
-                        </div>
-                        <span className="mr-[8px] !text-[12px] !text-muted-foreground lg:text-[14px]">
-                          {stockStatusCounts[status] ?? 0}
-                        </span>
-                      </label>
-                    ))}
-                  </div>
-                </AccordionContent>
-              </AccordionItem>
+                        </label>
+                      ))}
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              )}
 
-              {!isShopifyStore && (
+              {!isShopifyStore && showMandatoryFilters.featured && (
                 <AccordionItem value="featured">
                   <AccordionTrigger className="text-[16px] !font-[700] !text-foreground lg:text-[18px]">
                     <b className="font-extrabold">Featured Products</b>
@@ -2179,36 +2189,38 @@ const KalifindSearch: React.FC<{
                 </AccordionItem>
               )}
 
-              <AccordionItem value="sale">
-                <AccordionTrigger className="text-[16px] !font-[700] !text-foreground lg:text-[18px]">
-                  <b className="font-extrabold">Sale Status</b>
-                </AccordionTrigger>
-                <AccordionContent>
-                  <div className="!space-y-[8px]">
-                    {["On Sale", "Not On Sale"].map((status) => (
-                      <label
-                        key={status}
-                        className="!flex !cursor-pointer !items-center !justify-between"
-                      >
-                        <div className="!flex !items-center !gap-[10px]">
-                          <input
-                            type="checkbox"
-                            checked={filters.saleStatus.includes(status)}
-                            onChange={() => handleSaleStatusChange(status)}
-                            className="top-0 !h-[16px] !w-[16px] !rounded !border-border !bg-background !text-primary lg:!h-5 lg:!w-5 "
-                          />
-                          <span className="text-[14px] !text-foreground lg:text-[16px]">
-                            {status}
+              {showMandatoryFilters.sale && (
+                <AccordionItem value="sale">
+                  <AccordionTrigger className="text-[16px] !font-[700] !text-foreground lg:text-[18px]">
+                    <b className="font-extrabold">Sale Status</b>
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <div className="!space-y-[8px]">
+                      {["On Sale", "Not On Sale"].map((status) => (
+                        <label
+                          key={status}
+                          className="!flex !cursor-pointer !items-center !justify-between"
+                        >
+                          <div className="!flex !items-center !gap-[10px]">
+                            <input
+                              type="checkbox"
+                              checked={filters.saleStatus.includes(status)}
+                              onChange={() => handleSaleStatusChange(status)}
+                              className="top-0 !h-[16px] !w-[16px] !rounded !border-border !bg-background !text-primary lg:!h-5 lg:!w-5 "
+                            />
+                            <span className="text-[14px] !text-foreground lg:text-[16px]">
+                              {status}
+                            </span>
+                          </div>
+                          <span className="mr-[8px] !text-[12px] !text-muted-foreground lg:text-[14px]">
+                            {status === "On Sale" ? saleCount : notSaleCount}
                           </span>
-                        </div>
-                        <span className="mr-[8px] !text-[12px] !text-muted-foreground lg:text-[14px]">
-                          {status === "On Sale" ? saleCount : notSaleCount}
-                        </span>
-                      </label>
-                    ))}
-                  </div>
-                </AccordionContent>
-              </AccordionItem>
+                        </label>
+                      ))}
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              )}
             </Accordion>
             {isAnyFilterActive && (
               <Button
@@ -2363,7 +2375,6 @@ const KalifindSearch: React.FC<{
 
                   {/* Smart Recommendations */}
                   {(() => {
-                    console.log("Rendering recommendations, length:", recommendations.length, "recommendations:", recommendations);
                     return null;
                   })()}
                   {recommendations.length > 0 && (
@@ -2471,8 +2482,8 @@ const KalifindSearch: React.FC<{
                   </div>
 
                   {/* Infinite scroll trigger for mobile */}
-                  {isMobile && hasMoreProducts && (
-                    <div id="load-more-trigger" className="!my-4 !h-4 !w-full">
+                  {isMobile && hasMoreProducts && displayedProducts > 0 && !isLoading && (
+                    <div ref={loadMoreTriggerRef} id="load-more-trigger" className="!my-4 !h-16 !w-full">
                       {isLoadingMore && (
                         <div className="!flex !items-center !justify-center !py-4">
                           <div className="!flex !items-center !gap-2">
@@ -2492,7 +2503,7 @@ const KalifindSearch: React.FC<{
                   )}
 
                   {/* Load More button for desktop */}
-                  {!isMobile && hasMoreProducts && (
+                  {!isMobile && hasMoreProducts && displayedProducts > 0 && !isLoading && (
                     <div className="!mt-8 !flex !justify-center">
                       <button
                         onClick={() => void loadMoreProducts()}
@@ -2508,7 +2519,7 @@ const KalifindSearch: React.FC<{
                 </>
               )}
 
-              {!isLoading && !isPending && !showRecommendations && sortedProducts.length === 0 && (
+              {!isLoading && !isPending && !showRecommendations && sortedProducts.length === 0 && hasSearched && (
                 <div className="!w-full !py-[48px] !text-center !duration-300 !animate-in !fade-in">
                   <div className="!flex !flex-col !items-center !gap-4">
                     <div className="!flex !h-16 !w-16 !items-center !justify-center !rounded-full !bg-muted !duration-500 !animate-in !zoom-in">
