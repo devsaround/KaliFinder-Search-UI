@@ -4,11 +4,26 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Vite App</title>
+    <title>KaliFind Analytics Test</title>
   </head>
   <body>
-    <div id="root"></div>
-    <!-- Vite will replace this script with your bundled entry -->
-    <script type="module" src="/src/main.tsx"></script>
+    <h1>KaliFind Search Widget Test</h1>
+    <button id="kalifind-search-trigger">Open Search</button>
+    
+    <!-- Add vendorId and storeId to script URL -->
+    <script 
+      src="/src/embed-search.tsx?storeUrl=http://3.228.193.93&vendorId=1&storeId=1"
+      type="module"
+    ></script>
+    
+    <!-- Debug script to verify IDs are set -->
+    <script>
+      setTimeout(() => {
+        console.log('=== KALIFIND DEBUG ===');
+        console.log('Vendor ID:', window.KALIFIND_VENDOR_ID);
+        console.log('Store ID:', window.KALIFIND_STORE_ID);
+        console.log('===================');
+      }, 2000);
+    </script>
   </body>
 </html>
