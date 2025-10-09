@@ -169,6 +169,14 @@ const KalifindSearch: React.FC<{
       return () => window.removeEventListener("resize", checkIsMobile);
     }, []);
 
+    // Update price range max when maxPrice changes
+    useEffect(() => {
+      setFilters(prev => ({
+        ...prev,
+        priceRange: [prev.priceRange[0], maxPrice]
+      }));
+    }, [maxPrice]);
+
     // Load recent searches from localStorage on mount
     useEffect(() => {
       try {
@@ -446,6 +454,19 @@ const KalifindSearch: React.FC<{
             });
             setTagCounts(tagCounts);
             setAvailableTags(Object.keys(tagCounts));
+          }
+        }
+        
+        // Extract max price from products in global facets
+        if (result.products && Array.isArray(result.products) && result.products.length > 0) {
+          const prices = result.products
+            .map((p: any) => parseFloat(p.price || p.regularPrice || '0'))
+            .filter((price: number) => !isNaN(price) && price > 0);
+          
+          if (prices.length > 0) {
+            const calculatedMaxPrice = Math.ceil(Math.max(...prices));
+            const roundedMaxPrice = Math.ceil(calculatedMaxPrice / 50) * 50;
+            setMaxPrice(roundedMaxPrice);
           }
         }
         
@@ -820,6 +841,18 @@ const KalifindSearch: React.FC<{
                 const firstProductStoreType = products[0].storeType;
                 if (firstProductStoreType && (firstProductStoreType === 'shopify' || firstProductStoreType === 'woocommerce') && firstProductStoreType !== storeType) {
                   setStoreType(firstProductStoreType);
+                }
+                
+                // Calculate max price from products
+                const prices = products
+                  .map(p => parseFloat(p.price || p.regularPrice || '0'))
+                  .filter(price => !isNaN(price) && price > 0);
+                
+                if (prices.length > 0) {
+                  const calculatedMaxPrice = Math.ceil(Math.max(...prices));
+                  // Add some buffer (e.g., round up to nearest 10 or 50)
+                  const roundedMaxPrice = Math.ceil(calculatedMaxPrice / 50) * 50;
+                  setMaxPrice(roundedMaxPrice);
                 }
               }
             } else if (Array.isArray(result)) {
@@ -1687,7 +1720,7 @@ const KalifindSearch: React.FC<{
                             }))
                           }
                           max={maxPrice}
-                          step={10}
+                          step={1}
                           className="!w-full"
                         />
                         <div className="!flex !justify-between !text-[14px] !text-muted-foreground">
@@ -2027,7 +2060,7 @@ const KalifindSearch: React.FC<{
                       }))
                     }
                     max={maxPrice}
-                    step={10}
+                    step={1}
                     className="!w-full !mb-[16px] !mt-[8px]"
                   />
                   <div className="!flex !justify-between !text-[12px] lg:text-[14px] !text-muted-foreground">
