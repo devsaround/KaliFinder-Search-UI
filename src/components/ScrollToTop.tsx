@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { ChevronUp } from "lucide-react";
+import React, { useState, useEffect } from 'react';
+import { ChevronUp } from 'lucide-react';
 
 interface ScrollToTopProps {
   containerRef?: React.RefObject<HTMLElement>;
@@ -10,17 +10,15 @@ interface ScrollToTopProps {
 const ScrollToTop: React.FC<ScrollToTopProps> = ({
   containerRef,
   showAfter = 300,
-  className = "",
+  className = '',
 }) => {
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
     const container = containerRef?.current;
     const toggleVisibility = () => {
-      const scrollTop = container 
-        ? container.scrollTop 
-        : window.pageYOffset;
-        
+      const scrollTop = container ? container.scrollTop : window.pageYOffset;
+
       setIsVisible(scrollTop > showAfter);
     };
 
@@ -29,16 +27,16 @@ const ScrollToTop: React.FC<ScrollToTopProps> = ({
     };
 
     if (container) {
-      container.addEventListener("scroll", handleScroll);
+      container.addEventListener('scroll', handleScroll);
     } else {
-      window.addEventListener("scroll", handleScroll);
+      window.addEventListener('scroll', handleScroll);
     }
 
     return () => {
       if (container) {
-        container.removeEventListener("scroll", handleScroll);
+        container.removeEventListener('scroll', handleScroll);
       } else {
-        window.removeEventListener("scroll", handleScroll);
+        window.removeEventListener('scroll', handleScroll);
       }
     };
   }, [containerRef, showAfter]);
@@ -47,12 +45,12 @@ const ScrollToTop: React.FC<ScrollToTopProps> = ({
     if (containerRef?.current) {
       containerRef.current.scrollTo({
         top: 0,
-        behavior: "smooth",
+        behavior: 'smooth',
       });
     } else {
       window.scrollTo({
         top: 0,
-        behavior: "smooth",
+        behavior: 'smooth',
       });
     }
   };
@@ -67,7 +65,7 @@ const ScrollToTop: React.FC<ScrollToTopProps> = ({
         !transition-all !duration-300 !ease-in-out
         hover:!scale-110 active:!scale-95
         !flex !items-center !justify-center
-        ${isVisible ? "!opacity-100 !translate-y-0" : "!opacity-0 !translate-y-4 !pointer-events-none"}
+        ${isVisible ? '!opacity-100 !translate-y-0' : '!opacity-0 !translate-y-4 !pointer-events-none'}
         ${className}
       `}
       aria-label="Scroll to top"

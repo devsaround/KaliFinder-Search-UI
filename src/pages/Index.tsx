@@ -1,12 +1,8 @@
 // import SearchIcon from "../components/SearchIcon.tsx.old";
-import SearchIcon from "../components/SearchIcon.tsx";
-import { Search } from "lucide-react";
+import SearchIcon from '../components/SearchIcon.tsx';
+import { Search } from 'lucide-react';
 
-const Index = ({
-  storeUrl,
-}: {
-  storeUrl?: string;
-}) => {
+const Index = ({ storeUrl }: { storeUrl?: string }) => {
   return (
     <div>
       {/* <div className="!min-h-screen !bg-gray-50 !flex !items-center !justify-center "> */}

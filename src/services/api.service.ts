@@ -15,9 +15,9 @@ interface CacheEntry {
 }
 
 class ApiServiceImpl implements ApiService {
-  private baseUrl = import.meta.env.VITE_BACKEND_URL ; // Replace with actual API URL
+  private baseUrl = import.meta.env.VITE_BACKEND_URL; // Replace with actual API URL
   private cache = new Map<string, CacheEntry>();
-  
+
   // Cache TTL in milliseconds
   private readonly CACHE_TTL = {
     facetConfig: 30 * 60 * 1000, // 30 minutes
@@ -32,12 +32,12 @@ class ApiServiceImpl implements ApiService {
   private getFromCache(key: string): any | null {
     const entry = this.cache.get(key);
     if (!entry) return null;
-    
+
     if (Date.now() - entry.timestamp > entry.ttl) {
       this.cache.delete(key);
       return null;
     }
-    
+
     return entry.data;
   }
 
@@ -45,9 +45,9 @@ class ApiServiceImpl implements ApiService {
     this.cache.set(key, {
       data,
       timestamp: Date.now(),
-      ttl
+      ttl,
     });
-    
+
     // Clean up old entries if cache gets too large
     if (this.cache.size > 100) {
       const now = Date.now();
@@ -67,7 +67,9 @@ class ApiServiceImpl implements ApiService {
     }
 
     try {
-      const response = await fetch(`${this.baseUrl}/v1/search/popular?storeUrl=${encodeURIComponent(storeUrl)}`);
+      const response = await fetch(
+        `${this.baseUrl}/v1/search/popular?storeUrl=${encodeURIComponent(storeUrl)}`
+      );
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -89,7 +91,9 @@ class ApiServiceImpl implements ApiService {
     }
 
     try {
-      const response = await fetch(`${this.baseUrl}/v1/facets?storeUrl=${encodeURIComponent(storeUrl)}`);
+      const response = await fetch(
+        `${this.baseUrl}/v1/facets?storeUrl=${encodeURIComponent(storeUrl)}`
+      );
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -118,7 +122,9 @@ class ApiServiceImpl implements ApiService {
 
   async fetchAutocomplete(query: string, storeUrl: string): Promise<any> {
     try {
-      const response = await fetch(`${this.baseUrl}/v1/search/autocomplete?q=${encodeURIComponent(query)}&storeUrl=${encodeURIComponent(storeUrl)}`);
+      const response = await fetch(
+        `${this.baseUrl}/v1/search/autocomplete?q=${encodeURIComponent(query)}&storeUrl=${encodeURIComponent(storeUrl)}`
+      );
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }

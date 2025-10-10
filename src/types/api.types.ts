@@ -50,9 +50,5 @@ export function isSearchResponse(response: any): response is SearchResponse {
 }
 
 export function isAutocompleteResponse(response: any): response is AutocompleteResponse {
-  return (
-    response &&
-    typeof response === 'object' &&
-    Array.isArray(response.suggestions)
-  );
+  return response && typeof response === 'object' && Array.isArray(response.suggestions);
 }

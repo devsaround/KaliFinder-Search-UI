@@ -1,5 +1,5 @@
-import React, { useEffect, useState, useCallback, useRef } from "react";
-import { Search, X } from "lucide-react";
+import { Search, X } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
 
 interface KalifindSearchMobileProps {
   searchRef: React.RefObject<HTMLDivElement>;
@@ -28,7 +28,7 @@ const KalifindSearchMobile: React.FC<KalifindSearchMobileProps> = ({
   handleSearch,
   handleKeyDown,
   onClose,
-  storeUrl = "http://3.228.193.93",
+  storeUrl, // Now required to be passed by parent
   showAutocomplete = false,
   setShowAutocomplete,
   autocompleteSuggestions = [],
@@ -44,7 +44,7 @@ const KalifindSearchMobile: React.FC<KalifindSearchMobileProps> = ({
   const [mobileShowAutocomplete, setMobileShowAutocomplete] = useState(false);
   const [mobileAutocompleteSuggestions, setMobileAutocompleteSuggestions] = useState<string[]>([]);
   const [mobileIsAutocompleteLoading, setMobileIsAutocompleteLoading] = useState(false);
-  
+
   // Track if query change is from suggestion selection
   const isFromSuggestionClickRef = useRef(false);
 
@@ -63,8 +63,8 @@ const KalifindSearchMobile: React.FC<KalifindSearchMobileProps> = ({
       setMobileIsAutocompleteLoading(true);
       try {
         const params = new URLSearchParams();
-        params.append("q", searchQuery);
-        params.append("storeUrl", storeUrl); // Use storeUrl with fallback
+        params.append('q', searchQuery);
+        params.append('storeUrl', storeUrl); // Use storeUrl with fallback
 
         const response = await fetch(
           `${import.meta.env.VITE_BACKEND_URL}/v1/autocomplete?${params.toString()}`,
@@ -72,24 +72,28 @@ const KalifindSearchMobile: React.FC<KalifindSearchMobileProps> = ({
         );
 
         if (!response.ok) {
-          throw new Error("bad response");
+          throw new Error('bad response');
         }
 
         const result = await response.json();
-        
+
         // Handle different response formats
         let rawSuggestions: string[] = [];
         if (Array.isArray(result)) {
-          rawSuggestions = result.map((r: any) => r.title || r.name || r.product_title || r.product_name || String(r)).filter(Boolean);
+          rawSuggestions = result
+            .map((r: any) => r.title || r.name || r.product_title || r.product_name || String(r))
+            .filter(Boolean);
         } else if (result && Array.isArray(result.suggestions)) {
           rawSuggestions = result.suggestions.map((s: string) => String(s));
         } else if (result && Array.isArray(result.products)) {
-          rawSuggestions = result.products.map((r: any) => r.title || r.name || r.product_title || r.product_name || String(r)).filter(Boolean);
+          rawSuggestions = result.products
+            .map((r: any) => r.title || r.name || r.product_title || r.product_name || String(r))
+            .filter(Boolean);
         }
 
         setMobileAutocompleteSuggestions(rawSuggestions.slice(0, 10));
       } catch (error) {
-        console.error("Mobile autocomplete error:", error);
+        console.error('Mobile autocomplete error:', error);
         setMobileAutocompleteSuggestions([]);
       } finally {
         setMobileIsAutocompleteLoading(false);
@@ -103,21 +107,21 @@ const KalifindSearchMobile: React.FC<KalifindSearchMobileProps> = ({
   const handleMobileSuggestionClick = (suggestion: string) => {
     // Mark that this change is from a suggestion click
     isFromSuggestionClickRef.current = true;
-    
+
     // Close autocomplete
     setMobileShowAutocomplete(false);
     setMobileAutocompleteSuggestions([]);
     setMobileIsAutocompleteLoading(false);
-    
+
     // Set the search query and trigger search
     handleSearch(suggestion);
-    
+
     // Add to recent searches if needed
     setHasSearched?.(true);
-    
+
     // Blur input to close mobile keyboard
     inputRef.current?.blur();
-    
+
     // Reset the flag after a short delay
     setTimeout(() => {
       isFromSuggestionClickRef.current = false;
@@ -201,8 +205,8 @@ const KalifindSearchMobile: React.FC<KalifindSearchMobileProps> = ({
                       // Only close autocomplete if the blur is not caused by clicking on a suggestion
                       const relatedTarget = e.relatedTarget as HTMLElement;
                       const isClickingOnSuggestion =
-                        relatedTarget?.closest("[data-suggestion-item]") ||
-                        relatedTarget?.closest("[data-autocomplete-dropdown]");
+                        relatedTarget?.closest('[data-suggestion-item]') ||
+                        relatedTarget?.closest('[data-autocomplete-dropdown]');
 
                       if (!isClickingOnSuggestion && !isInteractingWithDropdown) {
                         // Longer delay to allow for autocomplete to show and user to interact
@@ -217,7 +221,7 @@ const KalifindSearchMobile: React.FC<KalifindSearchMobileProps> = ({
                     placeholder="Search"
                     className="h-full w-full pl-10 pr-4 py-2 text-base text-foreground placeholder-muted-foreground focus:outline-none border-none ring-0"
                     autoFocus
-                  />{" "}
+                  />{' '}
                 </div>
                 <button
                   className="rounded-lg hover:bg-muted/20 transition-colors duration-200 flex-shrink-0"
@@ -236,7 +240,7 @@ const KalifindSearchMobile: React.FC<KalifindSearchMobileProps> = ({
       {mobileShowAutocomplete &&
         searchQuery.length > 0 &&
         (mobileIsAutocompleteLoading || mobileAutocompleteSuggestions.length > 0) && (
-          <div 
+          <div
             data-autocomplete-dropdown="true"
             className="absolute top-full left-0 right-0 bg-background border border-border rounded-lg shadow-lg z-[9999999] mt-1 mx-4"
             onMouseEnter={() => setIsInteractingWithDropdown?.(true)}
@@ -250,16 +254,14 @@ const KalifindSearchMobile: React.FC<KalifindSearchMobileProps> = ({
                 </div>
               ) : mobileAutocompleteSuggestions.length > 0 ? (
                 <>
-                  <h3 className="text-sm font-medium text-foreground mb-3">
-                    Suggestions
-                  </h3>
+                  <h3 className="text-sm font-medium text-foreground mb-3">Suggestions</h3>
                   <div className="space-y-2">
                     {mobileAutocompleteSuggestions.map((suggestion, index) => (
                       <div
                         key={index}
                         data-suggestion-item="true"
                         className={`flex items-center gap-2 cursor-pointer hover:bg-muted p-2 rounded transition-colors ${
-                          index === highlightedSuggestionIndex ? "bg-muted" : ""
+                          index === highlightedSuggestionIndex ? 'bg-muted' : ''
                         }`}
                         onClick={(e) => {
                           e.preventDefault();
@@ -269,9 +271,7 @@ const KalifindSearchMobile: React.FC<KalifindSearchMobileProps> = ({
                         }}
                       >
                         <Search className="w-4 h-4 text-muted-foreground" />
-                        <span className="text-muted-foreground">
-                          {suggestion}
-                        </span>
+                        <span className="text-muted-foreground">{suggestion}</span>
                       </div>
                     ))}
                   </div>
@@ -283,7 +283,9 @@ const KalifindSearchMobile: React.FC<KalifindSearchMobileProps> = ({
                   </div>
                   <div className="animate-in slide-in-from-bottom-2 duration-500">
                     <p className="text-foreground font-medium mb-1">Search not found</p>
-                    <p className="text-muted-foreground text-sm">No suggestions found for "{searchQuery}"</p>
+                    <p className="text-muted-foreground text-sm">
+                      No suggestions found for "{searchQuery}"
+                    </p>
                   </div>
                 </div>
               ) : null}

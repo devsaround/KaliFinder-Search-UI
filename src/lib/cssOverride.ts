@@ -1,8 +1,8 @@
 // CSS override utilities for WordPress theme conflicts
 
 export const overrideCSSVariables = () => {
-  const styleElement = document.createElement("style");
-  styleElement.id = "kalifind-css-override";
+  const styleElement = document.createElement('style');
+  styleElement.id = 'kalifind-css-override';
 
   styleElement.textContent = `
     /* Override WordPress theme CSS variables */
@@ -134,7 +134,7 @@ export const overrideCSSVariables = () => {
 };
 
 export const removeCSSOverride = () => {
-  const styleElement = document.getElementById("kalifind-css-override");
+  const styleElement = document.getElementById('kalifind-css-override');
   if (styleElement) {
     styleElement.remove();
   }

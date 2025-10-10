@@ -49,7 +49,7 @@ export interface Product {
   productType?: string; // "simple" or "variable"
   shopifyVariantId?: string; // Shopify variant ID
   wooProductId?: string; // WooCommerce product ID
-  shopifyProductId? :string
+  shopifyProductId?: string;
 }
 
 export interface FilterState {
@@ -142,12 +142,7 @@ export interface ShadowDOMSearchDropdownProps {
 }
 
 // Sort options
-export type SortOption =
-  | "relevance"
-  | "a-z"
-  | "z-a"
-  | "price-asc"
-  | "price-desc";
+export type SortOption = 'relevance' | 'a-z' | 'z-a' | 'price-asc' | 'price-desc';
 
 // Filter counts
 export interface FilterCounts {
@@ -162,7 +157,7 @@ export interface FilterCounts {
 export interface CartProduct extends Product {
   // Required for cart operations
   storeUrl: string;
-  storeType: "shopify" | "woocommerce";
+  storeType: 'shopify' | 'woocommerce';
 }
 
 export interface CartResponse {

@@ -1,5 +1,5 @@
-import { create } from "zustand";
-import { IsOpenState } from "../types";
+import { create } from 'zustand';
+import { IsOpenState } from '../types';
 
 export const useIsOpen = create<IsOpenState>((set) => ({
   isOpen: false,

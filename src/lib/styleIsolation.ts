@@ -2,8 +2,8 @@
 
 export const injectIsolatedStyles = (container: HTMLElement) => {
   // Create a style element with scoped styles
-  const styleElement = document.createElement("style");
-  styleElement.id = "kalifind-isolated-styles";
+  const styleElement = document.createElement('style');
+  styleElement.id = 'kalifind-isolated-styles';
 
   styleElement.textContent = `
     /* Kalifind Search Widget - Isolated Styles */
@@ -104,33 +104,30 @@ export const injectIsolatedStyles = (container: HTMLElement) => {
 };
 
 export const removeIsolatedStyles = () => {
-  const styleElement = document.getElementById("kalifind-isolated-styles");
+  const styleElement = document.getElementById('kalifind-isolated-styles');
   if (styleElement) {
     styleElement.remove();
   }
 };
 
 // CSS class name generator for scoped styles
-export const generateScopedClassName = (
-  baseClass: string,
-  scope: string = "kalifind"
-) => {
+export const generateScopedClassName = (baseClass: string, scope: string = 'kalifind') => {
   return `${scope}-${baseClass}`;
 };
 
 // Utility to apply scoped styles to elements
 export const applyScopedStyles = (
   element: HTMLElement,
-  scope: string = "kalifind-search-widget"
+  scope: string = 'kalifind-search-widget'
 ) => {
   element.classList.add(scope);
 
   // Apply minimal isolation styles
   element.style.setProperty(
-    "font-family",
+    'font-family',
     "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
-    "important"
+    'important'
   );
-  element.style.setProperty("box-sizing", "border-box", "important");
-  element.style.setProperty("z-index", "999999", "important");
+  element.style.setProperty('box-sizing', 'border-box', 'important');
+  element.style.setProperty('z-index', '999999', 'important');
 };

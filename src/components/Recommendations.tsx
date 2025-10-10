@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Product } from '../types';
 import { ShoppingCart } from 'lucide-react';
@@ -52,17 +51,16 @@ const Recommendations: React.FC<RecommendationsProps> = ({
                 </div>
               )}
               {product.salePrice &&
-                product.salePrice !== "" &&
-                product.salePrice !== "0" &&
-                product.salePrice !== "0.00" &&
+                product.salePrice !== '' &&
+                product.salePrice !== '0' &&
+                product.salePrice !== '0.00' &&
                 product.regularPrice &&
                 product.salePrice !== product.regularPrice &&
                 (() => {
-                  const discountPercentage =
-                    calculateDiscountPercentage(
-                      product.regularPrice,
-                      product.salePrice,
-                    );
+                  const discountPercentage = calculateDiscountPercentage(
+                    product.regularPrice,
+                    product.salePrice
+                  );
                   return discountPercentage ? (
                     <div className="!absolute !top-2 !left-2 !bg-red-500 !text-white !px-2 !py-1 !rounded-full !text-xs !font-bold">
                       -{discountPercentage}%
@@ -80,9 +78,9 @@ const Recommendations: React.FC<RecommendationsProps> = ({
             <div className="!flex !items-center !justify-between mt-auto">
               <div className="!flex !items-center !gap-[8px]">
                 {product.salePrice &&
-                product.salePrice !== "" &&
-                product.salePrice !== "0" &&
-                product.salePrice !== "0.00" &&
+                product.salePrice !== '' &&
+                product.salePrice !== '0' &&
+                product.salePrice !== '0.00' &&
                 product.regularPrice &&
                 product.salePrice !== product.regularPrice ? (
                   <div className="!flex !items-center !gap-2">

@@ -1,13 +1,13 @@
-import React, { useState, useEffect, useRef, Suspense, lazy, useCallback } from "react";
-import { createRoot } from "react-dom/client";
-import { X, Search } from "lucide-react";
-import ScrollToTop from "./ScrollToTop";
-import { ShadowDOMSearchDropdownProps } from "../types";
-import KalifindSearchDesktop from "./KalifindSearchDesktop";
-import KalifindSearchMobile from "./KalifindSearchMobile";
+import React, { useState, useEffect, useRef, Suspense, lazy, useCallback } from 'react';
+import { createRoot } from 'react-dom/client';
+import { X, Search } from 'lucide-react';
+import ScrollToTop from './ScrollToTop';
+import { ShadowDOMSearchDropdownProps } from '../types';
+import KalifindSearchDesktop from './KalifindSearchDesktop';
+import KalifindSearchMobile from './KalifindSearchMobile';
 
 // Lazy load the EcommerceSearch component
-const EcommerceSearch = lazy(() => import("./KalifindSearch.tsx"));
+const EcommerceSearch = lazy(() => import('./KalifindSearch.tsx'));
 
 const ShadowDOMSearchDropdown: React.FC<ShadowDOMSearchDropdownProps> = ({
   isOpen,
@@ -19,7 +19,7 @@ const ShadowDOMSearchDropdown: React.FC<ShadowDOMSearchDropdownProps> = ({
   const [reactRoot, setReactRoot] = useState<unknown>(null);
   const [isAnimating, setIsAnimating] = useState(false);
   const [isMobileOrTablet, setIsMobileOrTablet] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState('');
   const [showAutocomplete, setShowAutocomplete] = useState(false);
   const [autocompleteSuggestions, setAutocompleteSuggestions] = useState<string[]>([]);
   const [isAutocompleteLoading, setIsAutocompleteLoading] = useState(false);
@@ -33,13 +33,13 @@ const ShadowDOMSearchDropdown: React.FC<ShadowDOMSearchDropdownProps> = ({
   // Fuzzy matching function for better autocomplete
   const fuzzyMatch = useCallback((query: string, suggestion: string): boolean => {
     if (!query || !suggestion) return false;
-    
+
     const queryLower = query.toLowerCase().trim();
     const suggestionLower = suggestion.toLowerCase().trim();
-    
+
     // Exact match
     if (suggestionLower.includes(queryLower)) return true;
-    
+
     // Fuzzy matching - check if all characters in query appear in order in suggestion
     let queryIndex = 0;
     for (let i = 0; i < suggestionLower.length && queryIndex < queryLower.length; i++) {
@@ -47,32 +47,35 @@ const ShadowDOMSearchDropdown: React.FC<ShadowDOMSearchDropdownProps> = ({
         queryIndex++;
       }
     }
-    
+
     // If we found all characters in order, it's a match
     return queryIndex === queryLower.length;
   }, []);
 
   // Function to score and sort suggestions by relevance
-  const scoreSuggestion = useCallback((query: string, suggestion: string): number => {
-    if (!query || !suggestion) return 0;
-    
-    const queryLower = query.toLowerCase().trim();
-    const suggestionLower = suggestion.toLowerCase().trim();
-    
-    // Exact match gets highest score
-    if (suggestionLower === queryLower) return 100;
-    
-    // Starts with query gets high score
-    if (suggestionLower.startsWith(queryLower)) return 90;
-    
-    // Contains query gets medium score
-    if (suggestionLower.includes(queryLower)) return 70;
-    
-    // Fuzzy match gets lower score
-    if (fuzzyMatch(query, suggestion)) return 50;
-    
-    return 0;
-  }, [fuzzyMatch]);
+  const scoreSuggestion = useCallback(
+    (query: string, suggestion: string): number => {
+      if (!query || !suggestion) return 0;
+
+      const queryLower = query.toLowerCase().trim();
+      const suggestionLower = suggestion.toLowerCase().trim();
+
+      // Exact match gets highest score
+      if (suggestionLower === queryLower) return 100;
+
+      // Starts with query gets high score
+      if (suggestionLower.startsWith(queryLower)) return 90;
+
+      // Contains query gets medium score
+      if (suggestionLower.includes(queryLower)) return 70;
+
+      // Fuzzy match gets lower score
+      if (fuzzyMatch(query, suggestion)) return 50;
+
+      return 0;
+    },
+    [fuzzyMatch]
+  );
 
   // Check if device is mobile or tablet (using 1280px breakpoint)
   useEffect(() => {
@@ -81,43 +84,43 @@ const ShadowDOMSearchDropdown: React.FC<ShadowDOMSearchDropdownProps> = ({
     };
 
     checkScreenSize();
-    window.addEventListener("resize", checkScreenSize);
+    window.addEventListener('resize', checkScreenSize);
 
-    return () => window.removeEventListener("resize", checkScreenSize);
+    return () => window.removeEventListener('resize', checkScreenSize);
   }, []);
 
   useEffect(() => {
     if (isOpen) {
       setIsAnimating(true);
-      document.body.style.overflow = "hidden";
+      document.body.style.overflow = 'hidden';
     } else {
       const timer = setTimeout(() => {
         setIsAnimating(false);
         // Reset shadow initialization flag when component closes
         shadowInitializedRef.current = false;
       }, 300);
-      document.body.style.overflow = "unset";
+      document.body.style.overflow = 'unset';
       return () => clearTimeout(timer);
     }
 
     return () => {
-      document.body.style.overflow = "unset";
+      document.body.style.overflow = 'unset';
     };
   }, [isOpen]);
 
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
+      if (e.key === 'Escape') {
         onClose();
       }
     };
 
     if (isOpen) {
-      document.addEventListener("keydown", handleEscape);
+      document.addEventListener('keydown', handleEscape);
     }
 
     return () => {
-      document.removeEventListener("keydown", handleEscape);
+      document.removeEventListener('keydown', handleEscape);
     };
   }, [isOpen, onClose]);
 
@@ -135,8 +138,8 @@ const ShadowDOMSearchDropdown: React.FC<ShadowDOMSearchDropdownProps> = ({
       setIsAutocompleteLoading(true);
       try {
         const params = new URLSearchParams();
-        params.append("q", searchQuery);
-        params.append("storeUrl", storeUrl);
+        params.append('q', searchQuery);
+        params.append('storeUrl', storeUrl);
 
         const response = await fetch(
           `${import.meta.env.VITE_BACKEND_URL}/v1/autocomplete?${params.toString()}`,
@@ -144,43 +147,50 @@ const ShadowDOMSearchDropdown: React.FC<ShadowDOMSearchDropdownProps> = ({
         );
 
         if (!response.ok) {
-          throw new Error("bad response");
+          throw new Error('bad response');
         }
 
         const result = await response.json();
-        
+
         // Better handling of different response formats
         let rawSuggestions: string[] = [];
         if (Array.isArray(result)) {
-          rawSuggestions = result.map((r: { title: string; name: string; product_title: string; product_name: string; }) => {
-            // Handle different possible field names
-            return r.title || r.name || r.product_title || r.product_name || String(r);
-          }).filter(Boolean);
+          rawSuggestions = result
+            .map(
+              (r: { title: string; name: string; product_title: string; product_name: string }) => {
+                // Handle different possible field names
+                return r.title || r.name || r.product_title || r.product_name || String(r);
+              }
+            )
+            .filter(Boolean);
         } else if (result && Array.isArray(result.suggestions)) {
           rawSuggestions = result.suggestions.map((s: string) => String(s));
         } else if (result && Array.isArray(result.products)) {
-          rawSuggestions = result.products.map((r: { title: string; name: string; product_title: string; product_name: string; }) => {
-            return r.title || r.name || r.product_title || r.product_name || String(r);
-          }).filter(Boolean);
+          rawSuggestions = result.products
+            .map(
+              (r: { title: string; name: string; product_title: string; product_name: string }) => {
+                return r.title || r.name || r.product_title || r.product_name || String(r);
+              }
+            )
+            .filter(Boolean);
         }
 
         // Apply fuzzy matching and scoring to improve suggestions
         const query = searchQuery.trim();
         const scoredSuggestions = rawSuggestions
-          .map(suggestion => ({
+          .map((suggestion) => ({
             text: suggestion,
-            score: scoreSuggestion(query, suggestion)
+            score: scoreSuggestion(query, suggestion),
           }))
-          .filter(item => item.score > 0) // Only include suggestions with positive scores
+          .filter((item) => item.score > 0) // Only include suggestions with positive scores
           .sort((a, b) => b.score - a.score) // Sort by score (highest first)
-          .map(item => item.text)
+          .map((item) => item.text)
           .slice(0, 10); // Limit to top 10 suggestions
 
-        
         setAutocompleteSuggestions(scoredSuggestions);
         setHighlightedSuggestionIndex(-1); // Reset highlight when new suggestions arrive
       } catch (error) {
-        console.error("Failed to fetch autocomplete suggestions:", error);
+        console.error('Failed to fetch autocomplete suggestions:', error);
         setAutocompleteSuggestions([]);
       } finally {
         setIsAutocompleteLoading(false);
@@ -193,16 +203,13 @@ const ShadowDOMSearchDropdown: React.FC<ShadowDOMSearchDropdownProps> = ({
   // Click outside handler for autocomplete
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (
-        searchRef.current &&
-        !searchRef.current.contains(event.target as Node)
-      ) {
+      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
         setShowAutocomplete(false);
       }
     };
 
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   // Initialize Shadow DOM
@@ -210,36 +217,36 @@ const ShadowDOMSearchDropdown: React.FC<ShadowDOMSearchDropdownProps> = ({
     if (shadowHostRef.current && !shadowRoot && isOpen && !shadowInitializedRef.current) {
       // Check if element already has a shadow root
       if (shadowHostRef.current.shadowRoot) {
-        console.warn("Kalifind Search: Element already has a shadow root, reusing existing one");
+        console.warn('Kalifind Search: Element already has a shadow root, reusing existing one');
         setShadowRoot(shadowHostRef.current.shadowRoot);
         shadowInitializedRef.current = true;
         return;
       }
-      
+
       let shadow: ShadowRoot;
       try {
         // Create shadow root with closed mode for better isolation
-        shadow = shadowHostRef.current.attachShadow({ mode: "closed" });
+        shadow = shadowHostRef.current.attachShadow({ mode: 'closed' });
         setShadowRoot(shadow);
         shadowInitializedRef.current = true;
       } catch (error) {
-        console.error("Kalifind Search: Failed to create shadow DOM:", error);
+        console.error('Kalifind Search: Failed to create shadow DOM:', error);
         // If shadow DOM creation fails, try to find an existing shadow root
         if (shadowHostRef.current.shadowRoot) {
-          console.warn("Kalifind Search: Using existing shadow root after error");
+          console.warn('Kalifind Search: Using existing shadow root after error');
           setShadowRoot(shadowHostRef.current.shadowRoot);
           shadowInitializedRef.current = true;
         } else {
           // If no shadow root exists and creation failed, skip shadow DOM
-          console.warn("Kalifind Search: Skipping shadow DOM initialization");
+          console.warn('Kalifind Search: Skipping shadow DOM initialization');
           shadowInitializedRef.current = true;
           return;
         }
       }
 
       // Create a container div inside shadow DOM
-      const shadowContainer = document.createElement("div");
-      shadowContainer.id = "kalifind-shadow-container";
+      const shadowContainer = document.createElement('div');
+      shadowContainer.id = 'kalifind-shadow-container';
       shadow.appendChild(shadowContainer);
 
       // Create React root inside shadow DOM
@@ -249,7 +256,7 @@ const ShadowDOMSearchDropdown: React.FC<ShadowDOMSearchDropdownProps> = ({
       // Comprehensive style injection for Shadow DOM
       const injectStyles = () => {
         // 1) Base reset and container styles
-        const baseStyle = document.createElement("style");
+        const baseStyle = document.createElement('style');
         baseStyle.textContent = `
           /* CSS Reset */
           *, *::before, *::after {
@@ -317,13 +324,13 @@ const ShadowDOMSearchDropdown: React.FC<ShadowDOMSearchDropdownProps> = ({
         shadow.appendChild(baseStyle);
 
         // 2) Inject Tailwind CSS from CDN
-        const tailwindLink = document.createElement("link");
-        tailwindLink.rel = "stylesheet";
-        tailwindLink.href = "https://cdn.tailwindcss.com/3.4.0";
+        const tailwindLink = document.createElement('link');
+        tailwindLink.rel = 'stylesheet';
+        tailwindLink.href = 'https://cdn.tailwindcss.com/3.4.0';
         shadow.appendChild(tailwindLink);
 
         // 3) Inject our custom CSS variables and styles
-        const customStyle = document.createElement("style");
+        const customStyle = document.createElement('style');
         customStyle.textContent = `
           /* CSS Custom Properties for consistent theming */
           .kalifind-shadow-container {
@@ -479,18 +486,16 @@ const ShadowDOMSearchDropdown: React.FC<ShadowDOMSearchDropdownProps> = ({
         shadow.appendChild(customStyle);
 
         // 4) Try to copy any existing styles from the main document that might be ours
-        const headStyles = Array.from(
-          document.head.querySelectorAll<HTMLStyleElement>("style")
-        );
+        const headStyles = Array.from(document.head.querySelectorAll<HTMLStyleElement>('style'));
         headStyles.forEach((styleEl) => {
-          const css = styleEl.textContent || "";
+          const css = styleEl.textContent || '';
           // Look for our distinctive CSS patterns
           if (
-            css.includes("--ring: 264 83% 58%") ||
-            css.includes("@layer base") ||
-            css.includes("--tw-") ||
-            css.includes("kalifind") ||
-            css.includes("search-highlight")
+            css.includes('--ring: 264 83% 58%') ||
+            css.includes('@layer base') ||
+            css.includes('--tw-') ||
+            css.includes('kalifind') ||
+            css.includes('search-highlight')
           ) {
             const clone = styleEl.cloneNode(true) as HTMLStyleElement;
             shadow.appendChild(clone);
@@ -499,12 +504,10 @@ const ShadowDOMSearchDropdown: React.FC<ShadowDOMSearchDropdownProps> = ({
 
         // 5) Copy any link stylesheets that might be ours
         const linkEls = Array.from(
-          document.head.querySelectorAll<HTMLLinkElement>(
-            'link[rel="stylesheet"]'
-          )
+          document.head.querySelectorAll<HTMLLinkElement>('link[rel="stylesheet"]')
         );
         linkEls.forEach((link) => {
-          const href = link.getAttribute("href") || "";
+          const href = link.getAttribute('href') || '';
           if (/kalifind|search|cdn|kalifinder/i.test(href)) {
             const clone = link.cloneNode(true) as HTMLLinkElement;
             shadow.appendChild(clone);
@@ -523,7 +526,7 @@ const ShadowDOMSearchDropdown: React.FC<ShadowDOMSearchDropdownProps> = ({
             (reactRoot as ReturnType<typeof createRoot>).unmount();
             setReactRoot(null);
           } catch (error) {
-            console.warn("Kalifind Search: Error during React root cleanup:", error);
+            console.warn('Kalifind Search: Error during React root cleanup:', error);
           }
         }, 0);
       }
@@ -534,38 +537,41 @@ const ShadowDOMSearchDropdown: React.FC<ShadowDOMSearchDropdownProps> = ({
   useEffect(() => {
     if (reactRoot && shadowRoot && isOpen) {
       const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
-        if (event.key === "Enter") {
+        if (event.key === 'Enter') {
           event.preventDefault();
           const query = event.currentTarget.value;
-          
+
           // If there's a highlighted suggestion, use that instead
-          if (highlightedSuggestionIndex >= 0 && autocompleteSuggestions[highlightedSuggestionIndex]) {
+          if (
+            highlightedSuggestionIndex >= 0 &&
+            autocompleteSuggestions[highlightedSuggestionIndex]
+          ) {
             const selectedSuggestion = autocompleteSuggestions[highlightedSuggestionIndex];
             handleSuggestionClick(selectedSuggestion);
             return;
           }
-          
+
           if (query.trim()) {
             setShowAutocomplete(false);
             setHighlightedSuggestionIndex(-1);
             setAutocompleteSuggestions([]);
             inputRef.current?.blur();
           }
-        } else if (event.key === "ArrowDown") {
+        } else if (event.key === 'ArrowDown') {
           event.preventDefault();
           if (showAutocomplete && autocompleteSuggestions.length > 0) {
-            setHighlightedSuggestionIndex(prev => 
+            setHighlightedSuggestionIndex((prev) =>
               prev < autocompleteSuggestions.length - 1 ? prev + 1 : 0
             );
           }
-        } else if (event.key === "ArrowUp") {
+        } else if (event.key === 'ArrowUp') {
           event.preventDefault();
           if (showAutocomplete && autocompleteSuggestions.length > 0) {
-            setHighlightedSuggestionIndex(prev => 
+            setHighlightedSuggestionIndex((prev) =>
               prev > 0 ? prev - 1 : autocompleteSuggestions.length - 1
             );
           }
-        } else if (event.key === "Escape") {
+        } else if (event.key === 'Escape') {
           setShowAutocomplete(false);
           setHighlightedSuggestionIndex(-1);
           setAutocompleteSuggestions([]);
@@ -585,7 +591,6 @@ const ShadowDOMSearchDropdown: React.FC<ShadowDOMSearchDropdownProps> = ({
       };
 
       const handleSuggestionClick = (suggestion: string) => {
-        
         try {
           setSearchQuery(suggestion);
           setShowAutocomplete(false);
@@ -594,10 +599,9 @@ const ShadowDOMSearchDropdown: React.FC<ShadowDOMSearchDropdownProps> = ({
           // Blur input to close mobile keyboard
           inputRef.current?.blur();
         } catch (error) {
-          console.error("Error in ShadowDOM handleSuggestionClick:", error);
+          console.error('Error in ShadowDOM handleSuggestionClick:', error);
         }
       };
-
 
       // Custom EcommerceSearch wrapper that hides header on mobile/tablet
       const EcommerceSearchWrapper = () => (
@@ -619,7 +623,7 @@ const ShadowDOMSearchDropdown: React.FC<ShadowDOMSearchDropdownProps> = ({
           {/* Backdrop */}
           <div
             className={`fixed inset-0 bg-foreground/20 backdrop-blur-sm transition-opacity duration-300 ${
-              isOpen ? "opacity-100" : "opacity-0"
+              isOpen ? 'opacity-100' : 'opacity-0'
             }`}
             onClick={onClose}
           />
@@ -627,11 +631,11 @@ const ShadowDOMSearchDropdown: React.FC<ShadowDOMSearchDropdownProps> = ({
           {/* Dropdown Panel */}
           <div
             className={`fixed inset-0 bg-background shadow-xl transition-all duration-500 overflow-y-auto ${
-              isOpen ? "animate-slide-down" : "animate-slide-up"
+              isOpen ? 'animate-slide-down' : 'animate-slide-up'
             }`}
             style={{
-              maxHeight: "100vh",
-              overflowY: "auto",
+              maxHeight: '100vh',
+              overflowY: 'auto',
             }}
           >
             <div className="w-full h-full overflow-y-auto">
@@ -660,20 +664,18 @@ const ShadowDOMSearchDropdown: React.FC<ShadowDOMSearchDropdownProps> = ({
                           <div className="flex space-x-2 mb-4">
                             <div
                               className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
-                              style={{ animationDelay: "0ms" }}
+                              style={{ animationDelay: '0ms' }}
                             ></div>
                             <div
                               className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
-                              style={{ animationDelay: "150ms" }}
+                              style={{ animationDelay: '150ms' }}
                             ></div>
                             <div
                               className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
-                              style={{ animationDelay: "300ms" }}
+                              style={{ animationDelay: '300ms' }}
                             ></div>
                           </div>
-                          <p className="text-muted-foreground text-sm">
-                            Loading products...
-                          </p>
+                          <p className="text-muted-foreground text-sm">Loading products...</p>
                         </div>
                       }
                     >
@@ -692,8 +694,8 @@ const ShadowDOMSearchDropdown: React.FC<ShadowDOMSearchDropdownProps> = ({
               ) : (
                 // Desktop: Use original EcommerceSearch component
                 <Suspense fallback={null}>
-                  <EcommerceSearch 
-                    storeUrl={storeUrl} 
+                  <EcommerceSearch
+                    storeUrl={storeUrl}
                     onClose={onClose}
                     searchQuery={searchQuery}
                     setSearchQuery={setSearchQuery}
@@ -735,7 +737,7 @@ const ShadowDOMSearchDropdown: React.FC<ShadowDOMSearchDropdownProps> = ({
         try {
           (reactRoot as ReturnType<typeof createRoot>).unmount();
         } catch (error) {
-          console.warn("Kalifind Search: Error during final cleanup:", error);
+          console.warn('Kalifind Search: Error during final cleanup:', error);
         }
       }
     };
@@ -743,7 +745,7 @@ const ShadowDOMSearchDropdown: React.FC<ShadowDOMSearchDropdownProps> = ({
 
   if (!isOpen && !isAnimating) return null;
 
-  return <div ref={shadowHostRef} style={{ display: "contents" }} />;
+  return <div ref={shadowHostRef} style={{ display: 'contents' }} />;
 };
 
 export default ShadowDOMSearchDropdown;

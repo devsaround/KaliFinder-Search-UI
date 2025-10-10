@@ -1,6 +1,6 @@
-import React from "react";
-import { Link } from "react-router-dom";
-import { Home, ArrowLeft } from "lucide-react";
+import React from 'react';
+import { Link } from 'react-router-dom';
+import { Home, ArrowLeft } from 'lucide-react';
 
 const NotFound: React.FC = () => {
   return (
@@ -8,14 +8,12 @@ const NotFound: React.FC = () => {
       <div className="text-center space-y-6 px-4">
         <div className="space-y-2">
           <h1 className="text-6xl font-bold text-primary">404</h1>
-          <h2 className="text-2xl font-semibold text-foreground">
-            Page Not Found
-          </h2>
+          <h2 className="text-2xl font-semibold text-foreground">Page Not Found</h2>
           <p className="text-muted-foreground max-w-md mx-auto">
             The page you're looking for doesn't exist or has been moved.
           </p>
         </div>
-        
+
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <Link
             to="/"
@@ -24,7 +22,7 @@ const NotFound: React.FC = () => {
             <Home className="w-4 h-4" />
             Go Home
           </Link>
-          
+
           <button
             onClick={() => window.history.back()}
             className="inline-flex items-center gap-2 px-6 py-3 border border-border text-foreground rounded-lg font-medium hover:bg-muted transition-colors"

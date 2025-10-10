@@ -1,10 +1,10 @@
-import React from "react";
-import { Search } from "lucide-react";
-import ShadowDOMSearchDropdown from "./ShadowDOMSearchDropdown";
-import { useIsOpen } from "@/hooks/zustand";
-import { SearchIconProps } from "../types";
+import React from 'react';
+import { Search } from 'lucide-react';
+import ShadowDOMSearchDropdown from './ShadowDOMSearchDropdown';
+import { useIsOpen } from '@/hooks/zustand';
+import { SearchIconProps } from '../types';
 
-const SearchIcon: React.FC<SearchIconProps> = ({storeUrl }) => {
+const SearchIcon: React.FC<SearchIconProps> = ({ storeUrl }) => {
   const isOpen = useIsOpen((state) => state.isOpen);
   const toggleIsOpen = useIsOpen((state) => state.toggleIsOpen);
 
@@ -20,11 +20,7 @@ const SearchIcon: React.FC<SearchIconProps> = ({storeUrl }) => {
       </button>
 
       {/* Search Dropdown */}
-      <ShadowDOMSearchDropdown
-        isOpen={isOpen}
-        onClose={toggleIsOpen}
-        storeUrl={storeUrl}
-      />
+      <ShadowDOMSearchDropdown isOpen={isOpen} onClose={toggleIsOpen} storeUrl={storeUrl} />
     </>
   );
 };

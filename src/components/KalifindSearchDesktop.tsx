@@ -1,5 +1,5 @@
-import React from "react";
-import { Search, X } from "lucide-react";
+import React from 'react';
+import { Search, X } from 'lucide-react';
 
 interface KalifindSearchDesktopProps {
   searchRef: React.RefObject<HTMLDivElement>;
@@ -45,10 +45,7 @@ const KalifindSearchDesktop: React.FC<KalifindSearchDesktopProps> = ({
               className="lg:pl-[0px] !flex-1 !relative !w-full px-[16px] md:px-0"
               ref={searchRef}
             >
-              <div
-                className="!flex !items-center !gap-[8px] !flex-1 !w-full"
-                ref={searchRef}
-              >
+              <div className="!flex !items-center !gap-[8px] !flex-1 !w-full" ref={searchRef}>
                 <div className="!w-full flex ">
                   <div className="!relative !flex-1 !w-full !border-b-2 !border-search-highlight">
                     <Search className="!absolute !left-[7px] !top-1/2 !transform !-translate-y-1/2 !text-muted-foreground !w-[20px] !h-[20px]" />
@@ -66,9 +63,10 @@ const KalifindSearchDesktop: React.FC<KalifindSearchDesktopProps> = ({
                         // Only close autocomplete if the blur is not caused by clicking on a suggestion
                         // or if the input is being cleared
                         const relatedTarget = e.relatedTarget as HTMLElement;
-                        const isClickingOnSuggestion = relatedTarget?.closest("[data-suggestion-item]") || 
-                                                      relatedTarget?.closest("[data-autocomplete-dropdown]");
-                        
+                        const isClickingOnSuggestion =
+                          relatedTarget?.closest('[data-suggestion-item]') ||
+                          relatedTarget?.closest('[data-autocomplete-dropdown]');
+
                         if (!isClickingOnSuggestion && searchQuery.length === 0) {
                           setShowAutocomplete?.(false);
                         }
@@ -77,10 +75,10 @@ const KalifindSearchDesktop: React.FC<KalifindSearchDesktopProps> = ({
                       placeholder="Search"
                       className="!w-full !pl-[30px] !pr-[16px] !py-[12px] !text-foreground !placeholder-muted-foreground focus:!outline-none focus:!border-none focus:!ring-0"
                       style={{
-                        background: "inherit",
-                        border: "none",
-                        color: "inherit",
-                        paddingLeft: "30px",
+                        background: 'inherit',
+                        border: 'none',
+                        color: 'inherit',
+                        paddingLeft: '30px',
                       }}
                     />
                   </div>

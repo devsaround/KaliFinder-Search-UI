@@ -1,0 +1,22 @@
+# Dependencies
+node_modules
+pnpm-lock.yaml
+package-lock.json
+yarn.lock
+
+# Build output
+dist
+build
+.next
+.vite
+
+# Config files
+.env
+.env.*
+
+# Logs
+*.log
+
+# Coverage
+coverage
+.nyc_output
