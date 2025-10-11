@@ -13,12 +13,7 @@ const App = ({ storeUrl }: { storeUrl?: string }) => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <BrowserRouter
-        future={{
-          v7_startTransition: true,
-          v7_relativeSplatPath: true,
-        }}
-      >
+      <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index storeUrl={storeUrl} />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

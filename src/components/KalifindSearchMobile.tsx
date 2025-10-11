@@ -2,8 +2,8 @@ import { Search, X } from 'lucide-react';
 import React, { useEffect, useRef, useState } from 'react';
 
 interface KalifindSearchMobileProps {
-  searchRef: React.RefObject<HTMLDivElement>;
-  inputRef: React.RefObject<HTMLInputElement>;
+  searchRef: React.RefObject<HTMLDivElement | null>;
+  inputRef: React.RefObject<HTMLInputElement | null>;
   searchQuery: string;
   handleSearch: (query: string) => void;
   handleKeyDown: (event: React.KeyboardEvent<HTMLInputElement>) => void;
@@ -64,7 +64,7 @@ const KalifindSearchMobile: React.FC<KalifindSearchMobileProps> = ({
       try {
         const params = new URLSearchParams();
         params.append('q', searchQuery);
-        params.append('storeUrl', storeUrl); // Use storeUrl with fallback
+        params.append('storeUrl', storeUrl || ''); // Use storeUrl with fallback
 
         const response = await fetch(
           `${import.meta.env.VITE_BACKEND_URL}/v1/autocomplete?${params.toString()}`,

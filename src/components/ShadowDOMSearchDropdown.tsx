@@ -223,7 +223,7 @@ const ShadowDOMSearchDropdown: React.FC<ShadowDOMSearchDropdownProps> = ({
         return;
       }
 
-      let shadow: ShadowRoot;
+      let shadow: ShadowRoot | null = null;
       try {
         // Create shadow root with closed mode for better isolation
         shadow = shadowHostRef.current.attachShadow({ mode: 'closed' });
@@ -234,6 +234,7 @@ const ShadowDOMSearchDropdown: React.FC<ShadowDOMSearchDropdownProps> = ({
         // If shadow DOM creation fails, try to find an existing shadow root
         if (shadowHostRef.current.shadowRoot) {
           console.warn('Kalifind Search: Using existing shadow root after error');
+          shadow = shadowHostRef.current.shadowRoot;
           setShadowRoot(shadowHostRef.current.shadowRoot);
           shadowInitializedRef.current = true;
         } else {
@@ -242,6 +243,12 @@ const ShadowDOMSearchDropdown: React.FC<ShadowDOMSearchDropdownProps> = ({
           shadowInitializedRef.current = true;
           return;
         }
+      }
+
+      // Ensure shadow is not null before proceeding
+      if (!shadow) {
+        console.warn('Kalifind Search: Shadow root is null, skipping initialization');
+        return;
       }
 
       // Create a container div inside shadow DOM

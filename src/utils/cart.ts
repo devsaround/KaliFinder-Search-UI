@@ -242,7 +242,7 @@ export const addToShopifyCart = async (product: CartProduct): Promise<CartRespon
     formData.append('quantity', '1');
 
     // Try to add to existing cart first
-    let cartId = localStorage.getItem('shopify_cart_id');
+    const cartId = localStorage.getItem('shopify_cart_id');
     let response;
 
     try {
@@ -353,7 +353,7 @@ export const addToShopifyCartFallback = async (product: CartProduct): Promise<Ca
       resolve({
         success: true,
         message: `${product.title} added to cart!`,
-        cart: null,
+        cart: undefined,
       });
     } catch (error) {
       console.error('Shopify fallback cart error:', error);
@@ -612,7 +612,7 @@ export const handleCartError = (error: Error | unknown, product: Product): void 
   console.error('Cart error:', error);
 
   // Show user-friendly error message
-  const errorMessage = error.message || 'Failed to add to cart';
+  const errorMessage = error instanceof Error ? error.message : 'Failed to add to cart';
 
   // Try to show notification if available
   if (typeof window !== 'undefined') {

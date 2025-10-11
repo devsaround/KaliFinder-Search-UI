@@ -202,7 +202,7 @@ class UBIClient {
     const sessionTimeout = 30 * 60 * 1000; // 30 minutes
 
     let sessionId = localStorage.getItem(sessionKey);
-    let sessionExpiry = localStorage.getItem(sessionExpiryKey);
+    const sessionExpiry = localStorage.getItem(sessionExpiryKey);
 
     // Check if session expired
     if (sessionId && sessionExpiry && now < parseInt(sessionExpiry)) {

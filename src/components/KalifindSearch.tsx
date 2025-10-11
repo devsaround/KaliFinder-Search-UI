@@ -1446,7 +1446,7 @@ const KalifindSearch: React.FC<{
 
     try {
       const result = await addToCart(product, storeUrl);
-      setCartMessage(result.message);
+      setCartMessage(result.message || 'Added to cart successfully');
 
       // Clear message after 3 seconds
       setTimeout(() => {
