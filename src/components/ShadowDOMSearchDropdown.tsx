@@ -732,6 +732,8 @@ const ShadowDOMSearchDropdown: React.FC<ShadowDOMSearchDropdownProps> = ({
     onClose,
     autocompleteSuggestions,
     highlightedSuggestionIndex,
+    hasSearched,
+    isInteractingWithDropdown,
     isAutocompleteLoading,
     showAutocomplete,
   ]);

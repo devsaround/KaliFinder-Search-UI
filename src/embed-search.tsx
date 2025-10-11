@@ -88,6 +88,7 @@ const prefetchData = async (storeUrl: string) => {
 };
 
 // --- Animation Manager Component ---
+// eslint-disable-next-line react-refresh/only-export-components
 const ModalManager: React.FC<{
   onUnmount: () => void;
   [key: string]: unknown;

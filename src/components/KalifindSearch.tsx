@@ -532,7 +532,7 @@ const KalifindSearch: React.FC<{
       console.error('Failed to fetch recommendations:', error);
       setRecommendations([]);
     }
-  }, [storeUrl]);
+  }, [storeUrl, recommendationsFetched]);
 
   // Search behavior state management according to search.md requirements
   useEffect(() => {
@@ -916,7 +916,7 @@ const KalifindSearch: React.FC<{
         void fetchProducts();
       });
     },
-    [storeUrl, debouncedPriceRange, debouncedFilters, searchAbortController]
+    [storeUrl, debouncedPriceRange, debouncedFilters, searchAbortController, isMobile, storeType]
   );
 
   // search products
@@ -963,6 +963,7 @@ const KalifindSearch: React.FC<{
     isInitialState,
     isSearchingFromSuggestion,
     forceSearch,
+    performSearch,
   ]);
 
   const sortedProducts = useMemo(() => {
@@ -1357,6 +1358,7 @@ const KalifindSearch: React.FC<{
     currentPage,
     debouncedFilters,
     debouncedPriceRange,
+    isMobile,
   ]);
 
   // Infinite scroll observer for mobile

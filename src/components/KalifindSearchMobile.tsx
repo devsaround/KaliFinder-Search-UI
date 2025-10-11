@@ -101,7 +101,7 @@ const KalifindSearchMobile: React.FC<KalifindSearchMobileProps> = ({
     }, 300);
 
     return () => clearTimeout(debounceTimer);
-  }, [searchQuery]);
+  }, [searchQuery, storeUrl]);
 
   // Mobile suggestion click handler - same as desktop
   const handleMobileSuggestionClick = (suggestion: string) => {
