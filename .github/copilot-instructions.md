@@ -154,7 +154,7 @@ export function SearchBar(props: SearchBarProps) {
 
 ```typescript
 // hooks/zustand.tsx
-import { create } from "zustand";
+import { create } from 'zustand';
 
 interface SearchStore {
   query: string;
@@ -168,7 +168,7 @@ interface SearchStore {
 }
 
 export const useSearchStore = create<SearchStore>((set, get) => ({
-  query: "",
+  query: '',
   products: [],
   isLoading: false,
   filters: {},
@@ -217,20 +217,14 @@ function SearchResults() {
 const API_BASE_URL = import.meta.env.VITE_BACKEND_URL;
 
 export const searchApi = {
-  search: async (
-    query: string,
-    filters?: FilterOptions
-  ): Promise<Product[]> => {
-    const response = await fetch(
-      `${API_BASE_URL}/search?q=${encodeURIComponent(query)}`,
-      {
-        method: "GET",
-        headers: { "Content-Type": "application/json" },
-      }
-    );
+  search: async (query: string, filters?: FilterOptions): Promise<Product[]> => {
+    const response = await fetch(`${API_BASE_URL}/search?q=${encodeURIComponent(query)}`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+    });
 
     if (!response.ok) {
-      throw new Error("Search failed");
+      throw new Error('Search failed');
     }
 
     const data = await response.json();
@@ -238,9 +232,7 @@ export const searchApi = {
   },
 
   autocomplete: async (query: string): Promise<string[]> => {
-    const response = await fetch(
-      `${API_BASE_URL}/autocomplete?q=${encodeURIComponent(query)}`
-    );
+    const response = await fetch(`${API_BASE_URL}/autocomplete?q=${encodeURIComponent(query)}`);
     const data = await response.json();
     return data.suggestions;
   },
@@ -254,8 +246,8 @@ try {
   const products = await searchApi.search(query);
   setProducts(products);
 } catch (error) {
-  console.error("Search failed:", error);
-  showErrorToast("Failed to search products");
+  console.error('Search failed:', error);
+  showErrorToast('Failed to search products');
 }
 ```
 
@@ -267,7 +259,7 @@ try {
 
 ```typescript
 // hooks/use-debounce.tsx
-import { useState, useEffect } from "react";
+import { useState, useEffect } from 'react';
 
 export function useDebounce<T>(value: T, delay: number): T {
   const [debouncedValue, setDebouncedValue] = useState<T>(value);
@@ -329,7 +321,7 @@ export class UBIClient {
 
   trackSearch(query: string, resultCount: number) {
     this.sendEvent({
-      eventType: "search",
+      eventType: 'search',
       query,
       resultCount,
       timestamp: new Date().toISOString(),
@@ -338,7 +330,7 @@ export class UBIClient {
 
   trackClick(productId: string, position: number) {
     this.sendEvent({
-      eventType: "product_click",
+      eventType: 'product_click',
       productId,
       position,
       timestamp: new Date().toISOString(),
@@ -348,12 +340,12 @@ export class UBIClient {
   private async sendEvent(event: any) {
     try {
       await fetch(`${this.apiUrl}/analytics/events`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...event, vendorId: this.vendorId }),
       });
     } catch (error) {
-      console.error("Failed to send analytics event:", error);
+      console.error('Failed to send analytics event:', error);
     }
   }
 }
@@ -365,10 +357,10 @@ export class UBIClient {
 const ubiClient = new UBIClient(config.apiUrl, config.vendorId);
 
 // Track search
-ubiClient.trackSearch("laptop", 25);
+ubiClient.trackSearch('laptop', 25);
 
 // Track product click
-ubiClient.trackClick("product-123", 3);
+ubiClient.trackClick('product-123', 3);
 ```
 
 ---
@@ -484,7 +476,7 @@ export interface WidgetConfig {
   apiUrl: string;
   vendorId: string;
   containerId: string;
-  theme?: "light" | "dark";
+  theme?: 'light' | 'dark';
   language?: string;
   placeholder?: string;
   maxResults?: number;
@@ -497,7 +489,7 @@ window.KalifinderSearch = {
     initWidget(config.containerId, config);
   },
 
-  setTheme: (theme: "light" | "dark") => {
+  setTheme: (theme: 'light' | 'dark') => {
     // Update theme dynamically
   },
 
@@ -518,10 +510,10 @@ window.KalifinderSearch = {
 export default defineConfig({
   build: {
     lib: {
-      entry: "src/embed-search.tsx",
-      name: "KalifinderSearch",
-      fileName: "kalifinder-search",
-      formats: ["umd"],
+      entry: 'src/embed-search.tsx',
+      name: 'KalifinderSearch',
+      fileName: 'kalifinder-search',
+      formats: ['umd'],
     },
     rollupOptions: {
       output: {

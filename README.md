@@ -194,11 +194,11 @@ Add this to your website's HTML:
 <!-- Step 3: Initialize -->
 <script>
   KalifinderSearch.init({
-    containerId: "kalifinder-search",
-    apiUrl: "https://api.kalifinder.com/api",
-    vendorId: "your-vendor-id",
-    theme: "light", // or 'dark'
-    language: "en",
+    containerId: 'kalifinder-search',
+    apiUrl: 'https://api.kalifinder.com/api',
+    vendorId: 'your-vendor-id',
+    theme: 'light', // or 'dark'
+    language: 'en',
   });
 </script>
 ```
@@ -210,7 +210,7 @@ interface KalifinderConfig {
   containerId: string; // Container element ID
   apiUrl: string; // Backend API URL
   vendorId: string; // Your vendor ID
-  theme?: "light" | "dark"; // Theme mode
+  theme?: 'light' | 'dark'; // Theme mode
   language?: string; // UI language (en, es, fr, etc.)
   placeholder?: string; // Search input placeholder
   showRecommendations?: boolean; // Show product recommendations
@@ -262,9 +262,9 @@ The widget uses Shadow DOM for style isolation. Customize via config:
 KalifinderSearch.init({
   // ... other config
   customStyles: {
-    primaryColor: "#FF6B6B",
-    borderRadius: "8px",
-    fontFamily: "Inter, sans-serif",
+    primaryColor: '#FF6B6B',
+    borderRadius: '8px',
+    fontFamily: 'Inter, sans-serif',
   },
 });
 ```
@@ -274,7 +274,7 @@ KalifinderSearch.init({
 Switch between light and dark themes:
 
 ```javascript
-KalifinderSearch.setTheme("dark"); // or 'light'
+KalifinderSearch.setTheme('dark'); // or 'light'
 ```
 
 ### Language
@@ -282,7 +282,7 @@ KalifinderSearch.setTheme("dark"); // or 'light'
 Change UI language dynamically:
 
 ```javascript
-KalifinderSearch.setLanguage("es"); // Spanish
+KalifinderSearch.setLanguage('es'); // Spanish
 ```
 
 ---
@@ -312,9 +312,9 @@ KalifinderSearch.init({
 Track custom events:
 
 ```javascript
-KalifinderSearch.trackEvent("custom_event", {
-  eventType: "button_click",
-  data: { buttonId: "buy-now" },
+KalifinderSearch.trackEvent('custom_event', {
+  eventType: 'button_click',
+  data: { buttonId: 'buy-now' },
 });
 ```
 
@@ -377,7 +377,7 @@ aws cloudfront create-invalidation \
 
 ```javascript
 // Check container exists
-console.log(document.getElementById("kalifinder-search"));
+console.log(document.getElementById('kalifinder-search'));
 
 // Check script loaded
 console.log(window.KalifinderSearch);
