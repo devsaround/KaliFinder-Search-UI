@@ -4,6 +4,15 @@
 
 KaliFinder Search UI is an embeddable search widget built with React, TypeScript, and Shadow DOM. It provides intelligent product search experiences that can be embedded in any e-commerce website without style conflicts.
 
+### Deployment Architecture (AWS Cloud-Native)
+
+- **Hosting**: AWS S3 + CloudFront (NOT Vercel)
+- **Backend API**: AWS ECS Fargate (api.kalifinder.com)
+- **CDN Domain**: cdn.kalifinder.com
+- **Widget Distribution**: Single JS file with Shadow DOM isolation
+- **Build Tool**: Vite in library mode
+- **Package Manager**: pnpm only (no npm, yarn, or bun)
+
 ---
 
 ## Code Style & Standards
