@@ -1,10 +1,8 @@
-import React, { useState, useEffect, useRef, Suspense, lazy, useCallback } from 'react';
+import React, { Suspense, lazy, useCallback, useEffect, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { X, Search } from 'lucide-react';
-import ScrollToTop from './ScrollToTop';
-import { ShadowDOMSearchDropdownProps } from '../types';
-import KalifindSearchDesktop from './KalifindSearchDesktop';
+import type { ShadowDOMSearchDropdownProps } from '../types';
 import KalifindSearchMobile from './KalifindSearchMobile';
+import ScrollToTop from './ScrollToTop';
 
 // Lazy load the EcommerceSearch component
 const EcommerceSearch = lazy(() => import('./KalifindSearch.tsx'));
@@ -610,21 +608,6 @@ const ShadowDOMSearchDropdown: React.FC<ShadowDOMSearchDropdownProps> = ({
         }
       };
 
-      // Custom EcommerceSearch wrapper that hides header on mobile/tablet
-      const EcommerceSearchWrapper = () => (
-        <div className="w-full px-2 sm:px-4">
-          <EcommerceSearch
-            storeUrl={storeUrl}
-            onClose={onClose}
-            searchQuery={searchQuery}
-            setSearchQuery={setSearchQuery}
-            hasSearched={hasSearched}
-            setHasSearched={setHasSearched}
-            hideHeader={isMobileOrTablet} // Pass flag to hide header on mobile/tablet
-          />
-        </div>
-      );
-
       const content = (
         <div className="fixed inset-0 z-50 min-h-screen">
           {/* Backdrop */}
@@ -720,7 +703,9 @@ const ShadowDOMSearchDropdown: React.FC<ShadowDOMSearchDropdownProps> = ({
         </div>
       );
 
-      (reactRoot as ReturnType<typeof createRoot>).render(content);
+      if (reactRoot && shadowRoot) {
+        (reactRoot as ReturnType<typeof createRoot>).render(content);
+      }
     }
   }, [
     reactRoot,

@@ -1,5 +1,5 @@
-import React from 'react';
 import { Search, X } from 'lucide-react';
+import React from 'react';
 
 interface KalifindSearchDesktopProps {
   searchRef: React.RefObject<HTMLDivElement>;
@@ -21,7 +21,6 @@ const KalifindSearchDesktop: React.FC<KalifindSearchDesktopProps> = ({
   handleKeyDown,
   onClose,
   hideHeader = false,
-  showAutocomplete = false,
   setShowAutocomplete,
 }) => {
   return (

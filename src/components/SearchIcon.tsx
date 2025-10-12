@@ -2,7 +2,7 @@ import React from 'react';
 import { Search } from 'lucide-react';
 import ShadowDOMSearchDropdown from './ShadowDOMSearchDropdown';
 import { useIsOpen } from '@/hooks/zustand';
-import { SearchIconProps } from '../types';
+import type { SearchIconProps } from '../types';
 
 const SearchIcon: React.FC<SearchIconProps> = ({ storeUrl }) => {
   const isOpen = useIsOpen((state) => state.isOpen);

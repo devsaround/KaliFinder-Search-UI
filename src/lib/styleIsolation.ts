@@ -1,6 +1,6 @@
 // Style isolation utilities for WordPress integration
 
-export const injectIsolatedStyles = (container: HTMLElement) => {
+export const injectIsolatedStyles = () => {
   // Create a style element with scoped styles
   const styleElement = document.createElement('style');
   styleElement.id = 'kalifind-isolated-styles';

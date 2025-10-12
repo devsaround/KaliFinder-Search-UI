@@ -2,9 +2,9 @@ import React, { useState } from 'react';
 import ReactDOM from 'react-dom/client';
 import ShadowDOMSearchDropdown from './components/ShadowDOMSearchDropdown.tsx';
 import './index.css';
-import { injectIsolatedStyles, applyScopedStyles } from './lib/styleIsolation';
+import { applyScopedStyles, injectIsolatedStyles } from './lib/styleIsolation';
 
-import { InitialData, Product, SearchConfig, KalifindWindow } from './types';
+import type { InitialData, KalifindWindow, Product, SearchConfig } from './types';
 
 // Add comprehensive debugging at the start
 console.log('Kalifind Search: Script loaded and executing');
@@ -332,7 +332,7 @@ const removeExistingSearch = (elements: Element[]): void => {
     }
 
     // Inject isolated styles first
-    injectIsolatedStyles(document.body);
+    injectIsolatedStyles();
 
     const modalContainer = document.createElement('div');
     modalContainer.id = 'kalifind-modal-container';
@@ -498,7 +498,7 @@ const removeExistingSearch = (elements: Element[]): void => {
   }
 
   // Listen for Shopify checkout completion
-  if ((window as any).Shopify && (window as any).Shopify.checkout) {
+  if ((window as any).Shopify?.checkout) {
     window.addEventListener('shopify:checkout:complete', (event: any) => {
       try {
         const { getUBIClient } = require('../analytics/ubiClient');

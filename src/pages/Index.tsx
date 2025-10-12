@@ -1,6 +1,5 @@
 // import SearchIcon from "../components/SearchIcon.tsx.old";
 import SearchIcon from '../components/SearchIcon.tsx';
-import { Search } from 'lucide-react';
 
 const Index = ({ storeUrl }: { storeUrl?: string }) => {
   return (

@@ -29,13 +29,6 @@ const KalifindSearchMobile: React.FC<KalifindSearchMobileProps> = ({
   handleKeyDown,
   onClose,
   storeUrl, // Now required to be passed by parent
-  showAutocomplete = false,
-  setShowAutocomplete,
-  autocompleteSuggestions = [],
-  isAutocompleteLoading = false,
-  handleSuggestionClick,
-  highlightedSuggestionIndex = -1,
-  setHighlightedSuggestionIndex,
   setHasSearched,
   isInteractingWithDropdown = false,
   setIsInteractingWithDropdown,
@@ -260,9 +253,7 @@ const KalifindSearchMobile: React.FC<KalifindSearchMobileProps> = ({
                       <div
                         key={index}
                         data-suggestion-item="true"
-                        className={`flex items-center gap-2 cursor-pointer hover:bg-muted p-2 rounded transition-colors ${
-                          index === highlightedSuggestionIndex ? 'bg-muted' : ''
-                        }`}
+                        className="flex items-center gap-2 cursor-pointer hover:bg-muted p-2 rounded transition-colors"
                         onClick={(e) => {
                           e.preventDefault();
                           e.stopPropagation();

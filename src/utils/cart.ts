@@ -1,4 +1,4 @@
-import { CartProduct, CartResponse, CartError, Product } from '../types';
+import type { CartProduct, CartResponse, Product } from '../types';
 
 // Store type detection
 export const detectStoreType = (product: CartProduct): 'shopify' | 'woocommerce' => {
@@ -242,7 +242,6 @@ export const addToShopifyCart = async (product: CartProduct): Promise<CartRespon
     formData.append('quantity', '1');
 
     // Try to add to existing cart first
-    const cartId = localStorage.getItem('shopify_cart_id');
     let response;
 
     try {
