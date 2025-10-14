@@ -2,9 +2,9 @@ import React, { useState } from 'react';
 import ReactDOM from 'react-dom/client';
 import ShadowDOMSearchDropdown from './components/ShadowDOMSearchDropdown.tsx';
 import './index.css';
-import { applyScopedStyles, injectIsolatedStyles } from './lib/styleIsolation';
+import { injectIsolatedStyles, applyScopedStyles } from './lib/styleIsolation';
 
-import type { InitialData, KalifindWindow, Product, SearchConfig } from './types';
+import { InitialData, Product, SearchConfig, KalifindWindow } from './types';
 
 // Add comprehensive debugging at the start
 console.log('Kalifind Search: Script loaded and executing');
@@ -88,7 +88,6 @@ const prefetchData = async (storeUrl: string) => {
 };
 
 // --- Animation Manager Component ---
-// eslint-disable-next-line react-refresh/only-export-components
 const ModalManager: React.FC<{
   onUnmount: () => void;
   [key: string]: unknown;
@@ -498,7 +497,7 @@ const removeExistingSearch = (elements: Element[]): void => {
   }
 
   // Listen for Shopify checkout completion
-  if ((window as any).Shopify?.checkout) {
+  if ((window as any).Shopify && (window as any).Shopify.checkout) {
     window.addEventListener('shopify:checkout:complete', (event: any) => {
       try {
         const { getUBIClient } = require('../analytics/ubiClient');
