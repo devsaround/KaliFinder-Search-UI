@@ -89,6 +89,13 @@ const KalifindSearchDesktop: React.FC<KalifindSearchDesktopProps> = ({
                     <X className="!text-muted-foreground hover:!text-foreground !mr-[10px] !h-[25px] !w-[25px] font-bold !transition-colors !duration-200" />
                   </button>
                 </div>
+                <button
+                  className="hover:!bg-muted/20 !flex-shrink-0 !rounded-lg !transition-colors !duration-200 !ml-[8px]"
+                  aria-label="Close search"
+                  onClick={onClose}
+                >
+                  <X className="!text-muted-foreground hover:!text-foreground !h-[20px] !w-[20px] !transition-colors !duration-200" />
+                </button>
               </div>
             </div>
           </div>
