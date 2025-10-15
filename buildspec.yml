@@ -15,7 +15,7 @@ phases:
     commands:
       - echo Build started on `date`
       - echo Building production bundle...
-      - export VITE_BACKEND_URL=https://api.kalifinder.com
+      - export VITE_BACKEND_URL=https://api.kalifinder.com/api
       - export VITE_WIDGET_CDN_URL=https://cdn.kalifinder.com
       - pnpm run build
   post_build:
