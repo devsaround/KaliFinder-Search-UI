@@ -4,7 +4,7 @@ import ShadowDOMSearchDropdown from './components/ShadowDOMSearchDropdown.tsx';
 import './index.css';
 import { injectIsolatedStyles, applyScopedStyles } from './lib/styleIsolation';
 
-import { InitialData, Product, SearchConfig, KalifindWindow } from './types';
+import type { InitialData, Product, SearchConfig, KalifindWindow } from './types';
 
 // Add comprehensive debugging at the start
 console.log('Kalifind Search: Script loaded and executing');
@@ -497,7 +497,7 @@ const removeExistingSearch = (elements: Element[]): void => {
   }
 
   // Listen for Shopify checkout completion
-  if ((window as any).Shopify && (window as any).Shopify.checkout) {
+  if ((window as any).Shopify?.checkout) {
     window.addEventListener('shopify:checkout:complete', (event: any) => {
       try {
         const { getUBIClient } = require('../analytics/ubiClient');
