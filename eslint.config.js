@@ -33,7 +33,7 @@ export default tseslint.config(
       // React Refresh rules
       'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
 
-      // TypeScript rules
+      // TypeScript rules - production optimized
       '@typescript-eslint/no-explicit-any': 'warn',
       '@typescript-eslint/no-unused-vars': [
         'warn',
@@ -47,12 +47,12 @@ export default tseslint.config(
         'warn',
         { allowShortCircuit: true, allowTernary: true },
       ],
-      '@typescript-eslint/prefer-optional-chain': 'warn',
-      '@typescript-eslint/consistent-type-imports': ['warn', { prefer: 'type-imports' }],
-      '@typescript-eslint/no-require-imports': 'warn',
+      '@typescript-eslint/prefer-optional-chain': 'off',
+      '@typescript-eslint/consistent-type-imports': 'off',
+      '@typescript-eslint/no-require-imports': 'off',
 
-      // General rules
-      'no-console': ['warn', { allow: ['warn', 'error'] }],
+      // Relaxed rules for embedded widget
+      'no-console': 'off', // Allow console for widget debugging
       'no-debugger': 'error',
       'prefer-const': 'error',
       'no-var': 'error',

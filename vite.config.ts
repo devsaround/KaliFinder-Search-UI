@@ -37,12 +37,25 @@ export default defineConfig(({ mode }) => ({
     },
   },
   build: {
+    // Production optimizations for widget
     sourcemap: false,
+    minify: 'esbuild',
+    cssMinify: true,
+    reportCompressedSize: false,
+    emptyOutDir: true,
     lib: {
       entry: path.resolve(__dirname, 'src/embed-search.tsx'),
       name: 'KalifindSearch',
       formats: ['umd'],
       fileName: (format) => `kalifind-search.js`,
+    },
+    rollupOptions: {
+      external: [],
+      output: {
+        // Ensure all dependencies are bundled for standalone widget
+        globals: {},
+        inlineDynamicImports: true,
+      },
     },
     outDir: 'dist',
   },

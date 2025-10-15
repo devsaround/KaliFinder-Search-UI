@@ -13,10 +13,10 @@ const SearchIcon: React.FC<SearchIconProps> = ({ storeUrl }) => {
       {/* Search Icon Button */}
       <button
         onClick={toggleIsOpen}
-        className="!relative !p-2 !rounded-lg !bg-background hover:!bg-muted !transition-colors !duration-200 focus:!outline-none focus:!ring-2 focus:!ring-primary focus:!ring-offset-2 group"
+        className="!bg-background hover:!bg-muted focus:!ring-primary group !relative !rounded-lg !p-2 !transition-colors !duration-200 focus:!ring-2 focus:!ring-offset-2 focus:!outline-none"
         aria-label="Toggle search"
       >
-        <Search className="!w-6 !h-6 !text-muted-foreground group-hover:!text-primary !transition-colors !duration-200" />
+        <Search className="!text-muted-foreground group-hover:!text-primary !h-6 !w-6 !transition-colors !duration-200" />
       </button>
 
       {/* Search Dropdown */}

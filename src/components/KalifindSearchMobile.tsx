@@ -167,18 +167,18 @@ const KalifindSearchMobile: React.FC<KalifindSearchMobileProps> = ({
   // }, [inputRef, searchRef]);
 
   return (
-    <div className="sticky top-0 z-50 bg-background w-full border-b border-border">
-      <div className="bg-background py-2 w-full">
-        <div className="flex justify-center lg:gap-24 mx-auto flex-col lg:flex-row w-full">
+    <div className="bg-background border-border sticky top-0 z-50 w-full border-b">
+      <div className="bg-background w-full py-2">
+        <div className="mx-auto flex w-full flex-col justify-center lg:flex-row lg:gap-24">
           <div
-            className="flex-1 h-full relative w-full px-[8px] sm:px-[16px]"
+            className="relative h-full w-full flex-1 px-[8px] sm:px-[16px]"
             ref={searchRef}
             data-mobile-search-container="true"
           >
-            <div className="flex items-center gap-2 flex-1 w-full h-full">
-              <div className="w-full flex h-full">
-                <div className="relative flex-1 w-full h-full">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-5 h-5" />
+            <div className="flex h-full w-full flex-1 items-center gap-2">
+              <div className="flex h-full w-full">
+                <div className="relative h-full w-full flex-1">
+                  <Search className="text-muted-foreground absolute top-1/2 left-3 h-5 w-5 -translate-y-1/2 transform" />
                   <input
                     ref={inputRef}
                     type="text"
@@ -212,16 +212,16 @@ const KalifindSearchMobile: React.FC<KalifindSearchMobileProps> = ({
                     }}
                     onKeyDown={handleKeyDown}
                     placeholder="Search"
-                    className="h-full w-full pl-10 pr-4 py-2 text-base text-foreground placeholder-muted-foreground focus:outline-none border-none ring-0"
+                    className="text-foreground placeholder-muted-foreground h-full w-full border-none py-2 pr-4 pl-10 text-base ring-0 focus:outline-none"
                     autoFocus
                   />{' '}
                 </div>
                 <button
-                  className="rounded-lg hover:bg-muted/20 transition-colors duration-200 flex-shrink-0"
+                  className="hover:bg-muted/20 flex-shrink-0 rounded-lg transition-colors duration-200"
                   aria-label="Close search"
                   onClick={onClose}
                 >
-                  <X className="w-5 h-5 text-muted-foreground hover:text-foreground transition-colors duration-200 mr-3" />
+                  <X className="text-muted-foreground hover:text-foreground mr-3 h-5 w-5 transition-colors duration-200" />
                 </button>
               </div>
             </div>
@@ -235,25 +235,25 @@ const KalifindSearchMobile: React.FC<KalifindSearchMobileProps> = ({
         (mobileIsAutocompleteLoading || mobileAutocompleteSuggestions.length > 0) && (
           <div
             data-autocomplete-dropdown="true"
-            className="absolute top-full left-0 right-0 bg-background border border-border rounded-lg shadow-lg z-[9999999] mt-1 mx-4"
+            className="bg-background border-border absolute top-full right-0 left-0 z-[9999999] mx-4 mt-1 rounded-lg border shadow-lg"
             onMouseEnter={() => setIsInteractingWithDropdown?.(true)}
             onMouseLeave={() => setIsInteractingWithDropdown?.(false)}
           >
             <div className="p-4">
               {mobileIsAutocompleteLoading ? (
-                <div className="flex items-center justify-center py-3 gap-2 text-muted-foreground">
-                  <div className="w-4 h-4 border-2 border-muted-foreground border-t-transparent rounded-full animate-spin"></div>
+                <div className="text-muted-foreground flex items-center justify-center gap-2 py-3">
+                  <div className="border-muted-foreground h-4 w-4 animate-spin rounded-full border-2 border-t-transparent"></div>
                   <span>Loading suggestions...</span>
                 </div>
               ) : mobileAutocompleteSuggestions.length > 0 ? (
                 <>
-                  <h3 className="text-sm font-medium text-foreground mb-3">Suggestions</h3>
+                  <h3 className="text-foreground mb-3 text-sm font-medium">Suggestions</h3>
                   <div className="space-y-2">
                     {mobileAutocompleteSuggestions.map((suggestion, index) => (
                       <div
                         key={index}
                         data-suggestion-item="true"
-                        className="flex items-center gap-2 cursor-pointer hover:bg-muted p-2 rounded transition-colors"
+                        className="hover:bg-muted flex cursor-pointer items-center gap-2 rounded p-2 transition-colors"
                         onClick={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
@@ -261,19 +261,19 @@ const KalifindSearchMobile: React.FC<KalifindSearchMobileProps> = ({
                           handleMobileSuggestionClick(suggestion);
                         }}
                       >
-                        <Search className="w-4 h-4 text-muted-foreground" />
+                        <Search className="text-muted-foreground h-4 w-4" />
                         <span className="text-muted-foreground">{suggestion}</span>
                       </div>
                     ))}
                   </div>
                 </>
               ) : !mobileIsAutocompleteLoading ? (
-                <div className="flex flex-col items-center justify-center py-6 text-center animate-in fade-in duration-300">
-                  <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center mb-3 animate-in zoom-in duration-500">
-                    <Search className="w-6 h-6 text-muted-foreground" />
+                <div className="animate-in fade-in flex flex-col items-center justify-center py-6 text-center duration-300">
+                  <div className="bg-muted animate-in zoom-in mb-3 flex h-12 w-12 items-center justify-center rounded-full duration-500">
+                    <Search className="text-muted-foreground h-6 w-6" />
                   </div>
                   <div className="animate-in slide-in-from-bottom-2 duration-500">
-                    <p className="text-foreground font-medium mb-1">Search not found</p>
+                    <p className="text-foreground mb-1 font-medium">Search not found</p>
                     <p className="text-muted-foreground text-sm">
                       No suggestions found for "{searchQuery}"
                     </p>

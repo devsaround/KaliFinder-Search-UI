@@ -9,13 +9,16 @@
     "skipLibCheck": true,
     "types": ["vite/client", "node"],
 
-    /* Bundler mode */
+    /* Bundler mode - optimized for widget build */
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
     "verbatimModuleSyntax": false,
     "moduleDetection": "force",
     "noEmit": true,
     "jsx": "react-jsx",
+    "isolatedModules": true,
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
 
     /* Strict Type Checking */
     "strict": true,
@@ -48,5 +51,16 @@
       "@/*": ["./src/*"]
     }
   },
-  "include": ["src"]
+  "include": ["src"],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "**/*.spec.ts",
+    "**/*.test.ts",
+    "**/*.stories.ts",
+    "**/*.stories.tsx",
+    ".husky/**",
+    ".vscode/**",
+    "public/**"
+  ]
 }

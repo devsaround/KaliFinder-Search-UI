@@ -612,7 +612,7 @@ const ShadowDOMSearchDropdown: React.FC<ShadowDOMSearchDropdownProps> = ({
         <div className="fixed inset-0 z-50 min-h-screen">
           {/* Backdrop */}
           <div
-            className={`fixed inset-0 bg-foreground/20 backdrop-blur-sm transition-opacity duration-300 ${
+            className={`bg-foreground/20 fixed inset-0 backdrop-blur-sm transition-opacity duration-300 ${
               isOpen ? 'opacity-100' : 'opacity-0'
             }`}
             onClick={onClose}
@@ -620,7 +620,7 @@ const ShadowDOMSearchDropdown: React.FC<ShadowDOMSearchDropdownProps> = ({
 
           {/* Dropdown Panel */}
           <div
-            className={`fixed inset-0 bg-background shadow-xl transition-all duration-500 overflow-y-auto ${
+            className={`bg-background fixed inset-0 overflow-y-auto shadow-xl transition-all duration-500 ${
               isOpen ? 'animate-slide-down' : 'animate-slide-up'
             }`}
             style={{
@@ -628,10 +628,10 @@ const ShadowDOMSearchDropdown: React.FC<ShadowDOMSearchDropdownProps> = ({
               overflowY: 'auto',
             }}
           >
-            <div className="w-full h-full overflow-y-auto">
+            <div className="h-full w-full overflow-y-auto">
               {isMobileOrTablet ? (
                 // Mobile/Tablet: Use KalifindSearchMobile component for header, and KalifindSearch for content
-                <div className="w-full h-full">
+                <div className="h-full w-full">
                   {/* Mobile search header at top */}
                   <KalifindSearchMobile
                     searchRef={searchRef}
@@ -647,21 +647,21 @@ const ShadowDOMSearchDropdown: React.FC<ShadowDOMSearchDropdownProps> = ({
                   />
 
                   {/* Content area below search */}
-                  <div className="w-full min-h-[calc(100vh-80px)]">
+                  <div className="min-h-[calc(100vh-80px)] w-full">
                     <Suspense
                       fallback={
                         <div className="flex flex-col items-center justify-center py-12">
-                          <div className="flex space-x-2 mb-4">
+                          <div className="mb-4 flex space-x-2">
                             <div
-                              className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                              className="h-2 w-2 animate-bounce rounded-full bg-gray-400"
                               style={{ animationDelay: '0ms' }}
                             ></div>
                             <div
-                              className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                              className="h-2 w-2 animate-bounce rounded-full bg-gray-400"
                               style={{ animationDelay: '150ms' }}
                             ></div>
                             <div
-                              className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                              className="h-2 w-2 animate-bounce rounded-full bg-gray-400"
                               style={{ animationDelay: '300ms' }}
                             ></div>
                           </div>

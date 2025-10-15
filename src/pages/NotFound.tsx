@@ -4,30 +4,30 @@ import { Home, ArrowLeft } from 'lucide-react';
 
 const NotFound: React.FC = () => {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
-      <div className="text-center space-y-6 px-4">
+    <div className="bg-background flex min-h-screen items-center justify-center">
+      <div className="space-y-6 px-4 text-center">
         <div className="space-y-2">
-          <h1 className="text-6xl font-bold text-primary">404</h1>
-          <h2 className="text-2xl font-semibold text-foreground">Page Not Found</h2>
-          <p className="text-muted-foreground max-w-md mx-auto">
+          <h1 className="text-primary text-6xl font-bold">404</h1>
+          <h2 className="text-foreground text-2xl font-semibold">Page Not Found</h2>
+          <p className="text-muted-foreground mx-auto max-w-md">
             The page you're looking for doesn't exist or has been moved.
           </p>
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+        <div className="flex flex-col justify-center gap-4 sm:flex-row">
           <Link
             to="/"
-            className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary-hover transition-colors"
+            className="bg-primary text-primary-foreground hover:bg-primary-hover inline-flex items-center gap-2 rounded-lg px-6 py-3 font-medium transition-colors"
           >
-            <Home className="w-4 h-4" />
+            <Home className="h-4 w-4" />
             Go Home
           </Link>
 
           <button
             onClick={() => window.history.back()}
-            className="inline-flex items-center gap-2 px-6 py-3 border border-border text-foreground rounded-lg font-medium hover:bg-muted transition-colors"
+            className="border-border text-foreground hover:bg-muted inline-flex items-center gap-2 rounded-lg border px-6 py-3 font-medium transition-colors"
           >
-            <ArrowLeft className="w-4 h-4" />
+            <ArrowLeft className="h-4 w-4" />
             Go Back
           </button>
         </div>
