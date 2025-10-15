@@ -25,7 +25,7 @@ export default defineConfig(({ mode }) => ({
   define: {
     'process.env.NODE_ENV': JSON.stringify(mode),
     __VITE_BACKEND_URL__: JSON.stringify(
-      process.env.VITE_BACKEND_URL || 'https://api.kalifinder.com'
+      process.env.VITE_BACKEND_URL || 'https://api.kalifinder.com/api'
     ),
     __VITE_WIDGET_CDN_URL__: JSON.stringify(
       process.env.VITE_WIDGET_CDN_URL || 'https://cdn.kalifinder.com'
