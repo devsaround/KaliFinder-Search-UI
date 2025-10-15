@@ -104,221 +104,238 @@ const ModalManager: React.FC<{
   return <ShadowDOMSearchDropdown isOpen={isOpen} onClose={handleClose} {...props} />;
 };
 
-// Function to find elements in header with class or id containing "search"
-const findSearchTriggerElements = (): Element[] => {
-  const header = document.querySelector('header');
-  console.log('Kalifind Search: Header found:', header);
+/**
+ * UNIVERSAL SEARCH TRIGGER DETECTOR
+ * Finds ANY element in header with "search" keyword
+ * Works on Shopify, WooCommerce, and custom themes
+ * 
+ * Checks ALL elements for "search" keyword in:
+ * - class names, id attributes, data-* attributes
+ * - aria labels, name, placeholder, title, role
+ * - text content (limited to avoid large blocks)
+ * 
+ * Supports ALL element types: div, span, button, a, i, svg, input, etc.
+ */
+const findUniversalSearchTrigger = (): Element[] => {
+  const header = document.querySelector('header') || document.querySelector('[role="banner"]');
+  
+  console.log('🔍 Kalifind Search: Starting universal trigger detection');
+  console.log('📍 Kalifind Search: Header element:', header);
+  
   if (!header) {
-    console.log('Kalifind Search: No header found');
+    console.warn('⚠️ Kalifind Search: No header found');
     return [];
   }
 
   const elements: Element[] = [];
+  const searchKeyword = 'search';
+  
+  // Get ALL elements in header (not just specific selectors)
+  const allElements = header.querySelectorAll('*');
+  console.log(`📦 Kalifind Search: Scanning ${allElements.length} elements in header`);
 
-  // Look for specific search icon/button elements only - be more restrictive
-  const searchSelectors = [
-    // Shopify specific - target the actual search buttons
-    'search-button',
-    '.search-action',
-    '.search-button',
-    '.search-trigger',
-    'button.search-modal__button',
-    'button[class*="search"]',
-    // Generic search buttons/icons
-    'button[aria-label*="search" i]',
-    'button[aria-label*="Search" i]',
-    'button[aria-label*="Open search" i]',
-    // WordPress specific - but only buttons, not divs
-    'button.search-toggle',
-    'button[data-toggle-target*="search"]',
-    'button[data-toggle-target*="Search"]',
-  ];
+  allElements.forEach((el) => {
+    // Collect all relevant attributes
+    const attributes = {
+      tagName: el.tagName.toLowerCase(),
+      className: el.className || '',
+      id: el.id || '',
+      dataAttributes: {} as Record<string, string>,
+      ariaLabel: el.getAttribute('aria-label') || '',
+      name: el.getAttribute('name') || '',
+      placeholder: el.getAttribute('placeholder') || '',
+      title: el.getAttribute('title') || '',
+      role: el.getAttribute('role') || '',
+      textContent: el.textContent?.trim().toLowerCase() || '',
+    };
 
-  searchSelectors.forEach((selector) => {
-    try {
-      const foundElements = header.querySelectorAll(selector);
-      foundElements.forEach((el) => {
-        // Only include actual buttons or clickable elements, not containers
-        if (
-          (el.tagName === 'BUTTON' || el.tagName === 'A' || el.hasAttribute('onclick')) &&
-          !elements.includes(el)
-        ) {
-          console.log(
-            'Kalifind Search: Found search element in header:',
-            el,
-            'selector:',
-            selector
-          );
-          elements.push(el);
-        }
-      });
-    } catch (e) {
-      console.log('Kalifind Search: Selector not supported:', selector);
-    }
-  });
+    // Collect all data-* attributes
+    Array.from(el.attributes).forEach((attr) => {
+      if (attr.name.startsWith('data-')) {
+        attributes.dataAttributes[attr.name] = attr.value;
+      }
+    });
 
-  // Also look for buttons with search-related text content (but be more specific)
-  const allButtons = header.querySelectorAll('button');
-  allButtons.forEach((button) => {
-    const text = button.textContent?.toLowerCase().trim() || '';
-    const ariaLabel = button.getAttribute('aria-label')?.toLowerCase() || '';
-    const className = button.className?.toLowerCase() || '';
+    // Check if "search" keyword appears in ANY attribute
+    const hasSearchInClass = attributes.className.toString().toLowerCase().includes(searchKeyword);
+    const hasSearchInId = attributes.id.toLowerCase().includes(searchKeyword);
+    const hasSearchInAriaLabel = attributes.ariaLabel.toLowerCase().includes(searchKeyword);
+    const hasSearchInDataAttr = Object.entries(attributes.dataAttributes).some(
+      ([key, value]) => 
+        key.toLowerCase().includes(searchKeyword) || 
+        value.toLowerCase().includes(searchKeyword)
+    );
+    const hasSearchInName = attributes.name.toLowerCase().includes(searchKeyword);
+    const hasSearchInPlaceholder = attributes.placeholder.toLowerCase().includes(searchKeyword);
+    const hasSearchInTitle = attributes.title.toLowerCase().includes(searchKeyword);
+    const hasSearchInRole = attributes.role.toLowerCase().includes(searchKeyword);
+    // Only match short text content to avoid matching large blocks
+    const hasSearchInText = attributes.textContent.includes(searchKeyword) && attributes.textContent.length < 50;
 
-    // Only include buttons that are clearly search buttons
+    // Element qualifies if "search" appears in ANY attribute
     if (
-      (text === 'search' ||
-        text === 'open search' ||
-        ariaLabel.includes('search') ||
-        className.includes('search')) &&
-      !elements.includes(button)
+      hasSearchInClass ||
+      hasSearchInId ||
+      hasSearchInAriaLabel ||
+      hasSearchInDataAttr ||
+      hasSearchInName ||
+      hasSearchInPlaceholder ||
+      hasSearchInTitle ||
+      hasSearchInRole ||
+      hasSearchInText
     ) {
-      console.log('Kalifind Search: Found search button by text content:', button);
-      elements.push(button);
+      console.log('✅ Kalifind Search: Found trigger element:', {
+        tag: attributes.tagName,
+        class: attributes.className.toString().substring(0, 100), // Truncate long class names
+        id: attributes.id,
+        ariaLabel: attributes.ariaLabel,
+        dataAttributes: attributes.dataAttributes,
+        matchedBy: {
+          class: hasSearchInClass,
+          id: hasSearchInId,
+          ariaLabel: hasSearchInAriaLabel,
+          dataAttr: hasSearchInDataAttr,
+          name: hasSearchInName,
+          placeholder: hasSearchInPlaceholder,
+          title: hasSearchInTitle,
+          role: hasSearchInRole,
+          text: hasSearchInText,
+        },
+      });
+      
+      elements.push(el);
     }
   });
 
-  console.log('Kalifind Search: Final trigger elements:', elements);
+  console.log(`🎯 Kalifind Search: Found ${elements.length} trigger element(s) total`);
   return elements;
+};
+
+/**
+ * COMPREHENSIVE EVENT HANDLER REMOVER
+ * Removes ALL existing search functionality
+ * Handles: Shopify (Svelte events), WooCommerce (WordPress hooks), inline handlers
+ * 
+ * Removes:
+ * - ALL event listeners (via cloning)
+ * - Inline events (onclick, ondblclick, onkeydown, etc.)
+ * - Svelte events (on:click, on:keydown, on:submit, etc.)
+ * - WordPress/WooCommerce data attributes (data-toggle-target, data-modal, etc.)
+ * - Problematic CSS classes that trigger native search
+ */
+const removeAllSearchHandlers = (element: Element): Element => {
+  console.log('🧹 Kalifind Search: Removing ALL handlers from element:', {
+    tag: element.tagName,
+    class: element.className.toString().substring(0, 100),
+    id: element.id,
+  });
+
+  // Clone element to remove ALL event listeners
+  const clonedElement = element.cloneNode(true) as Element;
+
+  // Remove inline event handlers (onclick, ondblclick, onkeydown, etc.)
+  const inlineEvents = [
+    'onclick', 'ondblclick', 'onmousedown', 'onmouseup', 
+    'onkeydown', 'onkeyup', 'onkeypress', 'onfocus', 'onblur',
+    'onsubmit', 'onchange', 'oninput', 'onmouseenter', 'onmouseleave',
+    'onmouseover', 'onmouseout', 'ontouchstart', 'ontouchend'
+  ];
+  
+  inlineEvents.forEach((event) => {
+    if (clonedElement.hasAttribute(event)) {
+      console.log(`  ❌ Kalifind Search: Removed inline event: ${event}`);
+      clonedElement.removeAttribute(event);
+    }
+  });
+
+  // Remove Svelte events (Shopify themes use Svelte)
+  const svelteEvents = [
+    'on:click', 'on:keydown', 'on:submit', 'on:change', 
+    'on:input', 'on:focus', 'on:blur', 'on:mouseenter', 'on:mouseleave',
+    'on:keyup', 'on:keypress', 'on:dblclick', 'on:mousedown', 'on:mouseup',
+    'on:mouseover', 'on:mouseout', 'on:touchstart', 'on:touchend'
+  ];
+  
+  svelteEvents.forEach((event) => {
+    if (clonedElement.hasAttribute(event)) {
+      console.log(`  ❌ Kalifind Search: Removed Svelte event: ${event}`);
+      clonedElement.removeAttribute(event);
+    }
+  });
+
+  // Remove WordPress/WooCommerce data attributes
+  const wordpressAttributes = [
+    'data-toggle-target', 'data-modal', 'data-drawer', 
+    'data-popup', 'data-search-modal', 'data-micromodal-trigger',
+    'data-toggle', 'data-target', 'data-bs-toggle', 'data-bs-target',
+    'data-search', 'data-modal-trigger'
+  ];
+  
+  wordpressAttributes.forEach((attr) => {
+    if (clonedElement.hasAttribute(attr)) {
+      console.log(`  ❌ Kalifind Search: Removed WordPress attribute: ${attr}`);
+      clonedElement.removeAttribute(attr);
+    }
+  });
+
+  // Remove problematic CSS classes that might trigger native search
+  const problematicClasses = [
+    'search-modal__button', 'modal__toggle', 'drawer__toggle',
+    'popup__trigger', 'micromodal-trigger', 'js-search-toggle',
+    'search-modal', 'cover-modal', 'search-action', 'search-trigger'
+  ];
+  
+  problematicClasses.forEach((cls) => {
+    if (clonedElement.classList.contains(cls)) {
+      console.log(`  ❌ Kalifind Search: Removed problematic class: ${cls}`);
+      clonedElement.classList.remove(cls);
+    }
+  });
+
+  // Prevent default link behavior for <a> elements
+  if (clonedElement.tagName === 'A') {
+    const href = clonedElement.getAttribute('href');
+    if (href && (href === '#' || href.includes('search') || href.includes('modal'))) {
+      clonedElement.removeAttribute('href');
+      console.log('  ❌ Kalifind Search: Removed problematic href from <a> element');
+    }
+  }
+
+  // Also check child elements for Svelte/WordPress attributes
+  const childElements = clonedElement.querySelectorAll('*');
+  childElements.forEach((child) => {
+    svelteEvents.forEach((event) => {
+      if (child.hasAttribute(event)) {
+        console.log(`  ❌ Kalifind Search: Removed ${event} from child:`, child.tagName);
+        child.removeAttribute(event);
+      }
+    });
+  });
+
+  console.log('✅ Kalifind Search: Element cleaned and ready for Kalifind handler');
+  return clonedElement;
 };
 
 // Function to remove existing search functionality from elements
 const removeExistingSearch = (elements: Element[]): void => {
-  console.log('Kalifind Search: removeExistingSearch called with elements:', elements);
-  elements.forEach((element) => {
-    console.log('Kalifind Search: Processing element:', element);
-    console.log(
-      'Kalifind Search: Element attributes:',
-      Array.from(element.attributes).map((attr) => `${attr.name}="${attr.value}"`)
-    );
+  console.log('🧹 Kalifind Search: Processing', elements.length, 'elements with universal cleaner');
 
-    // Remove all event listeners by cloning the element (this removes all attached event listeners)
-    const newElement = element.cloneNode(true) as Element;
+  elements.forEach((element, index) => {
+    console.log(`  🔧 Kalifind Search: Processing element ${index + 1}/${elements.length}`);
+    
+    // Use comprehensive handler removal
+    const cleanedElement = removeAllSearchHandlers(element);
+
+    // Replace the original element with the cleaned one
     if (element.parentNode) {
-      element.parentNode.replaceChild(newElement, element);
-    }
-
-    // Remove standard HTML event attributes
-    const eventAttributes = [
-      'onclick',
-      'ondblclick',
-      'onmousedown',
-      'onmouseup',
-      'onmouseover',
-      'onmouseout',
-      'onkeydown',
-      'onkeyup',
-      'onkeypress',
-    ];
-
-    eventAttributes.forEach((attr) => {
-      if (newElement.hasAttribute(attr)) {
-        newElement.removeAttribute(attr);
-      }
-    });
-
-    // Remove Svelte-style event attributes (like on:click)
-    const svelteEventAttributes = [
-      'on:click',
-      'on:dblclick',
-      'on:mousedown',
-      'on:mouseup',
-      'on:mouseover',
-      'on:mouseout',
-      'on:keydown',
-      'on:keyup',
-      'on:keypress',
-      'on:touchstart',
-      'on:touchend',
-    ];
-
-    svelteEventAttributes.forEach((attr) => {
-      if (newElement.hasAttribute(attr)) {
-        console.log(
-          'Kalifind Search: Removing Svelte event attribute:',
-          attr,
-          'from element:',
-          newElement
-        );
-        newElement.removeAttribute(attr);
-        console.log('Kalifind Search: Attribute removed, element now:', newElement);
-      }
-    });
-
-    // Also check for any remaining event attributes that might contain search or modal
-    const allAttributes = Array.from(newElement.attributes);
-    allAttributes.forEach((attr) => {
-      if (
-        attr.name.includes('on') &&
-        (attr.value.includes('search') || attr.value.includes('modal'))
-      ) {
-        console.log(
-          'Kalifind Search: Removing event attribute with search/modal:',
-          attr.name,
-          '=',
-          attr.value,
-          'from element:',
-          newElement
-        );
-        newElement.removeAttribute(attr.name);
-      }
-    });
-
-    // Also check child elements for on:click attributes
-    const childButtons = newElement.querySelectorAll('button[on\\:click]');
-    childButtons.forEach((button) => {
-      console.log('Kalifind Search: Found child button with on:click:', button);
-      if (button.hasAttribute('on:click')) {
-        console.log('Kalifind Search: Removing on:click from child button:', button);
-        button.removeAttribute('on:click');
-      }
-    });
-
-    // For WordPress, also remove any data attributes that might trigger search
-    const dataAttributes = Array.from(newElement.attributes).filter(
-      (attr) =>
-        attr.name.startsWith('data-') &&
-        (attr.value.includes('search') ||
-          attr.value.includes('modal') ||
-          attr.value.includes('toggle'))
-    );
-    dataAttributes.forEach((attr) => {
-      console.log('Kalifind Search: Removing data attribute:', attr.name, '=', attr.value);
-      newElement.removeAttribute(attr.name);
-    });
-
-    // Remove any WordPress-specific classes that might trigger search
-    const searchClasses = ['search-modal', 'cover-modal', 'header-footer-group'];
-    searchClasses.forEach((className) => {
-      if (newElement.classList.contains(className)) {
-        console.log('Kalifind Search: Removing search class:', className);
-        newElement.classList.remove(className);
-      }
-    });
-
-    // Remove Shopify-specific classes and attributes
-    const shopifySearchClasses = ['search-modal__button', 'search-action', 'search-trigger'];
-    shopifySearchClasses.forEach((className) => {
-      if (newElement.classList.contains(className)) {
-        console.log('Kalifind Search: Removing Shopify search class:', className);
-        newElement.classList.remove(className);
-      }
-    });
-
-    // Remove any Shopify-specific data attributes
-    const shopifyDataAttributes = ['data-modal', 'data-search', 'data-toggle'];
-    shopifyDataAttributes.forEach((attr) => {
-      if (newElement.hasAttribute(attr)) {
-        console.log('Kalifind Search: Removing Shopify data attribute:', attr);
-        newElement.removeAttribute(attr);
-      }
-    });
-
-    // Update the elements array to use the new element
-    const index = elements.indexOf(element);
-    if (index !== -1) {
-      elements[index] = newElement;
+      element.parentNode.replaceChild(cleanedElement, element);
+      console.log(`  ✅ Kalifind Search: Replaced element ${index + 1} with cleaned version`);
+    } else {
+      console.warn(`  ⚠️ Kalifind Search: Element ${index + 1} has no parent node, skipping replacement`);
     }
   });
+  
+  console.log('✅ Kalifind Search: All elements cleaned successfully');
 };
 
 (function () {
@@ -371,22 +388,31 @@ const removeExistingSearch = (elements: Element[]): void => {
   const initialize = () => {
     // Prevent multiple initializations
     if ((window as KalifindWindow).kalifindInitialized) {
-      console.warn('Kalifind Search: Already initialized, skipping');
+      console.warn('⚠️ Kalifind Search: Already initialized, skipping');
       return;
     }
 
-    console.log('Kalifind Search: Initialize function called');
+    console.log('🚀 Kalifind Search: Initialize function called');
+    console.log('📄 Kalifind Search: Document state:', document.readyState);
+    console.log('🌐 Kalifind Search: Current URL:', window.location.href);
+    
     const scriptTag = document.querySelector('script[src*="kalifind-search.js"]');
-    console.log('Kalifind Search: Script tag found:', scriptTag);
+    console.log('📜 Kalifind Search: Script tag found:', scriptTag);
+    
     if (!scriptTag) {
-      console.error('Kalifind Search script tag not found.');
-      console.log('Kalifind Search: Available script tags:', document.querySelectorAll('script'));
+      console.error('❌ Kalifind Search: Script tag not found');
+      console.log('🔍 Kalifind Search: Available script tags:', document.querySelectorAll('script'));
       return;
     }
 
     const scriptSrc = scriptTag.getAttribute('src');
-    if (!scriptSrc) return;
+    if (!scriptSrc) {
+      console.error('❌ Kalifind Search: No src attribute on script tag');
+      return;
+    }
 
+    console.log('📜 Kalifind Search: Script src:', scriptSrc);
+    
     const url = new URL(scriptSrc, window.location.origin);
     const storeUrl = url.searchParams.get('storeUrl');
 
@@ -396,40 +422,53 @@ const removeExistingSearch = (elements: Element[]): void => {
       storeId: url.searchParams.get('storeId') || undefined,
     };
 
+    console.log('🏪 Kalifind Search: Store configuration:', configFromUrl);
+
     if (!storeUrl) {
-      console.error('Kalifind Search: storeUrl parameter is required.');
-      console.log('Available parameters:', { storeUrl });
+      console.error('❌ Kalifind Search: storeUrl parameter is required');
+      console.error('💡 Kalifind Search: Script must include: ?storeUrl=...&vendorId=...&storeId=...');
       return;
     }
-
-    console.log('Kalifind Search: Using storeUrl:', storeUrl);
-    console.log('Kalifind Search: Using vendorId:', configFromUrl.vendorId);
-    console.log('Kalifind Search: Using storeId:', configFromUrl.storeId);
 
     // Set global variables for UBI client
     if (configFromUrl.vendorId) {
       (window as any).KALIFIND_VENDOR_ID = configFromUrl.vendorId;
+      console.log('✅ Kalifind Search: Set KALIFIND_VENDOR_ID:', configFromUrl.vendorId);
     }
     if (configFromUrl.storeId) {
       (window as any).KALIFIND_STORE_ID = configFromUrl.storeId;
+      console.log('✅ Kalifind Search: Set KALIFIND_STORE_ID:', configFromUrl.storeId);
     }
 
+    console.log('🔄 Kalifind Search: Prefetching data...');
     prefetchData(storeUrl);
 
-    const triggerElements = findSearchTriggerElements();
-    console.log('Kalifind Search: Found trigger elements:', triggerElements);
-    console.log('Kalifind Search: Number of trigger elements:', triggerElements.length);
+    console.log('🔍 Kalifind Search: Starting universal trigger detection...');
+    const triggerElements = findUniversalSearchTrigger();
+    console.log(`🎯 Kalifind Search: Found ${triggerElements.length} trigger element(s)`);
 
     if (triggerElements.length > 0) {
+      console.log('🧹 Kalifind Search: Removing existing search functionality...');
       removeExistingSearch(triggerElements);
 
-      triggerElements.forEach((element: Element) => {
+      // Get fresh references to the cleaned elements
+      console.log('🔄 Kalifind Search: Getting fresh element references...');
+      const updatedElements = findUniversalSearchTrigger();
+      
+      console.log('📌 Kalifind Search: Attaching Kalifind click handlers...');
+      updatedElements.forEach((element: Element, index) => {
+        console.log(`  📌 Kalifind Search: Attaching to element ${index + 1}/${updatedElements.length}:`, {
+          tag: element.tagName,
+          class: element.className.toString().substring(0, 100),
+          id: element.id,
+        });
+        
         if (element instanceof HTMLElement) {
           element.style.cursor = 'pointer';
         }
         element.setAttribute('tabindex', '0');
         element.setAttribute('role', 'button');
-        element.setAttribute('aria-label', 'Open search');
+        element.setAttribute('aria-label', 'Open Kalifind search');
 
         element.addEventListener(
           'click',
@@ -438,11 +477,19 @@ const removeExistingSearch = (elements: Element[]): void => {
             e.stopPropagation();
             e.stopImmediatePropagation();
 
+            console.log('🔍 Kalifind Search: Trigger clicked!');
+            console.log('  📍 Clicked element:', {
+              tag: element.tagName,
+              class: element.className.toString().substring(0, 100),
+              id: element.id,
+            });
+
             // Prevent any Shopify search modal from opening
             const existingShopifyModal = document.querySelector(
               '.search-modal, [data-modal], .modal'
             ) as HTMLElement;
             if (existingShopifyModal) {
+              console.log('  🧹 Kalifind Search: Removing existing Shopify modal');
               existingShopifyModal.style.display = 'none';
               existingShopifyModal.remove();
             }
@@ -451,12 +498,18 @@ const removeExistingSearch = (elements: Element[]): void => {
             document.body.style.overflow = 'unset';
             document.body.classList.remove('search-modal-open', 'modal-open');
 
+            console.log('🚀 Kalifind Search: Opening Kalifind modal...');
             openSearchModal(configFromUrl);
           },
           true
         );
       });
+      
+      console.log('✅ Kalifind Search: Successfully attached handlers to all trigger elements');
+      console.log('🎉 Kalifind Search: Universal search initialization complete!');
     } else {
+      console.warn('⚠️ Kalifind Search: No search triggers found in header');
+      console.log('💡 Kalifind Search: Creating fallback search icon...');
       const firstHeader = document.querySelector('header');
       if (firstHeader) {
         const searchIconContainer = document.createElement('div');
