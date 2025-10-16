@@ -3,14 +3,14 @@ import tailwindcssAnimate from 'tailwindcss-animate';
 
 export default {
   important: '#kalifind-shadow-container',
-  darkMode: ['class'],
+  darkMode: ['class', '.dark'],
   content: [
     './pages/**/*.{ts,tsx}',
     './components/**/*.{ts,tsx}',
     './app/**/*.{ts,tsx}',
     './src/**/*.{ts,tsx}',
   ],
-  prefix: 'kf-',
+  prefix: '',
   theme: {
     container: {
       center: true,

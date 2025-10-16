@@ -12,12 +12,20 @@ const STYLE_DATA_ATTRIBUTE = 'data-kalifind-shadow-styles';
 const SHADOW_RESET_STYLES = `
   :host {
     all: initial;
+    --tw-bg-opacity: 1;
+    --tw-text-opacity: 1;
+    --tw-border-opacity: 1;
+    --tw-divide-opacity: 1;
+    --tw-placeholder-opacity: 1;
+    --tw-ring-offset-shadow: 0 0 #0000;
+    --tw-ring-shadow: 0 0 #0000;
+    --tw-shadow: 0 0 #0000;
   }
 
   #${SHADOW_CONTAINER_ID},
   .kalifind-shadow-container {
     all: initial;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
     line-height: 1.5;
     color: #1f2937;
     background-color: #ffffff;
@@ -37,6 +45,9 @@ const SHADOW_RESET_STYLES = `
   #${SHADOW_CONTAINER_ID} *::before,
   #${SHADOW_CONTAINER_ID} *::after {
     box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    border: 0;
     font-family: inherit;
     line-height: inherit;
     color: inherit;
@@ -51,6 +62,21 @@ const SHADOW_RESET_STYLES = `
   #${SHADOW_CONTAINER_ID} button,
   .kalifind-shadow-container button {
     cursor: pointer;
+  }
+
+  /* Reset input elements */
+  #${SHADOW_CONTAINER_ID} input,
+  #${SHADOW_CONTAINER_ID} textarea,
+  #${SHADOW_CONTAINER_ID} select {
+    font-family: inherit;
+    font-size: 1em;
+  }
+
+  /* Ensure text is readable */
+  #${SHADOW_CONTAINER_ID} {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
   }
 `;
 
@@ -445,29 +471,29 @@ const ShadowDOMSearchDropdown: React.FC<ShadowDOMSearchDropdownProps> = ({
       };
 
       const content = (
-        <div className="kf-fixed kf-inset-0 kf-z-50 kf-min-h-screen">
+        <div className="fixed inset-0 z-50 min-h-screen">
           {/* Backdrop */}
           <div
-            className={`kf-bg-foreground/20 kf-fixed kf-inset-0 kf-backdrop-blur-sm kf-transition-opacity kf-duration-300 ${
-              isOpen ? 'kf-opacity-100' : 'kf-opacity-0'
+            className={`bg-foreground/20 fixed inset-0 backdrop-blur-sm transition-opacity duration-300 ${
+              isOpen ? 'opacity-100' : 'opacity-0'
             }`}
             onClick={onClose}
           />
 
           {/* Dropdown Panel */}
           <div
-            className={`kf-bg-background kf-fixed kf-inset-0 kf-overflow-y-auto kf-shadow-xl kf-transition-all kf-duration-500 ${
-              isOpen ? 'kf-animate-slide-down' : 'kf-animate-slide-up'
+            className={`bg-background fixed inset-0 overflow-y-auto shadow-xl transition-all duration-500 ${
+              isOpen ? 'animate-slide-down' : 'animate-slide-up'
             }`}
             style={{
               maxHeight: '100vh',
               overflowY: 'auto',
             }}
           >
-            <div className="kf-h-full kf-w-full kf-overflow-y-auto">
+            <div className="h-full w-full overflow-y-auto">
               {isMobileOrTablet ? (
                 // Mobile/Tablet: Use KalifindSearchMobile component for header, and KalifindSearch for content
-                <div className="kf-h-full kf-w-full">
+                <div className="h-full w-full">
                   {/* Mobile search header at top */}
                   <KalifindSearchMobile
                     searchRef={searchRef}
@@ -483,25 +509,25 @@ const ShadowDOMSearchDropdown: React.FC<ShadowDOMSearchDropdownProps> = ({
                   />
 
                   {/* Content area below search */}
-                  <div className="kf-min-h-[calc(100vh-80px)] kf-w-full">
+                  <div className="min-h-[calc(100vh-80px)] w-full">
                     <Suspense
                       fallback={
-                        <div className="kf-flex kf-flex-col kf-items-center kf-justify-center kf-py-12">
-                          <div className="kf-mb-4 kf-flex kf-space-x-2">
+                        <div className="flex flex-col items-center justify-center py-12">
+                          <div className="mb-4 flex space-x-2">
                             <div
-                              className="kf-h-2 kf-w-2 kf-animate-bounce kf-rounded-full kf-bg-gray-400"
+                              className="h-2 w-2 animate-bounce rounded-full bg-gray-400"
                               style={{ animationDelay: '0ms' }}
                             />
                             <div
-                              className="kf-h-2 kf-w-2 kf-animate-bounce kf-rounded-full kf-bg-gray-400"
+                              className="h-2 w-2 animate-bounce rounded-full bg-gray-400"
                               style={{ animationDelay: '150ms' }}
                             />
                             <div
-                              className="kf-h-2 kf-w-2 kf-animate-bounce kf-rounded-full kf-bg-gray-400"
+                              className="h-2 w-2 animate-bounce rounded-full bg-gray-400"
                               style={{ animationDelay: '300ms' }}
                             />
                           </div>
-                          <p className="kf-text-muted-foreground kf-text-sm">Loading products...</p>
+                          <p className="text-muted-foreground text-sm">Loading products...</p>
                         </div>
                       }
                     >
@@ -534,7 +560,7 @@ const ShadowDOMSearchDropdown: React.FC<ShadowDOMSearchDropdownProps> = ({
             </div>
 
             {/* Scroll to Top Button */}
-            <ScrollToTop showAfter={200} className="kf-z-50" />
+            <ScrollToTop showAfter={200} className="z-50" />
           </div>
         </div>
       );
