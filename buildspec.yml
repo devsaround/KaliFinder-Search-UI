@@ -21,8 +21,8 @@ phases:
   post_build:
     commands:
       - echo Build completed on `date`
-      - echo Deploying to S3...
-      - aws s3 sync dist/ s3://$S3_BUCKET/ --delete
+      - echo Deploying to S3 with no caching...
+      - aws s3 sync dist/ s3://$S3_BUCKET/ --delete --cache-control "no-cache, no-store, must-revalidate"
       - echo Invalidating CloudFront cache...
       - aws cloudfront create-invalidation --distribution-id $CLOUDFRONT_ID --paths "/*"
       - echo Deployment complete!

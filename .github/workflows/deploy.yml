@@ -68,8 +68,11 @@ jobs:
       - name: Deploy to S3
         run: |
           echo "Deploying to S3 bucket: ${{ env.S3_BUCKET }}"
-          aws s3 sync dist/ s3://${{ env.S3_BUCKET }}/ --delete --cache-control "public, max-age=31536000, immutable"
-          echo "✅ Deployed to S3"
+          # Deploy with NO caching - always serve fresh content
+          aws s3 sync dist/ s3://${{ env.S3_BUCKET }}/ \
+            --delete \
+            --cache-control "no-cache, no-store, must-revalidate"
+          echo "✅ Deployed to S3 with no caching"
 
       - name: Invalidate CloudFront cache
         run: |
