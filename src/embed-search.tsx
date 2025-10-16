@@ -2,9 +2,9 @@ import React, { useState } from 'react';
 import ReactDOM from 'react-dom/client';
 import ShadowDOMSearchDropdown from './components/ShadowDOMSearchDropdown.tsx';
 import './index.css';
-import { injectIsolatedStyles, applyScopedStyles } from './lib/styleIsolation';
+import { applyScopedStyles, injectIsolatedStyles } from './lib/styleIsolation';
 
-import type { InitialData, Product, SearchConfig, KalifindWindow } from './types';
+import type { InitialData, KalifindWindow, Product, SearchConfig } from './types';
 
 // Add comprehensive debugging at the start
 console.log('Kalifind Search: Script loaded and executing');
@@ -20,8 +20,12 @@ const prefetchData = async (storeUrl: string) => {
     const params = new URLSearchParams();
     params.append('storeUrl', storeUrl);
 
-    const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000/api';
-    const response = await fetch(`${backendUrl}/v1/search?${params.toString()}`, {});
+    if (!import.meta.env.VITE_BACKEND_URL) {
+      console.error('VITE_BACKEND_URL environment variable is required');
+      return;
+    }
+    const backendUrl = import.meta.env.VITE_BACKEND_URL;
+    const response = await fetch(`${backendUrl}/api/v1/search?${params.toString()}`, {});
     const result = await response.json();
 
     // Handle both array and object response formats

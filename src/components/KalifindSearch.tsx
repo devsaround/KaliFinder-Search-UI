@@ -332,8 +332,12 @@ const KalifindSearch: React.FC<{
       params.append('page', '1');
       params.append('limit', '1'); // Minimal products, we mainly need facets
 
-      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000/api';
-      const response = await fetch(`${backendUrl}/v1/search?${params.toString()}`);
+      if (!import.meta.env.VITE_BACKEND_URL) {
+        console.error('VITE_BACKEND_URL environment variable is required');
+        return;
+      }
+      const backendUrl = import.meta.env.VITE_BACKEND_URL;
+      const response = await fetch(`${backendUrl}/api/v1/search?${params.toString()}`);
 
       if (!response.ok) {
         console.error('Failed to fetch global facets');
@@ -468,12 +472,15 @@ const KalifindSearch: React.FC<{
     if (!storeUrl || recommendationsFetched) return;
     try {
       // First check if vendor has configured recommendations
-      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000/api';
+      if (!import.meta.env.VITE_BACKEND_URL) {
+        console.error('VITE_BACKEND_URL environment variable is required');
+        return;
+      }
+      const backendUrl = import.meta.env.VITE_BACKEND_URL;
       const configResponse = await fetch(
-        `${backendUrl}/v1/recommendations/config?storeUrl=${storeUrl}`,
+        `${backendUrl}/api/v1/recommendations/config?storeUrl=${storeUrl}`,
         {}
       );
-
       if (!configResponse.ok) {
         // If no config exists, don't show recommendations
         setRecommendations([]);
@@ -640,8 +647,12 @@ const KalifindSearch: React.FC<{
             params.append('q', debouncedSearchQuery.trim());
             params.append('storeUrl', storeUrl);
 
-            const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000/api';
-            const url = `${backendUrl}/v1/autocomplete?${params.toString()}`;
+            if (!import.meta.env.VITE_BACKEND_URL) {
+              console.error('VITE_BACKEND_URL environment variable is required');
+              return;
+            }
+            const backendUrl = import.meta.env.VITE_BACKEND_URL;
+            const url = `${backendUrl}/api/v1/autocomplete?${params.toString()}`;
             // Autocomplete API call
 
             const response = await fetch(url, {});
@@ -809,8 +820,12 @@ const KalifindSearch: React.FC<{
             params.append('page', '1');
             params.append('limit', isMobile ? '8' : '9');
 
-            const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000/api';
-            const response = await fetch(`${backendUrl}/v1/search?${params.toString()}`, {
+            if (!import.meta.env.VITE_BACKEND_URL) {
+              console.error('VITE_BACKEND_URL environment variable is required');
+              return;
+            }
+            const backendUrl = import.meta.env.VITE_BACKEND_URL;
+            const response = await fetch(`${backendUrl}/api/v1/search?${params.toString()}`, {
               signal: newAbortController.signal,
             });
 
@@ -1303,8 +1318,12 @@ const KalifindSearch: React.FC<{
       params.append('page', (currentPage + 1).toString());
       params.append('limit', isMobile ? '8' : '9');
 
-      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000/api';
-      const response = await fetch(`${backendUrl}/v1/search?${params.toString()}`, {});
+      if (!import.meta.env.VITE_BACKEND_URL) {
+        console.error('VITE_BACKEND_URL environment variable is required');
+        return;
+      }
+      const backendUrl = import.meta.env.VITE_BACKEND_URL;
+      const response = await fetch(`${backendUrl}/api/v1/search?${params.toString()}`, {});
 
       if (!response.ok) {
         throw new Error('Failed to load more products');

@@ -160,9 +160,13 @@ class UBIClient {
       this.flushTimer = null;
     }
 
-    // Use default backend URL if environment variable is not set
-    const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000/api';
-    const collectUrl = `${backendUrl}/ubi/collect`;
+    // Require backend URL environment variable
+    if (!import.meta.env.VITE_BACKEND_URL) {
+      console.error('VITE_BACKEND_URL environment variable is required');
+      return;
+    }
+    const backendUrl = import.meta.env.VITE_BACKEND_URL;
+    const collectUrl = `${backendUrl}/api/ubi/collect`;
 
     console.log('UBI Client: Flushing events to backend:', {
       count: eventsToSend.length,
