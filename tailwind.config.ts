@@ -2,7 +2,7 @@ import type { Config } from 'tailwindcss';
 import tailwindcssAnimate from 'tailwindcss-animate';
 
 export default {
-  important: true,
+  important: '#kalifind-shadow-container',
   darkMode: ['class'],
   content: [
     './pages/**/*.{ts,tsx}',
@@ -10,7 +10,7 @@ export default {
     './app/**/*.{ts,tsx}',
     './src/**/*.{ts,tsx}',
   ],
-  prefix: '',
+  prefix: 'kf-',
   theme: {
     container: {
       center: true,

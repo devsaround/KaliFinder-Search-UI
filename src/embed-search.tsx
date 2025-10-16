@@ -1,8 +1,6 @@
 import React, { useState } from 'react';
 import ReactDOM from 'react-dom/client';
 import ShadowDOMSearchDropdown from './components/ShadowDOMSearchDropdown.tsx';
-import './index.css';
-import { applyScopedStyles, injectIsolatedStyles } from './lib/styleIsolation';
 
 import type { InitialData, KalifindWindow, Product, SearchConfig } from './types';
 
@@ -396,27 +394,20 @@ const removeExistingSearch = (elements: Element[]): void => {
       return;
     }
 
-    // Inject isolated styles first
-    injectIsolatedStyles();
-
     const modalContainer = document.createElement('div');
     modalContainer.id = 'kalifind-modal-container';
-    modalContainer.className = 'kalifind-search-widget';
-
-    // Apply scoped styles
-    applyScopedStyles(modalContainer);
-
-    modalContainer.style.cssText += `
-      position: fixed !important;
-      top: 0 !important;
-      left: 0 !important;
-      right: 0 !important;
-      bottom: 0 !important;
-      width: 100% !important;
-      height: 100% !important;
-      z-index: 10000 !important;
-      background-color: transparent !important;
-      overflow: hidden !important;
+    modalContainer.style.cssText = `
+      all: initial;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 2147483646;
+      background-color: transparent;
+      overflow: hidden;
+      box-sizing: border-box;
+      display: block;
     `;
     document.body.appendChild(modalContainer);
 
@@ -486,11 +477,11 @@ const removeExistingSearch = (elements: Element[]): void => {
 
     // Set global variables for UBI client
     if (configFromUrl.vendorId) {
-      (window as any).KALIFIND_VENDOR_ID = configFromUrl.vendorId;
+      (window as Record<string, unknown>).KALIFIND_VENDOR_ID = configFromUrl.vendorId;
       console.log('✅ Kalifind Search: Set KALIFIND_VENDOR_ID:', configFromUrl.vendorId);
     }
     if (configFromUrl.storeId) {
-      (window as any).KALIFIND_STORE_ID = configFromUrl.storeId;
+      (window as Record<string, unknown>).KALIFIND_STORE_ID = configFromUrl.storeId;
       console.log('✅ Kalifind Search: Set KALIFIND_STORE_ID:', configFromUrl.storeId);
     }
 
@@ -607,17 +598,20 @@ const removeExistingSearch = (elements: Element[]): void => {
   }
 
   // Listen for Shopify checkout completion
-  if ((window as any).Shopify?.checkout) {
-    window.addEventListener('shopify:checkout:complete', (event: any) => {
+  if ((window as Record<string, unknown>).Shopify?.checkout) {
+    window.addEventListener('shopify:checkout:complete', (event: Event) => {
       try {
+        const detailEvent = event as CustomEvent;
         const { getUBIClient } = require('../analytics/ubiClient');
         const ubiClient = getUBIClient();
-        if (ubiClient && event.detail) {
-          const { order_id, total_price, line_items } = event.detail;
-          const productIds = line_items?.map((item: any) => item.product_id) || [];
+        if (ubiClient && detailEvent.detail) {
+          const { order_id, total_price, line_items } = detailEvent.detail as Record<string, unknown>;
+          const productIds = (line_items as Array<Record<string, unknown>>)?.map(
+            (item) => item.product_id
+          ) || [];
           ubiClient.trackPurchaseCompleted(
-            order_id,
-            parseFloat(total_price) || 0,
+            order_id as string,
+            parseFloat(total_price as string) || 0,
             productIds,
             'USD'
           );
@@ -629,14 +623,17 @@ const removeExistingSearch = (elements: Element[]): void => {
   }
 
   // Listen for WooCommerce checkout completion
-  window.addEventListener('woocommerce_order_completed', (event: any) => {
+  window.addEventListener('woocommerce_order_completed', (event: Event) => {
     try {
+      const detailEvent = event as CustomEvent;
       const { getUBIClient } = require('../analytics/ubiClient');
       const ubiClient = getUBIClient();
-      if (ubiClient && event.detail) {
-        const { order_id, total, items } = event.detail;
-        const productIds = items?.map((item: any) => item.product_id) || [];
-        ubiClient.trackPurchaseCompleted(order_id, parseFloat(total) || 0, productIds, 'USD');
+      if (ubiClient && detailEvent.detail) {
+        const { order_id, total, items } = detailEvent.detail as Record<string, unknown>;
+        const productIds = (items as Array<Record<string, unknown>>)?.map(
+          (item) => item.product_id
+        ) || [];
+        ubiClient.trackPurchaseCompleted(order_id as string, parseFloat(total as string) || 0, productIds, 'USD');
       }
     } catch (error) {
       console.warn('WooCommerce purchase tracking failed:', error);
