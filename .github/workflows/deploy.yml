@@ -1,92 +1,92 @@
 name: Deploy Search UI to S3/CloudFront
 
 on:
-    push:
-        branches: [main]
-    workflow_dispatch: # Allow manual triggering
+  push:
+    branches: [main]
+  workflow_dispatch: # Allow manual triggering
 
 env:
-    AWS_REGION: us-east-1
-    S3_BUCKET: kalifinder-prod-search-ui
-    CLOUDFRONT_DISTRIBUTION_ID: E1IOWPQDX7ER51
-    NODE_VERSION: "20"
+  AWS_REGION: us-east-1
+  S3_BUCKET: kalifinder-prod-search-ui
+  CLOUDFRONT_DISTRIBUTION_ID: E1IOWPQDX7ER51
+  NODE_VERSION: "22"
 
 jobs:
-    deploy:
-        name: Build and Deploy to S3/CloudFront
-        runs-on: ubuntu-latest
+  deploy:
+    name: Build and Deploy to S3/CloudFront
+    runs-on: ubuntu-latest
 
-        steps:
-            - name: Checkout code
-              uses: actions/checkout@v4
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-            - name: Setup Node.js
-              uses: actions/setup-node@v4
-              with:
-                  node-version: ${{ env.NODE_VERSION }}
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
 
-            - name: Install pnpm
-              uses: pnpm/action-setup@v2
-              with:
-                  version: 8
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 10
 
-            - name: Get pnpm store directory
-              id: pnpm-cache
-              run: echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        run: echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
 
-            - name: Cache pnpm dependencies
-              uses: actions/cache@v3
-              with:
-                  path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
-                  key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-                  restore-keys: |
-                      ${{ runner.os }}-pnpm-store-
+      - name: Cache pnpm dependencies
+        uses: actions/cache@v3
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
 
-            - name: Install dependencies
-              run: |
-                  echo "Installing dependencies..."
-                  pnpm install --frozen-lockfile
+      - name: Install dependencies
+        run: |
+          echo "Installing dependencies..."
+          pnpm install --frozen-lockfile
 
-            - name: Build production bundle
-              env:
-                  VITE_BACKEND_URL: https://api.kalifinder.com/api
-                  VITE_WIDGET_CDN_URL: https://cdn.kalifinder.com
-              run: |
-                  echo "Building production widget..."
-                  pnpm run build
-                  echo "✅ Build completed"
-                  echo "Build artifacts:"
-                  ls -lh dist/
+      - name: Build production bundle
+        env:
+          VITE_BACKEND_URL: https://api.kalifinder.com/api
+          VITE_WIDGET_CDN_URL: https://cdn.kalifinder.com
+        run: |
+          echo "Building production widget..."
+          pnpm run build
+          echo "✅ Build completed"
+          echo "Build artifacts:"
+          ls -lh dist/
 
-            - name: Configure AWS credentials
-              uses: aws-actions/configure-aws-credentials@v4
-              with:
-                  aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-                  aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-                  aws-region: ${{ env.AWS_REGION }}
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
 
-            - name: Deploy to S3
-              run: |
-                  echo "Deploying to S3 bucket: ${{ env.S3_BUCKET }}"
-                  aws s3 sync dist/ s3://${{ env.S3_BUCKET }}/ --delete --cache-control "public, max-age=31536000, immutable"
-                  echo "✅ Deployed to S3"
+      - name: Deploy to S3
+        run: |
+          echo "Deploying to S3 bucket: ${{ env.S3_BUCKET }}"
+          aws s3 sync dist/ s3://${{ env.S3_BUCKET }}/ --delete --cache-control "public, max-age=31536000, immutable"
+          echo "✅ Deployed to S3"
 
-            - name: Invalidate CloudFront cache
-              run: |
-                  echo "Creating CloudFront invalidation..."
-                  INVALIDATION_ID=$(aws cloudfront create-invalidation \
-                    --distribution-id ${{ env.CLOUDFRONT_DISTRIBUTION_ID }} \
-                    --paths "/*" \
-                    --query 'Invalidation.Id' \
-                    --output text)
-                  echo "✅ CloudFront invalidation created: $INVALIDATION_ID"
-                  echo "Note: Invalidation may take 1-3 minutes to complete"
+      - name: Invalidate CloudFront cache
+        run: |
+          echo "Creating CloudFront invalidation..."
+          INVALIDATION_ID=$(aws cloudfront create-invalidation \
+            --distribution-id ${{ env.CLOUDFRONT_DISTRIBUTION_ID }} \
+            --paths "/*" \
+            --query 'Invalidation.Id' \
+            --output text)
+          echo "✅ CloudFront invalidation created: $INVALIDATION_ID"
+          echo "Note: Invalidation may take 1-3 minutes to complete"
 
-            - name: Summary
-              if: success()
-              run: |
-                  echo "🎉 Search UI deployment successful!"
-                  echo "📍 S3 Bucket: ${{ env.S3_BUCKET }}"
-                  echo "📍 CloudFront: ${{ env.CLOUDFRONT_DISTRIBUTION_ID }}"
-                  echo "📍 URL: https://cdn.kalifinder.com"
-                  echo "📍 Commit: ${{ github.sha }}"
+      - name: Summary
+        if: success()
+        run: |
+          echo "🎉 Search UI deployment successful!"
+          echo "📍 S3 Bucket: ${{ env.S3_BUCKET }}"
+          echo "📍 CloudFront: ${{ env.CLOUDFRONT_DISTRIBUTION_ID }}"
+          echo "📍 URL: https://cdn.kalifinder.com"
+          echo "📍 Commit: ${{ github.sha }}"

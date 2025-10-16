@@ -6,7 +6,7 @@ phases:
       nodejs: 20
     commands:
       - echo Installing pnpm...
-      - npm install -g pnpm
+      - npm install -g pnpm@10.18.3
   pre_build:
     commands:
       - echo Installing dependencies...
