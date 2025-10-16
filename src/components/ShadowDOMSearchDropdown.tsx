@@ -210,12 +210,7 @@ const ShadowDOMSearchDropdown: React.FC<ShadowDOMSearchDropdownProps> = ({
         if (Array.isArray(result)) {
           rawSuggestions = result
             .map(
-              (r: {
-                title: string;
-                name: string;
-                product_title: string;
-                product_name: string;
-              }) => {
+              (r: { title: string; name: string; product_title: string; product_name: string }) => {
                 // Handle different possible field names
                 return r.title || r.name || r.product_title || r.product_name || String(r);
               }
@@ -226,12 +221,7 @@ const ShadowDOMSearchDropdown: React.FC<ShadowDOMSearchDropdownProps> = ({
         } else if (result && Array.isArray(result.products)) {
           rawSuggestions = result.products
             .map(
-              (r: {
-                title: string;
-                name: string;
-                product_title: string;
-                product_name: string;
-              }) => {
+              (r: { title: string; name: string; product_title: string; product_name: string }) => {
                 return r.title || r.name || r.product_title || r.product_name || String(r);
               }
             )
@@ -342,7 +332,10 @@ const ShadowDOMSearchDropdown: React.FC<ShadowDOMSearchDropdownProps> = ({
               target.adoptedStyleSheets = [...adoptedSheets, sheet];
             }
           } catch (error) {
-            console.warn('Kalifind Search: Failed to use constructable stylesheets, falling back:', error);
+            console.warn(
+              'Kalifind Search: Failed to use constructable stylesheets, falling back:',
+              error
+            );
             // Fall through to style element injection
             if (!target.querySelector(`style[${STYLE_DATA_ATTRIBUTE}]`)) {
               const styleElement = document.createElement('style');

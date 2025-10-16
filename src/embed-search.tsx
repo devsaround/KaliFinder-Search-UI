@@ -477,11 +477,11 @@ const removeExistingSearch = (elements: Element[]): void => {
 
     // Set global variables for UBI client
     if (configFromUrl.vendorId) {
-      (window as Record<string, unknown>).KALIFIND_VENDOR_ID = configFromUrl.vendorId;
+      (window as unknown as Record<string, unknown>).KALIFIND_VENDOR_ID = configFromUrl.vendorId;
       console.log('✅ Kalifind Search: Set KALIFIND_VENDOR_ID:', configFromUrl.vendorId);
     }
     if (configFromUrl.storeId) {
-      (window as Record<string, unknown>).KALIFIND_STORE_ID = configFromUrl.storeId;
+      (window as unknown as Record<string, unknown>).KALIFIND_STORE_ID = configFromUrl.storeId;
       console.log('✅ Kalifind Search: Set KALIFIND_STORE_ID:', configFromUrl.storeId);
     }
 
@@ -598,28 +598,34 @@ const removeExistingSearch = (elements: Element[]): void => {
   }
 
   // Listen for Shopify checkout completion
-  if ((window as Record<string, unknown>).Shopify?.checkout) {
-    window.addEventListener('shopify:checkout:complete', (event: Event) => {
-      try {
-        const detailEvent = event as CustomEvent;
-        const { getUBIClient } = require('../analytics/ubiClient');
-        const ubiClient = getUBIClient();
-        if (ubiClient && detailEvent.detail) {
-          const { order_id, total_price, line_items } = detailEvent.detail as Record<string, unknown>;
-          const productIds = (line_items as Array<Record<string, unknown>>)?.map(
-            (item) => item.product_id
-          ) || [];
-          ubiClient.trackPurchaseCompleted(
-            order_id as string,
-            parseFloat(total_price as string) || 0,
-            productIds,
-            'USD'
-          );
+  const shopifyWindow = window as unknown as Record<string, unknown>;
+  if (shopifyWindow.Shopify && typeof shopifyWindow.Shopify === 'object') {
+    const shopify = shopifyWindow.Shopify as Record<string, unknown>;
+    if (shopify.checkout) {
+      window.addEventListener('shopify:checkout:complete', (event: Event) => {
+        try {
+          const detailEvent = event as CustomEvent;
+          const { getUBIClient } = require('../analytics/ubiClient');
+          const ubiClient = getUBIClient();
+          if (ubiClient && detailEvent.detail) {
+            const { order_id, total_price, line_items } = detailEvent.detail as Record<
+              string,
+              unknown
+            >;
+            const productIds =
+              (line_items as Array<Record<string, unknown>>)?.map((item) => item.product_id) || [];
+            ubiClient.trackPurchaseCompleted(
+              order_id as string,
+              parseFloat(total_price as string) || 0,
+              productIds,
+              'USD'
+            );
+          }
+        } catch (error) {
+          console.warn('Shopify purchase tracking failed:', error);
         }
-      } catch (error) {
-        console.warn('Shopify purchase tracking failed:', error);
-      }
-    });
+      });
+    }
   }
 
   // Listen for WooCommerce checkout completion
@@ -630,10 +636,14 @@ const removeExistingSearch = (elements: Element[]): void => {
       const ubiClient = getUBIClient();
       if (ubiClient && detailEvent.detail) {
         const { order_id, total, items } = detailEvent.detail as Record<string, unknown>;
-        const productIds = (items as Array<Record<string, unknown>>)?.map(
-          (item) => item.product_id
-        ) || [];
-        ubiClient.trackPurchaseCompleted(order_id as string, parseFloat(total as string) || 0, productIds, 'USD');
+        const productIds =
+          (items as Array<Record<string, unknown>>)?.map((item) => item.product_id) || [];
+        ubiClient.trackPurchaseCompleted(
+          order_id as string,
+          parseFloat(total as string) || 0,
+          productIds,
+          'USD'
+        );
       }
     } catch (error) {
       console.warn('WooCommerce purchase tracking failed:', error);
