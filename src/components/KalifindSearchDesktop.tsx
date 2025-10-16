@@ -46,8 +46,8 @@ const KalifindSearchDesktop: React.FC<KalifindSearchDesktopProps> = ({
             >
               <div className="!flex !w-full !flex-1 !items-center !gap-[8px]" ref={searchRef}>
                 <div className="flex !w-full">
-                  <div className="!border-search-highlight !relative !w-full !flex-1 !border-b-2">
-                    <Search className="!text-muted-foreground !absolute !top-1/2 !left-[7px] !h-[20px] !w-[20px] !-translate-y-1/2 !transform" />
+                  <div className="!border-border !bg-input !relative !w-full !flex-1 !rounded-lg !border-2 !shadow-sm transition-shadow hover:!shadow-md">
+                    <Search className="!text-muted-foreground !absolute !top-1/2 !left-[12px] !h-[20px] !w-[20px] !-translate-y-1/2 !transform" />
                     <input
                       ref={inputRef}
                       type="text"
@@ -71,13 +71,13 @@ const KalifindSearchDesktop: React.FC<KalifindSearchDesktopProps> = ({
                         }
                       }}
                       onKeyDown={handleKeyDown}
-                      placeholder="Search"
-                      className="!text-foreground !placeholder-muted-foreground !w-full !py-[12px] !pr-[16px] !pl-[30px] focus:!border-none focus:!ring-0 focus:!outline-none"
+                      placeholder="Search products..."
+                      className="!text-foreground !placeholder-muted-foreground focus:!border-primary !w-full !bg-transparent !py-[14px] !pr-[16px] !pl-[40px] focus:!ring-0 focus:!outline-none"
                       style={{
-                        background: 'inherit',
+                        background: 'transparent',
                         border: 'none',
                         color: 'inherit',
-                        paddingLeft: '30px',
+                        paddingLeft: '40px',
                       }}
                     />
                   </div>

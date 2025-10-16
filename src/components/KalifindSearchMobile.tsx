@@ -1,5 +1,6 @@
+import { useAutocomplete } from '@/hooks/useAutocomplete';
 import { Search, X } from 'lucide-react';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useState } from 'react';
 
 interface KalifindSearchMobileProps {
   searchRef: React.RefObject<HTMLDivElement | null>;
@@ -28,97 +29,49 @@ const KalifindSearchMobile: React.FC<KalifindSearchMobileProps> = ({
   handleSearch,
   handleKeyDown,
   onClose,
-  storeUrl, // Now required to be passed by parent
+  storeUrl,
   setHasSearched,
   isInteractingWithDropdown = false,
   setIsInteractingWithDropdown,
 }) => {
-  // Mobile component's own autocomplete state
-  const [mobileShowAutocomplete, setMobileShowAutocomplete] = useState(false);
-  const [mobileAutocompleteSuggestions, setMobileAutocompleteSuggestions] = useState<string[]>([]);
-  const [mobileIsAutocompleteLoading, setMobileIsAutocompleteLoading] = useState(false);
-
   // Track if query change is from suggestion selection
-  const isFromSuggestionClickRef = useRef(false);
+  const [isFromSuggestionClick, setIsFromSuggestionClick] = useState(false);
 
-  // Mobile autocomplete logic - self-contained like desktop
-  useEffect(() => {
-    // Don't show autocomplete if query is empty or change is from suggestion click
-    if (!searchQuery.trim() || isFromSuggestionClickRef.current) {
-      setMobileAutocompleteSuggestions([]);
-      setMobileIsAutocompleteLoading(false);
-      setMobileShowAutocomplete(false);
-      return;
-    }
+  // Use autocomplete hook for mobile
+  const {
+    suggestions: mobileAutocompleteSuggestions,
+    isLoading: mobileIsAutocompleteLoading,
+    showDropdown: mobileShowAutocomplete,
+    setShowDropdown: setMobileShowAutocomplete,
+    handleSuggestionClick,
+  } = useAutocomplete({
+    query: searchQuery,
+    storeUrl,
+    onSuggestionSelect: (suggestion) => {
+      // Mark that this change is from a suggestion click
+      setIsFromSuggestionClick(true);
 
-    setMobileShowAutocomplete(true);
-    const debounceTimer = setTimeout(async () => {
-      setMobileIsAutocompleteLoading(true);
-      try {
-        const params = new URLSearchParams();
-        params.append('q', searchQuery);
-        params.append('storeUrl', storeUrl || ''); // Use storeUrl with fallback
+      // Set the search query and trigger search
+      handleSearch(suggestion);
 
-        const response = await fetch(
-          `${import.meta.env.VITE_BACKEND_URL}/v1/autocomplete?${params.toString()}`,
-          {}
-        );
+      // Add to recent searches if needed
+      setHasSearched?.(true);
 
-        if (!response.ok) {
-          throw new Error('bad response');
-        }
+      // Blur input to close mobile keyboard
+      inputRef.current?.blur();
 
-        const result = await response.json();
+      // Reset the flag after a short delay
+      setTimeout(() => {
+        setIsFromSuggestionClick(false);
+      }, 100);
+    },
+    debounceMs: 300,
+    enabled: !isFromSuggestionClick,
+  });
 
-        // Handle different response formats
-        let rawSuggestions: string[] = [];
-        if (Array.isArray(result)) {
-          rawSuggestions = result
-            .map((r: any) => r.title || r.name || r.product_title || r.product_name || String(r))
-            .filter(Boolean);
-        } else if (result && Array.isArray(result.suggestions)) {
-          rawSuggestions = result.suggestions.map((s: string) => String(s));
-        } else if (result && Array.isArray(result.products)) {
-          rawSuggestions = result.products
-            .map((r: any) => r.title || r.name || r.product_title || r.product_name || String(r))
-            .filter(Boolean);
-        }
-
-        setMobileAutocompleteSuggestions(rawSuggestions.slice(0, 10));
-      } catch (error) {
-        console.error('Mobile autocomplete error:', error);
-        setMobileAutocompleteSuggestions([]);
-      } finally {
-        setMobileIsAutocompleteLoading(false);
-      }
-    }, 300);
-
-    return () => clearTimeout(debounceTimer);
-  }, [searchQuery, storeUrl]);
-
-  // Mobile suggestion click handler - same as desktop
+  // Mobile suggestion click handler wrapper
   const handleMobileSuggestionClick = (suggestion: string) => {
-    // Mark that this change is from a suggestion click
-    isFromSuggestionClickRef.current = true;
-
-    // Close autocomplete
-    setMobileShowAutocomplete(false);
-    setMobileAutocompleteSuggestions([]);
-    setMobileIsAutocompleteLoading(false);
-
-    // Set the search query and trigger search
-    handleSearch(suggestion);
-
-    // Add to recent searches if needed
-    setHasSearched?.(true);
-
-    // Blur input to close mobile keyboard
-    inputRef.current?.blur();
-
-    // Reset the flag after a short delay
-    setTimeout(() => {
-      isFromSuggestionClickRef.current = false;
-    }, 100);
+    handleSuggestionClick(suggestion);
   };
 
   // Mobile-specific click outside handler - same as desktop
@@ -177,7 +130,7 @@ const KalifindSearchMobile: React.FC<KalifindSearchMobileProps> = ({
           >
             <div className="flex h-full w-full flex-1 items-center gap-2">
               <div className="flex h-full w-full">
-                <div className="relative h-full w-full flex-1">
+                <div className="border-border bg-input relative h-full w-full flex-1 rounded-lg border-2 shadow-sm">
                   <Search className="text-muted-foreground absolute top-1/2 left-3 h-5 w-5 -translate-y-1/2 transform" />
                   <input
                     ref={inputRef}
@@ -211,8 +164,8 @@ const KalifindSearchMobile: React.FC<KalifindSearchMobileProps> = ({
                       }
                     }}
                     onKeyDown={handleKeyDown}
-                    placeholder="Search"
-                    className="text-foreground placeholder-muted-foreground h-full w-full border-none py-2 pr-4 pl-10 text-base ring-0 focus:outline-none"
+                    placeholder="Search products..."
+                    className="text-foreground placeholder-muted-foreground h-full w-full border-none bg-transparent py-2 pr-4 pl-10 text-base ring-0 focus:outline-none"
                     autoFocus
                   />{' '}
                 </div>

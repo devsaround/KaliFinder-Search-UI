@@ -2,7 +2,7 @@ import type { Config } from 'tailwindcss';
 import tailwindcssAnimate from 'tailwindcss-animate';
 
 export default {
-  important: '#kalifind-shadow-container',
+  // Shadow DOM provides complete style isolation - no need for scoped !important
   darkMode: ['class', '.dark'],
   content: [
     './pages/**/*.{ts,tsx}',
