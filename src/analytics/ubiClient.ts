@@ -166,7 +166,7 @@ class UBIClient {
       return;
     }
     const backendUrl = import.meta.env.VITE_BACKEND_URL;
-    const collectUrl = `${backendUrl}/v1/analytics/ubi/collect`;
+    const collectUrl = `${backendUrl}/api/ubi/collect`;
 
     console.log('UBI Client: Flushing events to backend:', {
       count: eventsToSend.length,
@@ -177,7 +177,7 @@ class UBIClient {
     try {
       // Use sendBeacon for reliability during page unload
       if (navigator.sendBeacon) {
-        const blob = new Blob([JSON.stringify({ events: eventsToSend })], {
+        const blob = new Blob([JSON.stringify(eventsToSend)], {
           type: 'application/json',
         });
         const success = navigator.sendBeacon(collectUrl, blob);
@@ -187,7 +187,7 @@ class UBIClient {
         const response = await fetch(collectUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ events: eventsToSend }),
+          body: JSON.stringify(eventsToSend),
         });
         console.log('UBI Client: Fetch response:', response.status, response.statusText);
       }
@@ -236,9 +236,17 @@ class UBIClient {
     return anonymousId;
   }
 
-  // Get vendor ID from global variable (set by embed script)
+  // Get vendor ID from page context
   private getVendorId(): string {
-    // Check for global variable set by embed script
+    // Try to get from data attributes or global variables
+    const vendorElement = document.querySelector('[data-vendor-id]');
+    if (vendorElement) {
+      const vendorId = vendorElement.getAttribute('data-vendor-id') || 'unknown';
+      console.log('UBI Client: Found vendor ID from data attribute:', vendorId);
+      return vendorId;
+    }
+
+    // Check for global variable
     if ((window as any).KALIFIND_VENDOR_ID) {
       const vendorId = (window as any).KALIFIND_VENDOR_ID;
       console.log('UBI Client: Found vendor ID from global variable:', vendorId);
@@ -249,9 +257,17 @@ class UBIClient {
     return 'unknown';
   }
 
-  // Get store ID from global variable (set by embed script)
+  // Get store ID from page context
   private getStoreId(): string {
-    // Check for global variable set by embed script
+    // Try to get from data attributes or global variables
+    const storeElement = document.querySelector('[data-store-id]');
+    if (storeElement) {
+      const storeId = storeElement.getAttribute('data-store-id') || 'unknown';
+      console.log('UBI Client: Found store ID from data attribute:', storeId);
+      return storeId;
+    }
+
+    // Check for global variable
     if ((window as any).KALIFIND_STORE_ID) {
       const storeId = (window as any).KALIFIND_STORE_ID;
       console.log('UBI Client: Found store ID from global variable:', storeId);
