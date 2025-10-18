@@ -542,8 +542,9 @@ const removeExistingSearch = (elements: Element[]): void => {
               existingShopifyModal.remove();
             }
 
-            // Prevent body scroll lock that Shopify might apply
-            document.body.style.overflow = 'unset';
+            // Prevent body scroll lock that Shopify might apply (store original first)
+            const originalOverflow = document.body.style.overflow;
+            document.body.style.overflow = originalOverflow || '';
             document.body.classList.remove('search-modal-open', 'modal-open');
 
             console.log('🚀 Kalifind Search: Opening Kalifind modal...');

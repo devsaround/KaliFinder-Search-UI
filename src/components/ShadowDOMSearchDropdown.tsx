@@ -171,20 +171,23 @@ const ShadowDOMSearchDropdown: React.FC<ShadowDOMSearchDropdownProps> = ({
   useEffect(() => {
     if (isOpen) {
       setIsAnimating(true);
+      // Store original overflow before modifying
+      const originalOverflow = document.body.style.overflow;
       document.body.style.overflow = 'hidden';
+      
+      return () => {
+        // Restore original overflow when unmounting
+        document.body.style.overflow = originalOverflow || '';
+      };
     } else {
       const timer = setTimeout(() => {
         setIsAnimating(false);
         // Reset shadow initialization flag when component closes
         shadowInitializedRef.current = false;
       }, 300);
-      document.body.style.overflow = 'unset';
+      
       return () => clearTimeout(timer);
     }
-
-    return () => {
-      document.body.style.overflow = 'unset';
-    };
   }, [isOpen]);
 
   useEffect(() => {

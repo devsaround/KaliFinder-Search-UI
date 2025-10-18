@@ -3,9 +3,9 @@
 /* Tell Tailwind where to scan for class names */
 @source "./{app,components,pages,src}/**/*.{ts,tsx,js,jsx,html}";
 
-/* ---------- Global font + quick utility ---------- */
+/* ---------- Shadow DOM scoped font (only affects widget) ---------- */
 #my-ui :where(*) {
-  font-family: 'Inter', sans-serif !important;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
 }
 
 .my-border {
@@ -162,12 +162,12 @@
   --color-sidebar-ring: hsl(var(--sidebar-ring));
 }
 
-/* ---------- Base element styling using Tailwind utilities ---------- */
+/* ---------- Shadow DOM scoped base styling ---------- */
 @layer base {
-  * {
+  #my-ui * {
     @apply border-border;
   }
-  body {
+  #my-ui body {
     @apply bg-background text-foreground;
   }
 }

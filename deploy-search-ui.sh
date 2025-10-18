@@ -11,6 +11,7 @@ cd "$SCRIPT_DIR"
 # Step 1: Build
 echo ""
 echo "📦 Step 1/3: Building Search UI..."
+# npm run build
 npm run build:dev
 
 if [ $? -ne 0 ]; then
