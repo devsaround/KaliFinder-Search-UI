@@ -23,7 +23,7 @@ const prefetchData = async (storeUrl: string) => {
       return;
     }
     const backendUrl = import.meta.env.VITE_BACKEND_URL;
-    const response = await fetch(`${backendUrl}/v1/search?${params.toString()}`, {});
+    const response = await fetch(`${backendUrl}/api/v1/search?${params.toString()}`, {});
     const result = await response.json();
 
     // Handle both array and object response formats
