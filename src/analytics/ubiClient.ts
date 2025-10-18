@@ -166,7 +166,7 @@ class UBIClient {
       return;
     }
     const backendUrl = import.meta.env.VITE_BACKEND_URL;
-    const collectUrl = `${backendUrl}/api/ubi/collect`;
+    const collectUrl = `${backendUrl}/v1/analytics/ubi/collect`;
 
     console.log('UBI Client: Flushing events to backend:', {
       count: eventsToSend.length,
@@ -177,7 +177,7 @@ class UBIClient {
     try {
       // Use sendBeacon for reliability during page unload
       if (navigator.sendBeacon) {
-        const blob = new Blob([JSON.stringify(eventsToSend)], {
+        const blob = new Blob([JSON.stringify({ events: eventsToSend })], {
           type: 'application/json',
         });
         const success = navigator.sendBeacon(collectUrl, blob);
@@ -187,7 +187,7 @@ class UBIClient {
         const response = await fetch(collectUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(eventsToSend),
+          body: JSON.stringify({ events: eventsToSend }),
         });
         console.log('UBI Client: Fetch response:', response.status, response.statusText);
       }
