@@ -3,8 +3,19 @@
  * Handles UBI event tracking for the storefront embed
  */
 
+interface UBIEvent {
+  event_name: string;
+  event_details: Record<string, unknown>;
+  timestamp: string;
+  session_id?: string;
+  anonymous_id?: string;
+  vendor_id?: string;
+  store_id?: string;
+  platform?: string;
+}
+
 class UBIClient {
-  private events: any[] = [];
+  private events: UBIEvent[] = [];
   private sessionId: string;
   private anonymousId: string;
   private vendorId: string;
@@ -121,7 +132,7 @@ class UBIClient {
   }
 
   // Add event to batch
-  private addEvent(event: any) {
+  private addEvent(event: Omit<UBIEvent, 'session_id' | 'anonymous_id' | 'vendor_id' | 'store_id' | 'platform'>) {
     this.events.push({
       ...event,
       session_id: this.sessionId,
@@ -242,8 +253,9 @@ class UBIClient {
   // Get vendor ID from global variable (set by embed script)
   private getVendorId(): string {
     // Check for global variable set by embed script
-    if ((window as any).KALIFIND_VENDOR_ID) {
-      const vendorId = (window as any).KALIFIND_VENDOR_ID;
+    const globalWindow = window as Window & { KALIFIND_VENDOR_ID?: string };
+    if (globalWindow.KALIFIND_VENDOR_ID) {
+      const vendorId = globalWindow.KALIFIND_VENDOR_ID;
       console.log('UBI Client: Found vendor ID from global variable:', vendorId);
       return vendorId;
     }
@@ -255,8 +267,9 @@ class UBIClient {
   // Get store ID from global variable (set by embed script)
   private getStoreId(): string {
     // Check for global variable set by embed script
-    if ((window as any).KALIFIND_STORE_ID) {
-      const storeId = (window as any).KALIFIND_STORE_ID;
+    const globalWindow = window as Window & { KALIFIND_STORE_ID?: string };
+    if (globalWindow.KALIFIND_STORE_ID) {
+      const storeId = globalWindow.KALIFIND_STORE_ID;
       console.log('UBI Client: Found store ID from global variable:', storeId);
       return storeId;
     }
@@ -274,8 +287,9 @@ class UBIClient {
     }
 
     // Check for global variable
-    if ((window as any).KALIFIND_PLATFORM) {
-      return (window as any).KALIFIND_PLATFORM;
+    const globalWindow = window as Window & { KALIFIND_PLATFORM?: string };
+    if (globalWindow.KALIFIND_PLATFORM) {
+      return globalWindow.KALIFIND_PLATFORM;
     }
 
     // Detect from URL or other indicators

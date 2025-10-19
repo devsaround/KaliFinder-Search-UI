@@ -1,7 +1,8 @@
 // API Response type guards and utilities
+import type { Product } from './index';
 
 export interface SearchResponse {
-  products: any[];
+  products: Product[];
   total: number;
   facets?: {
     category?: {
@@ -40,15 +41,24 @@ export interface AutocompleteResponse {
 }
 
 // Type guards
-export function isSearchResponse(response: any): response is SearchResponse {
+export function isSearchResponse(response: unknown): response is SearchResponse {
   return (
-    response &&
+    response !== null &&
+    response !== undefined &&
     typeof response === 'object' &&
+    'products' in response &&
     Array.isArray(response.products) &&
+    'total' in response &&
     typeof response.total === 'number'
   );
 }
 
-export function isAutocompleteResponse(response: any): response is AutocompleteResponse {
-  return response && typeof response === 'object' && Array.isArray(response.suggestions);
+export function isAutocompleteResponse(response: unknown): response is AutocompleteResponse {
+  return (
+    response !== null &&
+    response !== undefined &&
+    typeof response === 'object' &&
+    'suggestions' in response &&
+    Array.isArray(response.suggestions)
+  );
 }

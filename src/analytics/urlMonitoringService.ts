@@ -321,21 +321,22 @@ class URLMonitoringService {
       }
 
       // Try to get from global cart state (if available)
-      if ((window as any).kalifindCart) {
+      const globalWindow = window as Window & { kalifindCart?: { totalValue: number; itemCount: number; productIds: string[] } };
+      if (globalWindow.kalifindCart) {
         return {
-          totalValue: (window as any).kalifindCart.totalValue || 0,
-          itemCount: (window as any).kalifindCart.itemCount || 0,
-          productIds: (window as any).kalifindCart.productIds || [],
+          totalValue: globalWindow.kalifindCart.totalValue || 0,
+          itemCount: globalWindow.kalifindCart.itemCount || 0,
+          productIds: globalWindow.kalifindCart.productIds || [],
         };
       }
 
       // Try to extract from common cart localStorage keys
       const shopifyCart = localStorage.getItem('cart');
       if (shopifyCart) {
-        const parsed = JSON.parse(shopifyCart);
+        const parsed = JSON.parse(shopifyCart) as { total_price?: number; total?: number; item_count?: number; items?: Array<{ product_id?: string; id?: string }> };
         const totalValue = parsed.total_price || parsed.total || 0;
         const itemCount = parsed.item_count || parsed.items?.length || 0;
-        const productIds = parsed.items?.map((item: any) => item.product_id || item.id) || [];
+        const productIds = parsed.items?.map((item) => item.product_id || item.id || '') || [];
 
         return { totalValue, itemCount, productIds };
       }

@@ -6,7 +6,7 @@
 interface DebugInfo {
   timestamp: number;
   event: string;
-  data: any;
+  data: Record<string, unknown>;
   url: string;
   userAgent: string;
 }
@@ -43,7 +43,7 @@ class PurchaseTrackingDebugHelper {
   /**
    * Log debug information
    */
-  public log(event: string, data: any = {}): void {
+  public log(event: string, data: Record<string, unknown> = {}): void {
     if (!this.isEnabled) return;
 
     const debugInfo: DebugInfo = {
@@ -214,12 +214,13 @@ class PurchaseTrackingDebugHelper {
       import('./ubiClient')
         .then(({ getUBIClient }) => {
           const ubiClient = getUBIClient();
+          const clientData = ubiClient as unknown as { vendorId?: string; storeId?: string; sessionId?: string } | null;
 
           this.log('ubi_client_test', {
             clientExists: !!ubiClient,
-            vendorId: (ubiClient as any)?.vendorId,
-            storeId: (ubiClient as any)?.storeId,
-            sessionId: (ubiClient as any)?.sessionId,
+            vendorId: clientData?.vendorId,
+            storeId: clientData?.storeId,
+            sessionId: clientData?.sessionId,
           });
         })
         .catch((error) => {
@@ -337,5 +338,5 @@ export const debugHelper = PurchaseTrackingDebugHelper.getInstance();
 
 // Make available globally for easy access in browser console
 if (typeof window !== 'undefined') {
-  (window as any).kalifindDebug = debugHelper;
+  (window as Window & { kalifindDebug?: typeof debugHelper }).kalifindDebug = debugHelper;
 }

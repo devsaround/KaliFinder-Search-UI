@@ -8,13 +8,13 @@ const updateCartDataForTracking = (product: CartProduct, price: number): void =>
   try {
     // Get existing cart data
     const existingData = localStorage.getItem('kalifind_cart_data');
-    let cartData = existingData
+    const cartData = existingData
       ? JSON.parse(existingData)
       : {
-          totalValue: 0,
-          itemCount: 0,
-          productIds: [],
-        };
+        totalValue: 0,
+        itemCount: 0,
+        productIds: [],
+      };
 
     // Add new item to cart data
     cartData.totalValue += price;
@@ -27,7 +27,7 @@ const updateCartDataForTracking = (product: CartProduct, price: number): void =>
     localStorage.setItem('kalifind_cart_data', JSON.stringify(cartData));
 
     // Also update global state for immediate access
-    (window as any).kalifindCart = cartData;
+    (window as Window & { kalifindCart?: typeof cartData }).kalifindCart = cartData;
 
     console.log('📊 Cart tracking data updated:', cartData);
   } catch (error) {
@@ -164,7 +164,7 @@ export const addToShopifyCart = async (product: CartProduct): Promise<CartRespon
       try {
         const errorData = JSON.parse(errorText);
         errorMessage = errorData.message || errorData.description || errorMessage;
-      } catch (e) {
+      } catch (_e) {
         // If response is not JSON, use the text as error message
         if (errorText) {
           errorMessage = errorText;
@@ -197,8 +197,15 @@ export const addToShopifyCart = async (product: CartProduct): Promise<CartRespon
   }
 };
 
+// Shopify cart format
+interface ShopifyCart {
+  item_count: number;
+  items: unknown[];
+  total_price: string;
+}
+
 // Update cart fragments in the DOM
-export const updateCartFragments = (cart: any) => {
+export const updateCartFragments = (cart: CartResponse | ShopifyCart) => {
   // Update cart count selectors
   const cartSelectors = [
     '.cart-count',
@@ -217,7 +224,9 @@ export const updateCartFragments = (cart: any) => {
     elements.forEach((element) => {
       if (element.textContent !== undefined) {
         // Handle both Shopify cart format and our CartResponse format
-        const itemCount = cart.item_count || cart.items?.length || 0;
+        const itemCount = 'item_count' in cart
+          ? cart.item_count
+          : cart.cart?.item_count || 0;
         element.textContent = itemCount.toString();
       }
     });
@@ -239,7 +248,9 @@ export const updateCartFragments = (cart: any) => {
     elements.forEach((element) => {
       if (element.textContent !== undefined) {
         // Handle both Shopify cart format and our CartResponse format
-        const totalPrice = cart.total_price || cart.total || '0';
+        const totalPrice = 'total_price' in cart
+          ? cart.total_price
+          : cart.cart?.total_price || '0';
         element.textContent = totalPrice.toString();
       }
     });

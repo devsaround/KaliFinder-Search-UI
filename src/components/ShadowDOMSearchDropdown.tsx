@@ -174,7 +174,7 @@ const ShadowDOMSearchDropdown: React.FC<ShadowDOMSearchDropdownProps> = ({
       // Store original overflow before modifying
       const originalOverflow = document.body.style.overflow;
       document.body.style.overflow = 'hidden';
-      
+
       return () => {
         // Restore original overflow when unmounting
         document.body.style.overflow = originalOverflow || '';
@@ -185,7 +185,7 @@ const ShadowDOMSearchDropdown: React.FC<ShadowDOMSearchDropdownProps> = ({
         // Reset shadow initialization flag when component closes
         shadowInitializedRef.current = false;
       }, 300);
-      
+
       return () => clearTimeout(timer);
     }
   }, [isOpen]);

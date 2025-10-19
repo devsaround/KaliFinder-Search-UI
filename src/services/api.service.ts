@@ -1,15 +1,24 @@
 // API service for Kalifind Search
+import type { AutocompleteResponse, SearchResponse } from '@/types/api.types';
+
+export interface FacetConfig {
+  field: string;
+  label: string;
+  type: string;
+  enabled: boolean;
+  visible: boolean;
+}
 
 export interface ApiService {
   fetchPopularSearches: (storeUrl: string) => Promise<string[]>;
-  fetchFacetConfiguration: (storeUrl: string) => Promise<any[]>;
-  searchProducts: (params: URLSearchParams) => Promise<any>;
-  fetchAutocomplete: (query: string, storeUrl: string) => Promise<any>;
+  fetchFacetConfiguration: (storeUrl: string) => Promise<FacetConfig[]>;
+  searchProducts: (params: URLSearchParams) => Promise<SearchResponse>;
+  fetchAutocomplete: (query: string, storeUrl: string) => Promise<AutocompleteResponse>;
 }
 
 // Simple in-memory cache for API responses
-interface CacheEntry {
-  data: any;
+interface CacheEntry<T = unknown> {
+  data: T;
   timestamp: number;
   ttl: number;
 }
@@ -29,7 +38,7 @@ class ApiServiceImpl implements ApiService {
     return `${method}:${params.join(':')}`;
   }
 
-  private getFromCache(key: string): any | null {
+  private getFromCache<T>(key: string): T | null {
     const entry = this.cache.get(key);
     if (!entry) return null;
 
@@ -38,10 +47,10 @@ class ApiServiceImpl implements ApiService {
       return null;
     }
 
-    return entry.data;
+    return entry.data as T;
   }
 
-  private setCache(key: string, data: any, ttl: number): void {
+  private setCache<T>(key: string, data: T, ttl: number): void {
     this.cache.set(key, {
       data,
       timestamp: Date.now(),
@@ -61,7 +70,7 @@ class ApiServiceImpl implements ApiService {
 
   async fetchPopularSearches(storeUrl: string): Promise<string[]> {
     const cacheKey = this.getCacheKey('popularSearches', storeUrl);
-    const cached = this.getFromCache(cacheKey);
+    const cached = this.getFromCache<string[]>(cacheKey);
     if (cached) {
       return cached;
     }
@@ -83,9 +92,9 @@ class ApiServiceImpl implements ApiService {
     }
   }
 
-  async fetchFacetConfiguration(storeUrl: string): Promise<any[]> {
+  async fetchFacetConfiguration(storeUrl: string): Promise<FacetConfig[]> {
     const cacheKey = this.getCacheKey('facetConfig', storeUrl);
-    const cached = this.getFromCache(cacheKey);
+    const cached = this.getFromCache<FacetConfig[]>(cacheKey);
     if (cached) {
       return cached;
     }
@@ -107,7 +116,7 @@ class ApiServiceImpl implements ApiService {
     }
   }
 
-  async searchProducts(params: URLSearchParams): Promise<any> {
+  async searchProducts(params: URLSearchParams): Promise<SearchResponse> {
     try {
       const response = await fetch(`${this.baseUrl}/v1/search?${params.toString()}`);
       if (!response.ok) {
@@ -120,7 +129,7 @@ class ApiServiceImpl implements ApiService {
     }
   }
 
-  async fetchAutocomplete(query: string, storeUrl: string): Promise<any> {
+  async fetchAutocomplete(query: string, storeUrl: string): Promise<AutocompleteResponse> {
     try {
       const response = await fetch(
         `${this.baseUrl}/v1/search/autocomplete?q=${encodeURIComponent(query)}&storeUrl=${encodeURIComponent(storeUrl)}`

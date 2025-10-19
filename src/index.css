@@ -5,7 +5,14 @@
 
 /* ---------- Shadow DOM scoped font (only affects widget) ---------- */
 #my-ui :where(*) {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+  font-family:
+    'Inter',
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    'Helvetica Neue',
+    sans-serif;
 }
 
 .my-border {

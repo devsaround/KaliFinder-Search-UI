@@ -238,7 +238,7 @@ class PurchaseTrackingHelper {
     currency: string;
   } {
     // Try to extract order ID from element
-    let orderId =
+    const orderId =
       element.getAttribute('data-order-id') ||
       element.getAttribute('data-order-number') ||
       element.textContent?.match(/order\s*#?\s*([A-Z0-9-]+)/i)?.[1] ||
@@ -310,17 +310,18 @@ class PurchaseTrackingHelper {
       // Try Shopify cart
       const shopifyCart = localStorage.getItem('cart');
       if (shopifyCart) {
-        const parsed = JSON.parse(shopifyCart);
+        const parsed = JSON.parse(shopifyCart) as { total_price?: number; total?: number; item_count?: number; items?: Array<{ product_id?: string; id?: string }> };
         return {
           totalValue: parsed.total_price || parsed.total || 0,
           itemCount: parsed.item_count || parsed.items?.length || 0,
-          productIds: parsed.items?.map((item: any) => item.product_id || item.id) || [],
+          productIds: parsed.items?.map((item) => item.product_id || item.id || '') || [],
         };
       }
 
       // Try global state
-      if ((window as any).kalifindCart) {
-        return (window as any).kalifindCart;
+      const globalWindow = window as Window & { kalifindCart?: typeof defaultData };
+      if (globalWindow.kalifindCart) {
+        return globalWindow.kalifindCart;
       }
     } catch (error) {
       console.warn('Failed to get cart data:', error);
@@ -392,7 +393,7 @@ class PurchaseTrackingHelper {
       const trackedTime = parseInt(tracked);
       const fiveMinutesAgo = Date.now() - 5 * 60 * 1000;
       return trackedTime > fiveMinutesAgo;
-    } catch (error) {
+    } catch (_error) {
       return false;
     }
   }
@@ -434,7 +435,7 @@ class PurchaseTrackingHelper {
   public getTrackingStats(): {
     checkoutTracked: boolean;
     lastTrackedTime: number | null;
-    cartData: any;
+    cartData: { totalValue: number; itemCount: number; productIds: string[] };
   } {
     return {
       checkoutTracked: this.hasTrackedCheckoutRecently(),
@@ -450,7 +451,7 @@ class PurchaseTrackingHelper {
     try {
       const tracked = localStorage.getItem('kalifind_checkout_tracked');
       return tracked ? parseInt(tracked) : null;
-    } catch (error) {
+    } catch (_error) {
       return null;
     }
   }
