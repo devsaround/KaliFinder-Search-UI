@@ -1,6 +1,40 @@
 import type { CartProduct, CartResponse, Product } from '../types';
 
 // Store type detection - ALWAYS use explicit storeType from backend
+/**
+ * Update cart data for purchase tracking
+ */
+const updateCartDataForTracking = (product: CartProduct, price: number): void => {
+  try {
+    // Get existing cart data
+    const existingData = localStorage.getItem('kalifind_cart_data');
+    let cartData = existingData
+      ? JSON.parse(existingData)
+      : {
+          totalValue: 0,
+          itemCount: 0,
+          productIds: [],
+        };
+
+    // Add new item to cart data
+    cartData.totalValue += price;
+    cartData.itemCount += 1;
+    if (!cartData.productIds.includes(product.id)) {
+      cartData.productIds.push(product.id);
+    }
+
+    // Save updated cart data
+    localStorage.setItem('kalifind_cart_data', JSON.stringify(cartData));
+
+    // Also update global state for immediate access
+    (window as any).kalifindCart = cartData;
+
+    console.log('📊 Cart tracking data updated:', cartData);
+  } catch (error) {
+    console.warn('Failed to update cart tracking data:', error);
+  }
+};
+
 export const detectStoreType = (product: CartProduct): 'shopify' | 'woocommerce' => {
   // ✅ ALWAYS use storeType from product data (provided by backend)
   // Backend already determines store type when indexing products
@@ -329,6 +363,13 @@ export const addToCart = async (product: Product, storeUrl: string): Promise<Car
       }
     } catch (ubiError) {
       console.warn('UBI tracking failed:', ubiError);
+    }
+
+    // STORE CART DATA FOR PURCHASE TRACKING
+    try {
+      updateCartDataForTracking(cartProduct, parseFloat(cartProduct.price) || 0);
+    } catch (error) {
+      console.warn('Failed to update cart tracking data:', error);
     }
 
     return result;

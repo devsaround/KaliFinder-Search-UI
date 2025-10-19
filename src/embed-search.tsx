@@ -485,6 +485,22 @@ const removeExistingSearch = (elements: Element[]): void => {
       console.log('✅ Kalifind Search: Set KALIFIND_STORE_ID:', configFromUrl.storeId);
     }
 
+    // Initialize purchase tracking
+    console.log('🛒 Kalifind Search: Initializing purchase tracking...');
+    import('./analytics/purchaseTrackingHelper')
+      .then(({ purchaseTrackingHelper }) => {
+        purchaseTrackingHelper.initialize({
+          enableCheckoutInitiation: true,
+          enablePurchaseCompletion: true,
+          minItemsForCheckout: 2,
+          minValueForCheckout: 50,
+        });
+        console.log('✅ Kalifind Search: Purchase tracking initialized');
+      })
+      .catch((error) => {
+        console.warn('⚠️ Kalifind Search: Failed to initialize purchase tracking:', error);
+      });
+
     console.log('🔄 Kalifind Search: Prefetching data...');
     prefetchData(storeUrl);
 

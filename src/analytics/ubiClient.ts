@@ -19,6 +19,9 @@ class UBIClient {
     this.storeId = this.getStoreId();
     this.platform = this.getPlatform();
 
+    // Initialize URL monitoring for purchase tracking
+    this.initializePurchaseTracking();
+
     // Set up page unload handler
     window.addEventListener('pagehide', () => this.flush());
     window.addEventListener('beforeunload', () => this.flush());
@@ -283,6 +286,25 @@ class UBIClient {
     }
 
     return 'unknown';
+  }
+
+  /**
+   * Initialize purchase tracking with URL monitoring
+   */
+  private initializePurchaseTracking(): void {
+    try {
+      // Dynamically import and initialize URL monitoring service
+      import('./urlMonitoringService')
+        .then(({ urlMonitoringService }) => {
+          urlMonitoringService.initialize();
+          console.log('🛒 Purchase tracking initialized with URL monitoring');
+        })
+        .catch((error) => {
+          console.warn('Failed to initialize purchase tracking:', error);
+        });
+    } catch (error) {
+      console.warn('Purchase tracking initialization failed:', error);
+    }
   }
 }
 

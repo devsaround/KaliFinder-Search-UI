@@ -4,6 +4,15 @@ import React, { useCallback, useEffect, useMemo, useRef, useState, useTransition
 import { getUBIClient } from '@/analytics/ubiClient';
 import { apiService } from '@/services/api.service';
 
+// Initialize URL monitoring for purchase tracking
+import('./../analytics/urlMonitoringService')
+  .then(({ urlMonitoringService }) => {
+    urlMonitoringService.initialize();
+  })
+  .catch((error) => {
+    console.warn('Failed to initialize URL monitoring:', error);
+  });
+
 import {
   Accordion,
   AccordionContent,
