@@ -321,7 +321,9 @@ class URLMonitoringService {
       }
 
       // Try to get from global cart state (if available)
-      const globalWindow = window as Window & { kalifindCart?: { totalValue: number; itemCount: number; productIds: string[] } };
+      const globalWindow = window as Window & {
+        kalifindCart?: { totalValue: number; itemCount: number; productIds: string[] };
+      };
       if (globalWindow.kalifindCart) {
         return {
           totalValue: globalWindow.kalifindCart.totalValue || 0,
@@ -333,7 +335,12 @@ class URLMonitoringService {
       // Try to extract from common cart localStorage keys
       const shopifyCart = localStorage.getItem('cart');
       if (shopifyCart) {
-        const parsed = JSON.parse(shopifyCart) as { total_price?: number; total?: number; item_count?: number; items?: Array<{ product_id?: string; id?: string }> };
+        const parsed = JSON.parse(shopifyCart) as {
+          total_price?: number;
+          total?: number;
+          item_count?: number;
+          items?: Array<{ product_id?: string; id?: string }>;
+        };
         const totalValue = parsed.total_price || parsed.total || 0;
         const itemCount = parsed.item_count || parsed.items?.length || 0;
         const productIds = parsed.items?.map((item) => item.product_id || item.id || '') || [];

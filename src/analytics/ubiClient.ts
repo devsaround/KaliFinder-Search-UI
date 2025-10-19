@@ -132,7 +132,9 @@ class UBIClient {
   }
 
   // Add event to batch
-  private addEvent(event: Omit<UBIEvent, 'session_id' | 'anonymous_id' | 'vendor_id' | 'store_id' | 'platform'>) {
+  private addEvent(
+    event: Omit<UBIEvent, 'session_id' | 'anonymous_id' | 'vendor_id' | 'store_id' | 'platform'>
+  ) {
     this.events.push({
       ...event,
       session_id: this.sessionId,

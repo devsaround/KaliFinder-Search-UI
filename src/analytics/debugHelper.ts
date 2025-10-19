@@ -214,7 +214,11 @@ class PurchaseTrackingDebugHelper {
       import('./ubiClient')
         .then(({ getUBIClient }) => {
           const ubiClient = getUBIClient();
-          const clientData = ubiClient as unknown as { vendorId?: string; storeId?: string; sessionId?: string } | null;
+          const clientData = ubiClient as unknown as {
+            vendorId?: string;
+            storeId?: string;
+            sessionId?: string;
+          } | null;
 
           this.log('ubi_client_test', {
             clientExists: !!ubiClient,

@@ -310,7 +310,12 @@ class PurchaseTrackingHelper {
       // Try Shopify cart
       const shopifyCart = localStorage.getItem('cart');
       if (shopifyCart) {
-        const parsed = JSON.parse(shopifyCart) as { total_price?: number; total?: number; item_count?: number; items?: Array<{ product_id?: string; id?: string }> };
+        const parsed = JSON.parse(shopifyCart) as {
+          total_price?: number;
+          total?: number;
+          item_count?: number;
+          items?: Array<{ product_id?: string; id?: string }>;
+        };
         return {
           totalValue: parsed.total_price || parsed.total || 0,
           itemCount: parsed.item_count || parsed.items?.length || 0,

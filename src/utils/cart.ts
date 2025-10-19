@@ -11,10 +11,10 @@ const updateCartDataForTracking = (product: CartProduct, price: number): void =>
     const cartData = existingData
       ? JSON.parse(existingData)
       : {
-        totalValue: 0,
-        itemCount: 0,
-        productIds: [],
-      };
+          totalValue: 0,
+          itemCount: 0,
+          productIds: [],
+        };
 
     // Add new item to cart data
     cartData.totalValue += price;
@@ -224,9 +224,7 @@ export const updateCartFragments = (cart: CartResponse | ShopifyCart) => {
     elements.forEach((element) => {
       if (element.textContent !== undefined) {
         // Handle both Shopify cart format and our CartResponse format
-        const itemCount = 'item_count' in cart
-          ? cart.item_count
-          : cart.cart?.item_count || 0;
+        const itemCount = 'item_count' in cart ? cart.item_count : cart.cart?.item_count || 0;
         element.textContent = itemCount.toString();
       }
     });
@@ -248,9 +246,7 @@ export const updateCartFragments = (cart: CartResponse | ShopifyCart) => {
     elements.forEach((element) => {
       if (element.textContent !== undefined) {
         // Handle both Shopify cart format and our CartResponse format
-        const totalPrice = 'total_price' in cart
-          ? cart.total_price
-          : cart.cart?.total_price || '0';
+        const totalPrice = 'total_price' in cart ? cart.total_price : cart.cart?.total_price || '0';
         element.textContent = totalPrice.toString();
       }
     });
