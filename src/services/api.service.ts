@@ -16,6 +16,15 @@ export interface ApiService {
   fetchAutocomplete: (query: string, storeUrl: string) => Promise<AutocompleteResponse>;
 }
 
+// Rate limit state (shared across all API calls)
+export interface RateLimitState {
+  isRateLimited: boolean;
+  retryAfter: number; // seconds
+  tier: string;
+  upgradeUrl: string;
+  message: string;
+}
+
 // Simple in-memory cache for API responses
 interface CacheEntry<T = unknown> {
   data: T;
@@ -26,6 +35,7 @@ interface CacheEntry<T = unknown> {
 class ApiServiceImpl implements ApiService {
   private baseUrl = import.meta.env.VITE_BACKEND_URL; // Replace with actual API URL
   private cache = new Map<string, CacheEntry>();
+  private rateLimitState: RateLimitState | null = null;
 
   // Cache TTL in milliseconds
   private readonly CACHE_TTL = {
@@ -66,6 +76,98 @@ class ApiServiceImpl implements ApiService {
         }
       }
     }
+  }
+
+  private async fetchWithRateLimitHandling<T>(
+    url: string,
+    options?: RequestInit
+  ): Promise<T | null> {
+    // Check if currently rate limited
+    if (this.rateLimitState && this.rateLimitState.isRateLimited) {
+      const now = Date.now();
+      const resetTime = now + this.rateLimitState.retryAfter * 1000;
+
+      if (Date.now() < resetTime) {
+        console.warn('⚠️ Rate limited, skipping request');
+        return null;
+      } else {
+        // Rate limit expired, clear state
+        this.rateLimitState = null;
+      }
+    }
+
+    try {
+      const response = await fetch(url, options);
+
+      // Log rate limit headers
+      const remaining = response.headers.get('ratelimit-remaining');
+      const limit = response.headers.get('ratelimit-limit');
+
+      if (remaining && parseInt(remaining) < 10) {
+        console.warn(`⚠️ Rate limit warning: ${remaining}/${limit} requests remaining`);
+      }
+
+      // Handle 429 Rate Limit
+      if (response.status === 429) {
+        const data = await response.json();
+        const retryAfter = parseInt(response.headers.get('retry-after') || '60');
+
+        this.rateLimitState = {
+          isRateLimited: true,
+          retryAfter,
+          tier: data.tier || 'free',
+          upgradeUrl: data.upgradeUrl || 'https://kalifinder.com/pricing',
+          message: data.message || 'Rate limit exceeded',
+        };
+
+        console.error(`🚫 Rate limit exceeded:`, this.rateLimitState);
+
+        // Dispatch custom event for UI to handle
+        window.dispatchEvent(
+          new CustomEvent('kalifind:ratelimit', {
+            detail: this.rateLimitState,
+          })
+        );
+
+        return null;
+      }
+
+      // Handle other errors
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('API request failed:', error);
+      return null;
+    }
+  }
+
+  async searchProducts(params: URLSearchParams): Promise<SearchResponse> {
+    const url = `${this.baseUrl}/v1/search?${params.toString()}`;
+    const result = await this.fetchWithRateLimitHandling<SearchResponse>(url);
+
+    if (!result) {
+      // Return empty results when rate limited
+      return {
+        products: [],
+        total: 0,
+      };
+    }
+
+    return result;
+  }
+
+  async fetchAutocomplete(query: string, storeUrl: string): Promise<AutocompleteResponse> {
+    const url = `${this.baseUrl}/v1/search/autocomplete?q=${encodeURIComponent(query)}&storeUrl=${encodeURIComponent(storeUrl)}`;
+    const result = await this.fetchWithRateLimitHandling<AutocompleteResponse>(url);
+
+    if (!result) {
+      return { suggestions: [] };
+    }
+
+    return result;
   }
 
   async fetchPopularSearches(storeUrl: string): Promise<string[]> {
@@ -113,34 +215,6 @@ class ApiServiceImpl implements ApiService {
     } catch (error) {
       console.error('Failed to fetch facet configuration:', error);
       return [];
-    }
-  }
-
-  async searchProducts(params: URLSearchParams): Promise<SearchResponse> {
-    try {
-      const response = await fetch(`${this.baseUrl}/v1/search?${params.toString()}`);
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      return await response.json();
-    } catch (error) {
-      console.error('Failed to search products:', error);
-      return { products: [], total: 0 };
-    }
-  }
-
-  async fetchAutocomplete(query: string, storeUrl: string): Promise<AutocompleteResponse> {
-    try {
-      const response = await fetch(
-        `${this.baseUrl}/v1/search/autocomplete?q=${encodeURIComponent(query)}&storeUrl=${encodeURIComponent(storeUrl)}`
-      );
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      return await response.json();
-    } catch (error) {
-      console.error('Failed to fetch autocomplete:', error);
-      return { suggestions: [] };
     }
   }
 }

@@ -2,7 +2,8 @@ import { ChevronDown, Filter, Search, X } from 'lucide-react';
 import React, { useCallback, useEffect, useMemo, useRef, useState, useTransition } from 'react';
 
 import { getUBIClient } from '@/analytics/ubiClient';
-import { apiService } from '@/services/api.service';
+import { apiService, type RateLimitState } from '@/services/api.service';
+import { RateLimitNotice } from './RateLimitNotice';
 
 // Type for facet buckets from API response
 interface FacetBucket {
@@ -130,6 +131,9 @@ const KalifindSearch: React.FC<{
   const [sortOption, setSortOption] = useState('default');
   const [globalFacetsFetched, setGlobalFacetsFetched] = useState(false);
 
+  // Rate limit state
+  const [rateLimitState, setRateLimitState] = useState<RateLimitState | null>(null);
+
   // Helper function to get sort option label
   const getSortLabel = (option: string) => {
     switch (option) {
@@ -220,6 +224,17 @@ const KalifindSearch: React.FC<{
       console.error('Failed to save recent searches to localStorage', error);
     }
   }, [recentSearches]);
+
+  // Listen for rate limit events from API service
+  useEffect(() => {
+    const handleRateLimit = (event: Event) => {
+      const customEvent = event as CustomEvent<RateLimitState>;
+      setRateLimitState(customEvent.detail);
+    };
+
+    window.addEventListener('kalifind:ratelimit', handleRateLimit);
+    return () => window.removeEventListener('kalifind:ratelimit', handleRateLimit);
+  }, []);
 
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
   const debouncedPriceRange = useDebounce(filters.priceRange, 500);
@@ -1453,6 +1468,18 @@ const KalifindSearch: React.FC<{
   return (
     // <div className="box-border !bg-background !min-h-screen w-screen lg:pt-[4px] lg:px-[96px]">
     <div className="bg-background box-border !min-h-screen w-screen lg:pt-[4px]">
+      {/* Rate Limit Notice */}
+      {rateLimitState && rateLimitState.isRateLimited && (
+        <div className="fixed top-4 left-1/2 z-50 w-full max-w-md -translate-x-1/2 transform px-4">
+          <RateLimitNotice
+            tier={rateLimitState.tier}
+            retryAfter={rateLimitState.retryAfter}
+            upgradeUrl={rateLimitState.upgradeUrl}
+            message={rateLimitState.message}
+          />
+        </div>
+      )}
+
       {!hideHeader && (
         <div className="bg-background !w-full pt-[12px] lg:px-[48px]">
           <div className="mx-auto !flex !w-full flex-col !items-center justify-center lg:flex-row">

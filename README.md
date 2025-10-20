@@ -180,74 +180,85 @@ KaliFinder-Search-UI/
 
 ## 🔌 Integration
 
-### Embed in Website
+### Embed in Website (Single-Script - Recommended)
 
-Add this to your website's HTML:
+Add this **single line** to your website's HTML:
+
+```html
+<!-- Simple one-line integration -->
+<script src="https://cdn.kalifinder.com/kalifind-search.js?storeUrl=YOUR_STORE_URL" defer></script>
+```
+
+**Parameters:**
+
+- `storeUrl` (required): Your store URL (e.g., `https://yourstore.myshopify.com`)
+- `vendorId` (optional): Your KaliFinder vendor ID
+- `storeId` (optional): Your store ID in KaliFinder
+
+**Example:**
+
+```html
+<script
+  src="https://cdn.kalifinder.com/kalifind-search.js?storeUrl=https://findifly-dev.myshopify.com&vendorId=123&storeId=456"
+  defer
+></script>
+```
+
+That's it! The widget will automatically:
+
+- ✅ Find your search icon/button in the header
+- ✅ Replace it with KaliFinder search
+- ✅ Handle all clicks and searches
+- ✅ Work with any theme (Shopify, WordPress, custom)
+
+---
+
+### Alternative: Manual Initialization (Legacy)
+
+If you need more control, you can use the two-script method:
 
 ```html
 <!-- Step 1: Add container -->
 <div id="kalifinder-search"></div>
 
 <!-- Step 2: Load script -->
-<script src="https://cdn.kalifinder.com/search-widget.js"></script>
+<script src="https://cdn.kalifinder.com/kalifind-search.js"></script>
 
-<!-- Step 3: Initialize -->
+<!-- Step 3: Initialize manually -->
 <script>
-  KalifinderSearch.init({
-    containerId: 'kalifinder-search',
-    apiUrl: 'https://api.kalifinder.com/api',
-    vendorId: 'your-vendor-id',
-    theme: 'light', // or 'dark'
-    language: 'en',
+  window.addEventListener('DOMContentLoaded', function () {
+    if (window.KalifinderSearch) {
+      KalifinderSearch.init({
+        containerId: 'kalifinder-search',
+        storeUrl: 'https://yourstore.myshopify.com',
+        vendorId: 'your-vendor-id',
+        storeId: 'your-store-id',
+      });
+    }
   });
 </script>
 ```
 
-### Configuration Options
-
-```typescript
-interface KalifinderConfig {
-  containerId: string; // Container element ID
-  apiUrl: string; // Backend API URL
-  vendorId: string; // Your vendor ID
-  theme?: 'light' | 'dark'; // Theme mode
-  language?: string; // UI language (en, es, fr, etc.)
-  placeholder?: string; // Search input placeholder
-  showRecommendations?: boolean; // Show product recommendations
-  maxResults?: number; // Max search results (default: 20)
-  enableAnalytics?: boolean; // Enable UBI tracking (default: true)
-  customStyles?: CSSProperties; // Custom CSS overrides
-}
-```
+**Note:** Single-script method is recommended for simplicity.
 
 ### WordPress Integration
 
 ```html
 <!-- Add to theme's header.php or footer.php -->
-<div id="kalifinder-search"></div>
-<script src="https://cdn.kalifinder.com/search-widget.js"></script>
-<script>
-  KalifinderSearch.init({
-    containerId: 'kalifinder-search',
-    apiUrl: '<?php echo get_option('kalifinder_api_url'); ?>',
-    vendorId: '<?php echo get_option('kalifinder_vendor_id'); ?>',
-  });
-</script>
+<script
+  src="https://cdn.kalifinder.com/kalifind-search.js?storeUrl=<?php echo esc_url(get_site_url()); ?>"
+  defer
+></script>
 ```
 
 ### Shopify Integration
 
 ```liquid
-<!-- Add to theme.liquid -->
-<div id="kalifinder-search"></div>
-<script src="https://cdn.kalifinder.com/search-widget.js"></script>
-<script>
-  KalifinderSearch.init({
-    containerId: 'kalifinder-search',
-    apiUrl: '{{ settings.kalifinder_api_url }}',
-    vendorId: '{{ settings.kalifinder_vendor_id }}',
-  });
-</script>
+<!-- Add to theme.liquid before </body> -->
+<script
+  src="https://cdn.kalifinder.com/kalifind-search.js?storeUrl={{ shop.url }}"
+  defer
+></script>
 ```
 
 ---
