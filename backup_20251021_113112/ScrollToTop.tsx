@@ -58,11 +58,11 @@ const ScrollToTop: React.FC<ScrollToTopProps> = ({
   return (
     <button
       onClick={scrollToTop}
-      className={`kf:bg-primary kf:text-primary-foreground kf:fixed kf:right-6 kf:bottom-6 kf:z-[1000] kf:flex kf:h-12 kf:w-12 kf:items-center kf:justify-center kf:rounded-full kf:shadow-lg kf:transition-all kf:duration-300 kf:ease-in-out kf:hover:scale-110 kf:hover:shadow-xl kf:active:scale-95 ${isVisible ? 'kf:translate-y-0 kf:opacity-100' : 'kf:pointer-events-none kf:translate-y-4 kf:opacity-0'} ${className} `}
+      className={`kf:!bg-primary kf:!text-primary-foreground kf:!fixed kf:!right-6 kf:!bottom-6 kf:!z-[1000] kf:!flex kf:!h-12 kf:!w-12 kf:!items-center kf:!justify-center kf:!rounded-full kf:!shadow-lg kf:!transition-all kf:!duration-300 kf:!ease-in-out kf:hover:!scale-110 kf:hover:!shadow-xl kf:active:!scale-95 ${isVisible ? 'kf:!translate-y-0 kf:!opacity-100' : 'kf:!pointer-events-none kf:!translate-y-4 kf:!opacity-0'} ${className} `}
       aria-label="Scroll to top"
       title="Back to top"
     >
-      <ChevronUp className="kf:h-6 kf:w-6" />
+      <ChevronUp className="kf:!h-6 kf:!w-6" />
     </button>
   );
 };

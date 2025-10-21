@@ -474,29 +474,29 @@ const ShadowDOMSearchDropdown: React.FC<ShadowDOMSearchDropdownProps> = ({
       };
 
       const content = (
-        <div className="fixed inset-0 z-50 min-h-screen">
+        <div className="kf:fixed kf:inset-0 kf:z-50 kf:min-h-screen">
           {/* Backdrop */}
           <div
-            className={`bg-foreground/20 fixed inset-0 backdrop-blur-sm transition-opacity duration-300 ${
-              isOpen ? 'opacity-100' : 'opacity-0'
+            className={`kf:bg-foreground/20 kf:fixed kf:inset-0 kf:backdrop-blur-sm kf:transition-opacity kf:duration-300 ${
+              isOpen ? 'kf:opacity-100' : 'kf:opacity-0'
             }`}
             onClick={onClose}
           />
 
           {/* Dropdown Panel */}
           <div
-            className={`bg-background fixed inset-0 overflow-y-auto shadow-xl transition-all duration-500 ${
-              isOpen ? 'animate-slide-down' : 'animate-slide-up'
+            className={`kf:bg-background kf:fixed kf:inset-0 kf:overflow-y-auto kf:shadow-xl kf:transition-all kf:duration-500 ${
+              isOpen ? 'kf-animate-slide-down' : 'kf-animate-slide-up'
             }`}
             style={{
               maxHeight: '100vh',
               overflowY: 'auto',
             }}
           >
-            <div className="h-full w-full overflow-y-auto">
+            <div className="kf:h-full kf:w-full kf:overflow-y-auto">
               {isMobileOrTablet ? (
                 // Mobile/Tablet: Use KalifindSearchMobile component for header, and KalifindSearch for content
-                <div className="h-full w-full">
+                <div className="kf:h-full kf:w-full">
                   {/* Mobile search header at top */}
                   <KalifindSearchMobile
                     searchRef={searchRef}
@@ -512,25 +512,25 @@ const ShadowDOMSearchDropdown: React.FC<ShadowDOMSearchDropdownProps> = ({
                   />
 
                   {/* Content area below search */}
-                  <div className="min-h-[calc(100vh-80px)] w-full">
+                  <div className="kf:min-h-[calc(100vh-80px)] kf:w-full">
                     <Suspense
                       fallback={
-                        <div className="flex flex-col items-center justify-center py-12">
-                          <div className="mb-4 flex space-x-2">
+                        <div className="kf:flex kf:flex-col kf:items-center kf:justify-center kf:py-12">
+                          <div className="kf:mb-4 kf:flex kf:space-x-2">
                             <div
-                              className="h-2 w-2 animate-bounce rounded-full bg-gray-400"
+                              className="kf:h-2 kf:w-2 kf:animate-bounce kf:rounded-full kf:bg-gray-400"
                               style={{ animationDelay: '0ms' }}
                             />
                             <div
-                              className="h-2 w-2 animate-bounce rounded-full bg-gray-400"
+                              className="kf:h-2 kf:w-2 kf:animate-bounce kf:rounded-full kf:bg-gray-400"
                               style={{ animationDelay: '150ms' }}
                             />
                             <div
-                              className="h-2 w-2 animate-bounce rounded-full bg-gray-400"
+                              className="kf:h-2 kf:w-2 kf:animate-bounce kf:rounded-full kf:bg-gray-400"
                               style={{ animationDelay: '300ms' }}
                             />
                           </div>
-                          <p className="text-muted-foreground text-sm">Loading products...</p>
+                          <p className="kf:text-muted-foreground kf:text-sm">Loading products...</p>
                         </div>
                       }
                     >
@@ -563,7 +563,7 @@ const ShadowDOMSearchDropdown: React.FC<ShadowDOMSearchDropdownProps> = ({
             </div>
 
             {/* Scroll to Top Button */}
-            <ScrollToTop showAfter={200} className="z-50" />
+            <ScrollToTop showAfter={200} className="kf:z-50" />
           </div>
         </div>
       );

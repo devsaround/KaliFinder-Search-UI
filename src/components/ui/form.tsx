@@ -66,7 +66,7 @@ const FormItem = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivEl
 
     return (
       <FormItemContext.Provider value={{ id }}>
-        <div ref={ref} className={cn('space-y-2', className)} {...props} />
+        <div ref={ref} className={cn('kf:space-y-2', className)} {...props} />
       </FormItemContext.Provider>
     );
   }
@@ -82,7 +82,7 @@ const FormLabel = React.forwardRef<
   return (
     <Label
       ref={ref}
-      className={cn(error && 'text-destructive', className)}
+      className={cn(error && 'kf:text-destructive', className)}
       htmlFor={formItemId}
       {...props}
     />
@@ -118,7 +118,7 @@ const FormDescription = React.forwardRef<
     <p
       ref={ref}
       id={formDescriptionId}
-      className={cn('text-muted-foreground text-sm', className)}
+      className={cn('kf:text-sm kf:text-muted-foreground', className)}
       {...props}
     />
   );
@@ -140,7 +140,7 @@ const FormMessage = React.forwardRef<
     <p
       ref={ref}
       id={formMessageId}
-      className={cn('text-destructive text-sm font-medium', className)}
+      className={cn('kf:text-sm kf:font-medium kf:text-destructive', className)}
       {...props}
     >
       {body}

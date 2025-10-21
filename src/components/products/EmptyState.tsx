@@ -13,19 +13,19 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
   description = 'No products found matching your criteria. Try different keywords or browse our categories.',
 }) => {
   return (
-    <div className="!animate-in !fade-in !w-full !py-[48px] !text-center !duration-300">
-      <div className="!flex !flex-col !items-center !gap-4">
+    <div className="kf:animate-in kf:fade-in kf:w-full kf:py-[48px] kf:text-center kf:duration-300">
+      <div className="kf:flex kf:flex-col kf:items-center kf:gap-4">
         {/* Icon */}
-        <div className="!bg-muted !animate-in !zoom-in !flex !h-16 !w-16 !items-center !justify-center !rounded-full !duration-500">
-          <Search className="!text-muted-foreground !h-8 !w-8" />
+        <div className="kf:bg-muted kf:animate-in kf:zoom-in kf:flex kf:h-16 kf:w-16 kf:items-center kf:justify-center kf:rounded-full kf:duration-500">
+          <Search className="kf:text-muted-foreground kf:h-8 kf:w-8" />
         </div>
 
         {/* Text Content */}
-        <div className="!animate-in !slide-in-from-bottom-2 !duration-500">
-          <p className="!text-foreground !mb-2 !text-[18px] !font-semibold lg:!text-[20px]">
+        <div className="kf:animate-in kf:slide-in-from-bottom-2 kf:duration-500">
+          <p className="kf:text-foreground kf:mb-2 kf:text-[18px] kf:font-semibold kf:lg:text-[20px]">
             {title}
           </p>
-          <p className="!text-muted-foreground !text-[14px] lg:!text-[16px]">
+          <p className="kf:text-muted-foreground kf:text-[14px] kf:lg:text-[16px]">
             {query ? `No results for "${query}". ${description}` : description}
           </p>
         </div>

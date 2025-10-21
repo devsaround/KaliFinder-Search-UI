@@ -3,18 +3,18 @@ import { Skeleton } from '../ui/skeleton';
 
 export const ProductSkeleton: React.FC = () => {
   return (
-    <div className="!bg-background !border-border !flex !w-full !flex-col !rounded-lg !border !p-[8px] sm:!p-[12px]">
+    <div className="kf:bg-background kf:border-border kf:flex kf:w-full kf:flex-col kf:rounded-lg kf:border kf:p-[8px] kf:sm:p-[12px]">
       {/* Image Skeleton */}
-      <Skeleton className="!mb-[8px] !h-[112px] !w-full !rounded-md sm:!h-[144px]" />
+      <Skeleton className="kf:mb-[8px] kf:h-[112px] kf:w-full kf:rounded-md kf:sm:h-[144px]" />
 
       {/* Title Skeleton */}
-      <Skeleton className="!mb-[4px] !h-[20px] !w-3/4 sm:!mb-[8px]" />
-      <Skeleton className="!mb-[8px] !h-[16px] !w-1/2" />
+      <Skeleton className="kf:mb-[4px] kf:h-[20px] kf:w-3/4 kf:sm:mb-[8px]" />
+      <Skeleton className="kf:mb-[8px] kf:h-[16px] kf:w-1/2" />
 
       {/* Price Skeleton */}
-      <div className="mt-auto !flex !items-center !justify-between">
-        <Skeleton className="!h-[16px] !w-1/3" />
-        <Skeleton className="!h-[24px] !w-[24px] !rounded-md sm:!h-[32px] sm:!w-[32px]" />
+      <div className="kf:mt-auto kf:flex kf:items-center kf:justify-between">
+        <Skeleton className="kf:h-[16px] kf:w-1/3" />
+        <Skeleton className="kf:h-[24px] kf:w-[24px] kf:rounded-md kf:sm:h-[32px] kf:sm:w-[32px]" />
       </div>
     </div>
   );
