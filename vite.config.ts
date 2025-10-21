@@ -3,8 +3,39 @@ import react from '@vitejs/plugin-react-swc';
 import autoprefixer from 'autoprefixer';
 import { componentTagger } from 'lovable-tagger';
 import path from 'path';
-import { defineConfig } from 'vite';
-import cssInjectedByJsPlugin from 'vite-plugin-css-injected-by-js';
+import { defineConfig, Plugin } from 'vite';
+
+// Custom plugin to inline CSS for Shadow DOM
+function shadowDomCssPlugin(): Plugin {
+  let cssContent = '';
+
+  return {
+    name: 'shadow-dom-css',
+    enforce: 'post',
+
+    // Capture generated CSS
+    generateBundle(options, bundle) {
+      for (const [fileName, file] of Object.entries(bundle)) {
+        if (fileName.endsWith('.css') && file.type === 'asset') {
+          cssContent = file.source as string;
+          // Remove the CSS file from the bundle since we'll inline it
+          delete bundle[fileName];
+        }
+      }
+
+      // Inject CSS into the JS bundle
+      for (const [fileName, file] of Object.entries(bundle)) {
+        if (fileName.endsWith('.js') && file.type === 'chunk') {
+          // Replace the placeholder import with actual CSS
+          file.code = file.code.replace(
+            /import\s+widgetStyles\s+from\s+['"]\.\.\/index\.css\?inline['"];?/g,
+            `const widgetStyles = ${JSON.stringify(cssContent)};`
+          );
+        }
+      }
+    },
+  };
+}
 
 export default defineConfig(({ mode }) => ({
   server: {
@@ -13,9 +44,9 @@ export default defineConfig(({ mode }) => ({
   },
   plugins: [
     react(),
-    cssInjectedByJsPlugin(),
-    tailwindcss(), // <-- add this
+    tailwindcss(),
     mode === 'development' && componentTagger(),
+    shadowDomCssPlugin(), // Custom plugin to inline CSS into Shadow DOM
   ].filter(Boolean),
   resolve: {
     alias: {
@@ -43,6 +74,8 @@ export default defineConfig(({ mode }) => ({
     cssMinify: true,
     reportCompressedSize: false,
     emptyOutDir: true,
+    // Disable CSS code splitting - inline all CSS into the JS bundle
+    cssCodeSplit: false,
     lib: {
       entry: path.resolve(__dirname, 'src/embed-search.tsx'),
       name: 'KalifindSearch',
@@ -55,6 +88,8 @@ export default defineConfig(({ mode }) => ({
         // Ensure all dependencies are bundled for standalone widget
         globals: {},
         inlineDynamicImports: true,
+        // Inline all assets (including CSS)
+        assetFileNames: 'assets/[name][extname]',
       },
     },
     outDir: 'dist',

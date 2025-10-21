@@ -20,7 +20,7 @@ export default tseslint.config(
       ecmaVersion: 2022,
       globals: globals.browser,
       parserOptions: {
-        project: ['./tsconfig.json', './tsconfig.app.json'],
+        project: ['./tsconfig.json', './tsconfig.app.json', './tsconfig.node.json'],
         tsconfigRootDir: import.meta.dirname,
       },
     },
@@ -57,6 +57,13 @@ export default tseslint.config(
       'prefer-const': 'error',
       'no-var': 'error',
       eqeqeq: ['error', 'always', { null: 'ignore' }],
+    },
+  },
+  {
+    // Disable react-refresh for embed script (no exports needed)
+    files: ['src/embed-search.tsx'],
+    rules: {
+      'react-refresh/only-export-components': 'off',
     },
   }
 );
