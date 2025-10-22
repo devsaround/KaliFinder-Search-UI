@@ -14,6 +14,7 @@ export interface InitialData {
   sizeCounts?: { [key: string]: number };
   tagCounts?: { [key: string]: number };
   products?: Product[]; // Store products with cart fields for cart operations
+  storeUrl?: string;
 }
 
 export interface Product {

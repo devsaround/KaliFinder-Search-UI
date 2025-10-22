@@ -1,4 +1,4 @@
-@import 'tailwindcss' prefix(kf);
+@import 'tailwindcss';
 
 /* Tell Tailwind where to scan for class names */
 @source "./{app,components,pages,src}/**/*.{ts,tsx,js,jsx,html}";
@@ -21,6 +21,23 @@
 
 /* ---------- Design tokens (your existing HSL vars) ---------- */
 @layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans;
+    font-family:
+      'Inter',
+      -apple-system,
+      BlinkMacSystemFont,
+      'Segoe UI',
+      Roboto,
+      'Helvetica Neue',
+      Arial,
+      sans-serif;
+  }
+
   :root {
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
@@ -172,10 +189,10 @@
 /* ---------- Shadow DOM scoped base styling ---------- */
 @layer base {
   #my-ui * {
-    @apply kf:border-border;
+    @apply border-border;
   }
   #my-ui body {
-    @apply kf:bg-background kf:text-foreground;
+    @apply bg-background text-foreground;
   }
 }
 
@@ -262,4 +279,264 @@
 }
 .kf-animate-fade-in {
   animation: fade-in 0.3s ease-out;
+}
+
+/* ============================================================
+   EMBEDDED WIDGET STYLES (Shadow DOM Isolated)
+   These styles only apply within the Shadow DOM of the embedded widget
+   ============================================================ */
+
+/**
+ * Widget Root Container
+ * Minimal styling to avoid affecting host page
+ */
+.kalifinder-widget-root {
+  all: initial;
+  display: inline-block;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family:
+    'Inter',
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    sans-serif;
+}
+
+/**
+ * Widget Embed Wrapper (Shadow DOM)
+ * Contains all widget styles safely isolated
+ */
+.kalifinder-widget-embed {
+  all: initial;
+  display: block;
+  box-sizing: border-box;
+  font-family:
+    'Inter',
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    sans-serif;
+}
+
+/**
+ * Trigger Button - Minimal Search Icon
+ * Only Kalifinder icon, does NOT intercept host page search
+ * Positioned absolutely to avoid DOM layout impact
+ */
+.kalifinder-trigger-button {
+  all: initial;
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+  color: white;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.4);
+  transition: all 0.3s ease;
+  z-index: 9998;
+  font-size: 24px;
+}
+
+.kalifinder-trigger-button:hover {
+  transform: scale(1.1);
+  box-shadow: 0 8px 24px rgba(124, 58, 237, 0.6);
+}
+
+.kalifinder-trigger-button:active {
+  transform: scale(0.95);
+}
+
+.kalifinder-trigger-button:focus {
+  outline: 2px solid rgba(124, 58, 237, 0.5);
+  outline-offset: 2px;
+}
+
+.kalifinder-trigger-button svg {
+  width: 24px;
+  height: 24px;
+  stroke: currentColor;
+  stroke-width: 2;
+  fill: none;
+}
+
+/**
+ * Trigger Tooltip
+ * Shows on hover
+ */
+.kalifinder-trigger-tooltip {
+  position: absolute;
+  bottom: 100%;
+  right: 0;
+  background: rgba(0, 0, 0, 0.9);
+  color: white;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  white-space: nowrap;
+  margin-bottom: 8px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+.kalifinder-trigger-button:hover .kalifinder-trigger-tooltip {
+  opacity: 1;
+}
+
+/**
+ * Widget Modal - Full Widget Container
+ * Overlays entire page with semi-transparent backdrop
+ * Only appears when trigger is clicked
+ */
+.kalifinder-widget-modal {
+  all: initial;
+  position: fixed;
+  top: 0;
+  width: 100vw;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 9999;
+  animation: fade-in-modal 0.3s ease-out;
+}
+
+/**
+ * Modal Content
+ * The actual widget panel
+ * Mobile: full width, slides up from bottom
+ * Desktop: centered, max-width container
+ */
+.kalifinder-widget-modal-content {
+  all: initial;
+  position: relative;
+  background: white;
+  border-radius: 16px 16px 0 0;
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
+  animation: slide-up-modal 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-sizing: border-box;
+}
+
+@media (max-width: 768px) {
+  .kalifinder-widget-modal-content {
+    max-width: 600px;
+    width: auto;
+    height: auto;
+    border-radius: 16px;
+    margin: auto;
+  }
+}
+
+/**
+ * Modal Close Button
+ * Top-right X button
+ */
+.kalifinder-widget-modal-close {
+  all: initial;
+  position: absolute;
+  top: 1.8rem;
+  right: 1.5rem;
+  width: 32px;
+  height: 32px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 24px;
+  color: #666;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  z-index: 10000;
+}
+
+.kalifinder-widget-modal-close:hover {
+  color: #000;
+  transform: scale(1.1);
+}
+
+.kalifinder-widget-modal-close:active {
+  transform: scale(0.95);
+}
+
+/**
+ * Widget Content
+ * Scrollable area for search results
+ */
+.kalifinder-widget-content {
+  all: initial;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/**
+ * Hidden trigger indicator (accessibility)
+ */
+.kalifinder-widget-trigger-hidden {
+  display: none;
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* ============================================================
+   ANIMATIONS FOR EMBEDDED WIDGET
+   ============================================================ */
+
+@keyframes fade-in-modal {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slide-up-modal {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* ============================================================
+   RESPONSIVE ADJUSTMENTS
+   ============================================================ */
+
+@media (max-width: 640px) {
+  .kalifinder-trigger-button {
+    bottom: 20px;
+    right: 20px;
+    width: 48px;
+    height: 48px;
+  }
+
+  .kalifinder-widget-modal-content {
+    height: 100vh;
+    max-height: 100vh;
+    border-radius: 0;
+  }
+
+  .kalifinder-widget-modal-close {
+    top: 12px;
+    right: 12px;
+  }
 }
