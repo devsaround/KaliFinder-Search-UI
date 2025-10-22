@@ -18,6 +18,157 @@ import WidgetEmbed from './components/WidgetEmbed';
 import './index.css';
 
 /**
+ * Dispatch a window event to open the Kalifinder widget with an optional query
+ */
+function openKalifinderWithQuery(query?: string) {
+  try {
+    const event = new CustomEvent('kalifinder:open', { detail: { query: query ?? '' } });
+    window.dispatchEvent(event);
+  } catch (e) {
+    // Fallback for very old browsers (unlikely)
+    (window as any).dispatchEvent &&
+      (window as any).dispatchEvent({ type: 'kalifinder:open', detail: { query: query ?? '' } });
+  }
+}
+
+/**
+ * Attach listeners to common host search elements and forward queries to the widget
+ */
+function attachHostSearchListeners(): void {
+  // Selectors: inputs, forms, and common search triggers (case-insensitive)
+  const inputSelectors = [
+    'header input[type="search"]',
+    'header input[placeholder*="search" i]',
+    'header input[name*="search" i]',
+    'header input[name="q" i]',
+    'header input[id*="search" i]',
+    'header [role="search"] input',
+    'input[type="search"]',
+    'input[placeholder*="search" i]',
+    'input[name*="search" i]',
+    'input[name="q" i]',
+    'input[id*="search" i]',
+    '[role="search"] input',
+    '#search',
+    '.search input',
+    '.search-box input',
+    '[class*="search-input" i]',
+    '[class*="search" i] input',
+  ];
+
+  const formSelectors = [
+    'header form[role="search"]',
+    'header form[action*="search" i]',
+    'form[role="search"]',
+    'form[action*="search" i]',
+  ];
+
+  const buttonSelectors = [
+    'header button[aria-label*="search" i]',
+    'header button[title*="search" i]',
+    'header a[aria-label*="search" i]',
+    'header [class*="search" i]',
+    'header [id*="search" i]',
+    'button[aria-label*="search" i]',
+    'button[title*="search" i]',
+    'a[aria-label*="search" i]',
+    '[class*="search-button" i]',
+    '[class*="search-icon" i]',
+    '[id*="search" i]',
+    'svg[class*="search" i]',
+  ];
+
+  const markBound = (el: Element) => el.setAttribute('data-kalifinder-bound', 'true');
+  const isBound = (el: Element) => el.getAttribute('data-kalifinder-bound') === 'true';
+
+  // Binding function (can be called repeatedly; guarded by data-kalifinder-bound)
+  const bindAll = () => {
+    // Inputs: submit on Enter
+    const inputs = new Set<Element>();
+    inputSelectors.forEach((sel) => {
+      document.querySelectorAll(sel).forEach((el) => inputs.add(el));
+    });
+    inputs.forEach((el) => {
+      if (isBound(el)) return;
+      (el as HTMLElement).addEventListener(
+        'keydown',
+        (e: Event) => {
+          const ke = e as KeyboardEvent;
+          if (ke.key === 'Enter') {
+            const target = ke.target as HTMLInputElement | null;
+            const q = target?.value?.trim() ?? '';
+            openKalifinderWithQuery(q);
+            ke.preventDefault();
+            ke.stopPropagation();
+          }
+        },
+        { capture: true }
+      );
+      markBound(el);
+    });
+
+    // Forms: intercept submit
+    const forms = new Set<Element>();
+    formSelectors.forEach((sel) => {
+      document.querySelectorAll(sel).forEach((el) => forms.add(el));
+    });
+    forms.forEach((el) => {
+      if (isBound(el)) return;
+      el.addEventListener(
+        'submit',
+        (e: Event) => {
+          const form = e.currentTarget as HTMLFormElement;
+          const input = form.querySelector<HTMLInputElement>(
+            'input[type="search"], input[name="q" i], input[name*="search" i], input[placeholder*="search" i]'
+          );
+          const q = input?.value?.trim() ?? '';
+          openKalifinderWithQuery(q);
+          e.preventDefault();
+          e.stopPropagation();
+        },
+        { capture: true }
+      );
+      markBound(el);
+    });
+
+    // Buttons/Icons: open widget (don’t assume query)
+    const buttons = new Set<Element>();
+    buttonSelectors.forEach((sel) => {
+      document.querySelectorAll(sel).forEach((el) => buttons.add(el));
+    });
+    buttons.forEach((el) => {
+      if (isBound(el)) return;
+      (el as HTMLElement).addEventListener(
+        'click',
+        (e: Event) => {
+          const root =
+            (e.currentTarget as Element).closest('form, header, .search, [role="search"]') ||
+            document;
+          const input = root.querySelector<HTMLInputElement>(
+            'input[type="search"], input[name="q" i], input[name*="search" i], input[placeholder*="search" i]'
+          );
+          const q = input?.value?.trim() ?? '';
+          openKalifinderWithQuery(q);
+          e.preventDefault();
+          e.stopPropagation();
+        },
+        { capture: true }
+      );
+      markBound(el);
+    });
+  };
+
+  // Initial bind
+  bindAll();
+
+  // Observe for dynamically added search elements (SPAs)
+  const observer = new MutationObserver(() => {
+    bindAll();
+  });
+  observer.observe(document.documentElement, { childList: true, subtree: true });
+}
+
+/**
  * Get store URL from script tag attributes or URL query parameters
  */
 function getStoreUrlFromScript(): string {
@@ -173,6 +324,8 @@ function initializeEmbeddedWidget(): void {
 
     // Check if host page has search, inject icon if needed
     injectSearchIconIfNeeded();
+    // Regardless of injection, hook into any existing search elements
+    attachHostSearchListeners();
 
     // Create a unique container for this widget instance
     const containerId = `kalifinder-search-${Date.now()}`;

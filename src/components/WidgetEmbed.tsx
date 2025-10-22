@@ -21,6 +21,8 @@ interface WidgetEmbedProps {
 
 export default function WidgetEmbed({ containerId, storeUrl }: WidgetEmbedProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [hasSearched, setHasSearched] = useState<boolean>(false);
   const shadowRootRef = useRef<ShadowRoot | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -61,6 +63,30 @@ export default function WidgetEmbed({ containerId, storeUrl }: WidgetEmbedProps)
   };
 
   /**
+   * Listen for host-page open/search events
+   * - 'kalifinder:open' opens the widget and optionally seeds a query
+   * detail: { query?: string }
+   */
+  useEffect(() => {
+    const handleOpen = (evt: Event) => {
+      // Using CustomEvent to access detail safely
+      const ce = evt as CustomEvent<{ query?: string }>;
+      const q = ce?.detail?.query ?? '';
+      setIsOpen(true);
+      if (typeof q === 'string') {
+        setSearchQuery(q);
+        setHasSearched(Boolean(q.trim()));
+      }
+      console.log('[KaliFinder] Received open event from host with query:', q);
+    };
+
+    window.addEventListener('kalifinder:open' as any, handleOpen);
+    return () => {
+      window.removeEventListener('kalifinder:open' as any, handleOpen);
+    };
+  }, []);
+
+  /**
    * Close widget when clicking outside
    */
   const handleBackdropClick = () => {
@@ -92,10 +118,10 @@ export default function WidgetEmbed({ containerId, storeUrl }: WidgetEmbedProps)
             {/* Search widget */}
             <div className="kalifinder-widget-content">
               <KalifindSearch
-                searchQuery=""
-                setSearchQuery={() => {}}
-                hasSearched={false}
-                setHasSearched={() => {}}
+                searchQuery={searchQuery}
+                setSearchQuery={setSearchQuery}
+                hasSearched={hasSearched}
+                setHasSearched={setHasSearched}
                 storeUrl={storeUrl}
               />
             </div>
