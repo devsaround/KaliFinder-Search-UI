@@ -49,7 +49,7 @@ jobs:
 
       - name: Build production bundle
         env:
-          VITE_BACKEND_URL: https://api.kalifinder.com/api
+          VITE_BACKEND_URL: https://api.kalifinder.com
           VITE_WIDGET_CDN_URL: https://cdn.kalifinder.com
         run: |
           echo "Building production widget..."
