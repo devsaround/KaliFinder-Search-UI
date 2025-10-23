@@ -40,10 +40,7 @@ const KalifindSearchDesktop: React.FC<KalifindSearchDesktopProps> = ({
               </div>
             </div>
 
-            <div
-              className="relative w-full flex-1 px-4 md:px-0 lg:pl-0"
-              ref={searchRef}
-            >
+            <div className="relative w-full flex-1 px-4 md:px-0 lg:pl-0" ref={searchRef}>
               <div className="flex w-full flex-1 items-center gap-2" ref={searchRef}>
                 <div className="flex w-full">
                   <div className="border-border bg-input relative w-full flex-1 rounded-lg border-2 shadow-sm transition-shadow hover:shadow-md">

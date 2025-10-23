@@ -351,7 +351,8 @@ function initializeEmbeddedWidget(): void {
     const containerId = `kalifinder-search-${Date.now()}`;
     const container = document.createElement('div');
     container.id = containerId;
-    container.style.cssText = 'position: fixed; z-index: 2147483647; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none;';
+    container.style.cssText =
+      'position: fixed; z-index: 2147483647; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none;';
 
     // Append to body
     document.body.appendChild(container);
