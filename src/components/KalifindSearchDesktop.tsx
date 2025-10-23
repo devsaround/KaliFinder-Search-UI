@@ -24,30 +24,30 @@ const KalifindSearchDesktop: React.FC<KalifindSearchDesktopProps> = ({
   setShowAutocomplete,
 }) => {
   return (
-    <div className="!bg-background box-border !min-h-screen w-screen lg:pt-[4px]">
+    <div className="bg-background box-border min-h-screen w-screen lg:pt-1">
       {!hideHeader && (
-        <div className="!bg-background !w-full pt-[12px] lg:px-[48px]">
-          <div className="!mx-auto !flex !w-full flex-col !items-center justify-center lg:flex-row">
-            <div className="!flex !items-center justify-between !gap-[8px] md:justify-normal">
-              <div className="!hidden w-[340px] !items-center lg:!flex">
-                <a href="/" className="!s-center">
+        <div className="bg-background w-full pt-3 lg:px-12">
+          <div className="mx-auto flex w-full flex-col items-center justify-center lg:flex-row">
+            <div className="flex items-center justify-between gap-2 md:justify-normal">
+              <div className="hidden w-[340px] items-center lg:flex">
+                <a href="/" className="s-center">
                   <img
                     src={`https://kalifinder-search.pages.dev/KalifindLogo.png`}
                     alt="Kalifind"
-                    className="mt-[8px] !h-auto w-[210px] !object-contain !object-center"
+                    className="mt-2 h-auto w-[210px] object-contain object-center"
                   />
                 </a>
               </div>
             </div>
 
             <div
-              className="!relative !w-full !flex-1 px-[16px] md:px-0 lg:pl-[0px]"
+              className="relative w-full flex-1 px-4 md:px-0 lg:pl-0"
               ref={searchRef}
             >
-              <div className="!flex !w-full !flex-1 !items-center !gap-[8px]" ref={searchRef}>
-                <div className="flex !w-full">
-                  <div className="!border-border !bg-input !relative !w-full !flex-1 !rounded-lg !border-2 !shadow-sm transition-shadow hover:!shadow-md">
-                    <Search className="!text-muted-foreground !absolute !top-1/2 !left-[12px] !h-[20px] !w-[20px] !-translate-y-1/2 !transform" />
+              <div className="flex w-full flex-1 items-center gap-2" ref={searchRef}>
+                <div className="flex w-full">
+                  <div className="border-border bg-input relative w-full flex-1 rounded-lg border-2 shadow-sm transition-shadow hover:shadow-md">
+                    <Search className="text-muted-foreground absolute top-1/2 left-3 h-5 w-5 -translate-y-1/2 transform" />
                     <input
                       ref={inputRef}
                       type="text"
@@ -72,7 +72,7 @@ const KalifindSearchDesktop: React.FC<KalifindSearchDesktopProps> = ({
                       }}
                       onKeyDown={handleKeyDown}
                       placeholder="Search products..."
-                      className="!text-foreground !placeholder-muted-foreground focus:!border-primary !w-full !bg-transparent !py-[14px] !pr-[16px] !pl-[40px] focus:!ring-0 focus:!outline-none"
+                      className="text-foreground placeholder-muted-foreground focus:border-primary w-full bg-transparent py-3.5 pr-4 pl-10 focus:ring-0 focus:outline-none"
                       style={{
                         background: 'transparent',
                         border: 'none',
@@ -82,11 +82,11 @@ const KalifindSearchDesktop: React.FC<KalifindSearchDesktopProps> = ({
                     />
                   </div>
                   <button
-                    className="hover:!bg-muted/20 !flex-shrink-0 !rounded-lg !transition-colors !duration-200"
+                    className="hover:bg-muted/20 flex-shrink-0 rounded-lg transition-colors duration-200"
                     aria-label="Close search"
                     onClick={onClose}
                   >
-                    <X className="!text-muted-foreground hover:!text-foreground !mr-[10px] !h-[25px] !w-[25px] font-bold !transition-colors !duration-200" />
+                    <X className="text-muted-foreground hover:text-foreground mr-2.5 h-6 w-6 font-bold transition-colors duration-200" />
                   </button>
                 </div>
               </div>

@@ -292,7 +292,6 @@
  */
 .kalifinder-widget-root {
   all: initial;
-  display: inline-block;
   margin: 0;
   padding: 0;
   box-sizing: border-box;
@@ -311,7 +310,6 @@
  */
 .kalifinder-widget-embed {
   all: initial;
-  display: block;
   box-sizing: border-box;
   font-family:
     'Inter',
@@ -403,7 +401,7 @@
   all: initial;
   position: fixed;
   top: 0;
-  width: 100vw;
+  width: 100%;
   background: rgba(0, 0, 0, 0.5);
   z-index: 9999;
   animation: fade-in-modal 0.3s ease-out;
@@ -428,7 +426,6 @@
 @media (max-width: 768px) {
   .kalifinder-widget-modal-content {
     max-width: 600px;
-    width: auto;
     height: auto;
     border-radius: 16px;
     margin: auto;
@@ -443,7 +440,7 @@
   all: initial;
   position: absolute;
   top: 1.8rem;
-  right: 1.5rem;
+  right: 0.6rem;
   width: 32px;
   height: 32px;
   background: transparent;
@@ -473,7 +470,7 @@
  */
 .kalifinder-widget-content {
   all: initial;
-  padding: 0;
+  width: 100%;
   box-sizing: border-box;
 }
 

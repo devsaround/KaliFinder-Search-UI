@@ -1,21 +1,37 @@
 /**
  * KaliFinder Embeddable Search Widget
- * Entry point for CDN embedding with Shadow DOM isolation
+ * Entry point for CDN embedding with complete Shadow DOM isolation
  *
  * Usage:
- * <script src="https://cdn.kalifinder.com/kalifind-search.js?storeUrl=https://test.myshopify.com" defer></script>
+ * <script src="https://cdn.kalifinder.com/kalifind-search.umd.js?storeUrl=https://test.myshopify.com" defer></script>
  *
- * Features:
- * - Shadow DOM isolation prevents CSS conflicts
- * - Listens to common host-site search elements (inputs/forms/buttons) non-invasively
- * - Also provides a Kalifinder search icon injection when no search exists
- * - Single JS file embedding
+ * ISOLATION FEATURES:
+ * ✅ Shadow DOM - Complete CSS/JS isolation
+ * ✅ Host CSS cannot affect widget styles
+ * ✅ Widget CSS cannot leak to host page
+ * ✅ All styles injected inside Shadow DOM
+ * ✅ React components render inside Shadow DOM
+ * ✅ Events captured/stopped from bubbling to host
+ * ✅ No global namespace pollution
+ *
+ * DETECTION STRATEGY:
+ * ✅ Universal attribute-based detection (not theme-specific)
+ * ✅ Only scans <header> element for search functionality
+ * ✅ Works with any framework (WordPress, Shopify, custom, etc.)
+ * ✅ Detects: inputs, forms, buttons with "search" in attributes
+ * ✅ Falls back to injecting search icon if no header search found
+ * ✅ MutationObserver for dynamic content (SPAs)
+ *
+ * HOST COMPATIBILITY:
+ * ✅ Non-invasive event listeners (no preventDefault on buttons)
+ * ✅ Host theme toggles/modals continue to work
+ * ✅ Single UMD bundle - works everywhere
  */
 
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import WidgetEmbed from './components/WidgetEmbed';
-import './index.css';
+import styles from './index.css?inline';
 
 /**
  * Dispatch a window event to open the Kalifinder widget with an optional query
@@ -33,86 +49,91 @@ function openKalifinderWithQuery(query?: string) {
 
 /**
  * Attach listeners to common host search elements and forward queries to the widget
+ * Strategy: Only focus on <header> element with universal attribute-based detection
  */
 function attachHostSearchListeners(): void {
-  // Selectors: inputs, forms, and common search triggers (case-insensitive)
+  const header = document.querySelector('header');
+  if (!header) {
+    console.log('[KaliFinder] No <header> element found on page');
+    return;
+  }
+
+  console.log('[KaliFinder] Found <header> element, scanning for search functionality...');
+
+  // Universal selectors - detect ANY element within header that contains "search" in:
+  // - type attribute
+  // - name attribute
+  // - id attribute
+  // - class attribute
+  // - placeholder attribute
+  // - aria-label attribute
+  // - title attribute
+  // - role attribute
   const inputSelectors = [
-    'header input[type="search"]',
-    'header input[placeholder*="search" i]',
-    'header input[name*="search" i]',
-    'header input[name="q" i]',
-    'header input[name="s" i]',
-    'header input[id*="search" i]',
-    'header [role="search"] input',
     'input[type="search"]',
-    'input[placeholder*="search" i]',
-    'input[name*="search" i]',
-    'input[name="q" i]',
-    'input[name="s" i]',
-    'input[id*="search" i]',
+    'input[type="text"][name*="search" i]',
+    'input[type="text"][name="q"]',
+    'input[type="text"][name="s"]',
+    'input[type="text"][id*="search" i]',
+    'input[type="text"][class*="search" i]',
+    'input[type="text"][placeholder*="search" i]',
+    'input[type="text"][aria-label*="search" i]',
+    'input[role="searchbox"]',
     '[role="search"] input',
-    '#search',
-    '#searchform input',
-    '.search input',
-    '.search-box input',
-    '.search-field',
-    'form[id*="search" i] input',
-    'form[class*="search" i] input',
-    '[class*="search-input" i]',
-    '[class*="search" i] input',
   ];
 
   const formSelectors = [
-    'header form[role="search"]',
-    'header form[action*="search" i]',
-    'header form[id*="search" i]',
-    'header form[class*="search" i]',
     'form[role="search"]',
     'form[action*="search" i]',
     'form[id*="search" i]',
     'form[class*="search" i]',
-    '#searchform',
   ];
 
   const buttonSelectors = [
-    'header button[aria-label*="search" i]',
-    'header button[title*="search" i]',
-    'header a[aria-label*="search" i]',
-    'header [class*="search" i]',
-    'header [id*="search" i]',
+    'button[type="submit"]', // Any submit button in a search form
     'button[aria-label*="search" i]',
     'button[title*="search" i]',
-    'a[aria-label*="search" i]',
-    '[class*="search-button" i]',
-    '[class*="search-icon" i]',
-    '[class*="search-action" i]',
-    '[class*="search-modal" i]',
     'button[class*="search" i]',
+    'button[id*="search" i]',
+    'a[aria-label*="search" i]',
+    'a[title*="search" i]',
     'a[class*="search" i]',
-    '[class*="search-toggle" i]',
-    '[class*="sb-search-button-open" i]',
+    'a[id*="search" i]',
+    '[role="button"][aria-label*="search" i]',
     '[role="button"][class*="search" i]',
     '[data-toggle-target*="search" i]',
+    '[data-toggle-body-class*="search" i]',
     '[data-set-focus*="search" i]',
-    '[on\\:click*="search" i]',
-    '[id*="search" i]',
-    'svg[class*="search" i]',
-    'search-button button',
-    'search-button',
-    'input[type="submit"][value*="search" i]',
-    '[aria-controls*="search" i]',
   ];
 
   const markBound = (el: Element) => el.setAttribute('data-kalifinder-bound', 'true');
   const isBound = (el: Element) => el.getAttribute('data-kalifinder-bound') === 'true';
 
-  // Binding function (can be called repeatedly; guarded by data-kalifinder-bound)
+  // Binding function - only scan within <header>
   const bindAll = () => {
-    // Inputs: submit on Enter
+    // Find all inputs within header that match search patterns
     const inputs = new Set<Element>();
     inputSelectors.forEach((sel) => {
-      document.querySelectorAll(sel).forEach((el) => inputs.add(el));
+      header.querySelectorAll(sel).forEach((el) => inputs.add(el));
     });
+
+    // Find all forms within header that match search patterns
+    const forms = new Set<Element>();
+    formSelectors.forEach((sel) => {
+      header.querySelectorAll(sel).forEach((el) => forms.add(el));
+    });
+
+    // Find all buttons/links within header that match search patterns
+    const buttons = new Set<Element>();
+    buttonSelectors.forEach((sel) => {
+      header.querySelectorAll(sel).forEach((el) => buttons.add(el));
+    });
+
+    console.log(
+      `[KaliFinder] Header scan complete: ${inputs.size} input(s), ${forms.size} form(s), ${buttons.size} button(s)/link(s)`
+    );
+
+    // Bind inputs: trigger on Enter key
     inputs.forEach((el) => {
       if (isBound(el)) return;
       (el as HTMLElement).addEventListener(
@@ -132,19 +153,16 @@ function attachHostSearchListeners(): void {
       markBound(el);
     });
 
-    // Forms: intercept submit
-    const forms = new Set<Element>();
-    formSelectors.forEach((sel) => {
-      document.querySelectorAll(sel).forEach((el) => forms.add(el));
-    });
+    // Bind forms: intercept submit
     forms.forEach((el) => {
       if (isBound(el)) return;
       el.addEventListener(
         'submit',
         (e: Event) => {
           const form = e.currentTarget as HTMLFormElement;
+          // Find any input in the form
           const input = form.querySelector<HTMLInputElement>(
-            'input[type="search"], input[name="q" i], input[name="s" i], input[name*="search" i], input[id*="search" i], input[placeholder*="search" i], .search-field'
+            'input[type="search"], input[type="text"]'
           );
           const q = input?.value?.trim() ?? '';
           openKalifinderWithQuery(q);
@@ -156,25 +174,21 @@ function attachHostSearchListeners(): void {
       markBound(el);
     });
 
-    // Buttons/Icons: open widget (don’t assume query)
-    const buttons = new Set<Element>();
-    buttonSelectors.forEach((sel) => {
-      document.querySelectorAll(sel).forEach((el) => buttons.add(el));
-    });
+    // Bind buttons: trigger on click
     buttons.forEach((el) => {
       if (isBound(el)) return;
       (el as HTMLElement).addEventListener(
         'click',
         (e: Event) => {
-          const root =
-            (e.currentTarget as Element).closest('form, header, .search, [role="search"]') ||
-            document;
-          const input = root.querySelector<HTMLInputElement>(
-            'input[type="search"], input[name="q" i], input[name="s" i], input[name*="search" i], input[id*="search" i], input[placeholder*="search" i], .search-field'
+          // Try to find input in closest form or in header
+          const closestForm = (e.currentTarget as Element).closest('form');
+          const searchRoot = closestForm || header;
+          const input = searchRoot.querySelector<HTMLInputElement>(
+            'input[type="search"], input[type="text"]'
           );
           const q = input?.value?.trim() ?? '';
           openKalifinderWithQuery(q);
-          // Do not prevent default or stop propagation so host behaviors (e.g., WordPress toggles) still work
+          // Do not prevent default or stop propagation so host behaviors still work
         },
         { capture: true }
       );
@@ -185,11 +199,11 @@ function attachHostSearchListeners(): void {
   // Initial bind
   bindAll();
 
-  // Observe for dynamically added search elements (SPAs)
+  // Observe header for dynamically added search elements (SPAs or lazy-loaded content)
   const observer = new MutationObserver(() => {
     bindAll();
   });
-  observer.observe(document.documentElement, { childList: true, subtree: true });
+  observer.observe(header, { childList: true, subtree: true });
 }
 
 /**
@@ -220,55 +234,35 @@ function getStoreUrlFromScript(): string {
 }
 
 /**
- * Detect if the host website has a search input or search icon
- * Returns true if search functionality is already present
+ * Detect if the host website has a search functionality in <header>
+ * Returns true if search functionality is already present in header
  */
 function detectExistingSearch(): boolean {
-  // Common search input selectors
-  const searchInputSelectors = [
-    'input[type="search"]',
-    'input[placeholder*="search" i]',
-    'input[placeholder*="Search" i]',
-    'input[name*="search" i]',
-    'input[name*="q" i]',
-    'input[name="s" i]',
-    'input[class*="search" i]',
-    '[role="searchbox"]',
-    '.search-input',
-    '.search-box',
-    '#search',
-    'form.search',
-    '#searchform',
-  ];
-
-  // Common search icon/button selectors
-  const searchIconSelectors = [
-    'button[aria-label*="search" i]',
-    'button[title*="search" i]',
-    'a[aria-label*="search" i]',
-    '.search-icon',
-    '.search-btn',
-    '[class*="search-icon" i]',
-    '[class*="search-button" i]',
-    'svg[class*="search" i]',
-  ];
-
-  const allSelectors = [...searchInputSelectors, ...searchIconSelectors];
-
-  for (const selector of allSelectors) {
-    try {
-      const element = document.querySelector(selector);
-      if (element && (element as HTMLElement).offsetParent !== null) {
-        // Element exists and is visible
-        console.log('[KaliFinder] Existing search found:', selector);
-        return true;
-      }
-    } catch {
-      // Invalid selector, continue
-    }
+  const header = document.querySelector('header');
+  if (!header) {
+    console.log('[KaliFinder] No <header> element found');
+    return false;
   }
 
-  console.log('[KaliFinder] No existing search found, will inject search icon');
+  // Universal detection: look for any element with "search" in attributes
+  const hasSearchInput = header.querySelector(
+    'input[type="search"], input[name*="search" i], input[placeholder*="search" i], input[class*="search" i], input[id*="search" i], [role="searchbox"]'
+  );
+
+  const hasSearchButton = header.querySelector(
+    'button[aria-label*="search" i], button[title*="search" i], button[class*="search" i], a[aria-label*="search" i], a[class*="search" i], [role="button"][class*="search" i]'
+  );
+
+  const hasSearchForm = header.querySelector(
+    'form[role="search"], form[action*="search" i], form[class*="search" i], form[id*="search" i]'
+  );
+
+  if (hasSearchInput || hasSearchButton || hasSearchForm) {
+    console.log('[KaliFinder] Search functionality detected in <header>');
+    return true;
+  }
+
+  console.log('[KaliFinder] No search functionality found in <header>, will inject search icon');
   return false;
 }
 
@@ -341,7 +335,7 @@ function injectSearchIconIfNeeded(): void {
 }
 
 /**
- * Initialize the embedded widget
+ * Initialize the embedded widget with Shadow DOM isolation
  */
 function initializeEmbeddedWidget(): void {
   try {
@@ -357,21 +351,43 @@ function initializeEmbeddedWidget(): void {
     const containerId = `kalifinder-search-${Date.now()}`;
     const container = document.createElement('div');
     container.id = containerId;
-    container.style.cssText = 'display: inline-block; margin: 0; padding: 0;';
+    container.style.cssText = 'position: fixed; z-index: 2147483647; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none;';
 
-    // Append to body or a specific element
-    const targetElement = document.body;
-    targetElement.appendChild(container);
+    // Append to body
+    document.body.appendChild(container);
 
-    // Render widget component
-    const root = ReactDOM.createRoot(container);
+    // Create Shadow DOM for complete isolation
+    const shadowRoot = container.attachShadow({ mode: 'open' });
+
+    // Inject all widget styles into Shadow DOM (isolated from host)
+    const styleSheet = document.createElement('style');
+    styleSheet.textContent = `
+      /* CSS Reset to prevent host CSS interference */
+      :host {
+        all: initial;
+        display: block;
+      }
+      
+      /* Widget styles (completely isolated) */
+      ${styles}
+    `;
+    shadowRoot.appendChild(styleSheet);
+
+    // Create React mount point inside Shadow DOM
+    const reactRoot = document.createElement('div');
+    reactRoot.id = 'kalifinder-react-root';
+    reactRoot.style.cssText = 'width: 100%; height: 100%; pointer-events: auto;';
+    shadowRoot.appendChild(reactRoot);
+
+    // Render React app inside Shadow DOM
+    const root = ReactDOM.createRoot(reactRoot);
     root.render(
       <React.StrictMode>
-        <WidgetEmbed containerId={containerId} storeUrl={storeUrl} />
+        <WidgetEmbed storeUrl={storeUrl} />
       </React.StrictMode>
     );
 
-    console.log('[KaliFinder] Widget embedded successfully for store:', storeUrl);
+    console.log('[KaliFinder] Widget embedded with Shadow DOM isolation for store:', storeUrl);
   } catch (error) {
     console.error('[KaliFinder] Failed to initialize widget:', error);
   }

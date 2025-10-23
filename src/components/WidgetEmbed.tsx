@@ -1,57 +1,27 @@
 /**
  * WidgetEmbed Component
- * Handles Shadow DOM isolation and event management for embedded widget
+ * Handles event management for embedded widget inside Shadow DOM
  *
  * Key features:
- * - Shadow DOM prevents CSS conflicts with host website
- * - Only listens to Kalifinder search icon clicks
- * - Does NOT intercept host website search elements
- * - Self-contained styling and behavior
+ * - Rendered inside Shadow DOM for complete CSS/JS isolation
+ * - Host website CSS cannot affect widget styles
+ * - Widget CSS cannot leak to host website
+ * - Event isolation with capture phase handling
  */
 
 import { useEffect, useRef, useState } from 'react';
-import styles from '../index.css?inline';
 import KalifindSearch from './KalifindSearch';
 import WidgetTrigger from './WidgetTrigger';
 
 interface WidgetEmbedProps {
-  containerId: string;
   storeUrl: string;
 }
 
-export default function WidgetEmbed({ containerId, storeUrl }: WidgetEmbedProps) {
+export default function WidgetEmbed({ storeUrl }: WidgetEmbedProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [hasSearched, setHasSearched] = useState<boolean>(false);
-  const shadowRootRef = useRef<ShadowRoot | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    // Create Shadow DOM for style isolation
-    const container = document.getElementById(containerId);
-    if (!container) {
-      console.error(`[KaliFinder] Container ${containerId} not found`);
-      return;
-    }
-
-    // Attach shadow root with 'open' mode for debugging (use 'closed' for production security)
-    if (!shadowRootRef.current) {
-      shadowRootRef.current = container.attachShadow({ mode: 'open' });
-
-      // Inject styles into shadow DOM
-      const styleSheet = document.createElement('style');
-      styleSheet.textContent = styles;
-      shadowRootRef.current.appendChild(styleSheet);
-
-      // Create content wrapper
-      const contentWrapper = document.createElement('div');
-      contentWrapper.className = 'kalifinder-widget-embed';
-      contentWrapper.setAttribute('data-store-url', storeUrl);
-      shadowRootRef.current.appendChild(contentWrapper);
-
-      console.log('[KaliFinder] Shadow DOM created for isolation');
-    }
-  }, [containerId, storeUrl]);
 
   /**
    * Handle trigger button click - only responds to Kalifinder icon
