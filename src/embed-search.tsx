@@ -40,7 +40,7 @@ function openKalifinderWithQuery(query?: string) {
   try {
     const event = new CustomEvent('kalifinder:open', { detail: { query: query ?? '' } });
     window.dispatchEvent(event);
-  } catch (e) {
+  } catch (_error) {
     // Fallback for very old browsers (unlikely)
     (window as any).dispatchEvent &&
       (window as any).dispatchEvent({ type: 'kalifinder:open', detail: { query: query ?? '' } });

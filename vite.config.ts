@@ -19,7 +19,7 @@ export default defineConfig({
   define: {
     'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'development'),
     __VITE_BACKEND_URL__: JSON.stringify(
-      process.env.VITE_BACKEND_URL || 'https://api.kalifinder.com/api'
+      process.env.VITE_BACKEND_URL || 'https://api.kalifinder.com'
     ),
     __VITE_WIDGET_CDN_URL__: JSON.stringify(
       process.env.VITE_WIDGET_CDN_URL || 'https://cdn.kalifinder.com'
@@ -40,12 +40,14 @@ export default defineConfig({
     lib: {
       entry: path.resolve(__dirname, 'src/embed-search.tsx'),
       name: 'KaliFinderSearch',
-      fileName: 'kalifind-search',
+      fileName: (format) => `kalifind-search.js`,
       formats: ['umd'],
     },
     rollupOptions: {
       output: {
         inlineDynamicImports: true,
+        // Force .js extension for UMD format
+        entryFileNames: 'kalifind-search.js',
         // Inline all CSS and assets into the single JS file
         assetFileNames: (assetInfo) => {
           if (assetInfo.name === 'style.css') return 'styles.css';

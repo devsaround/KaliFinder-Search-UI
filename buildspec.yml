@@ -15,14 +15,18 @@ phases:
     commands:
       - echo Build started on `date`
       - echo Building production bundle...
-      - export VITE_BACKEND_URL=https://api.kalifinder.com/api
+      - export VITE_BACKEND_URL=https://api.kalifinder.com
       - export VITE_WIDGET_CDN_URL=https://cdn.kalifinder.com
       - pnpm run build
   post_build:
     commands:
       - echo Build completed on `date`
       - echo Deploying to S3 with no caching...
-      - aws s3 sync dist/ s3://$S3_BUCKET/ --delete --cache-control "no-cache, no-store, must-revalidate"
+      - aws s3 sync dist/ s3://$S3_BUCKET/ --delete --cache-control "no-cache, no-store, must-revalidate" --exclude "*.js" --exclude "*.css"
+      - echo Uploading JS files with correct content-type...
+      - aws s3 sync dist/ s3://$S3_BUCKET/ --exclude "*" --include "*.js" --content-type "application/javascript" --cache-control "no-cache, no-store, must-revalidate"
+      - echo Uploading CSS files with correct content-type...
+      - aws s3 sync dist/ s3://$S3_BUCKET/ --exclude "*" --include "*.css" --content-type "text/css" --cache-control "no-cache, no-store, must-revalidate"
       - echo Invalidating CloudFront cache...
       - aws cloudfront create-invalidation --distribution-id $CLOUDFRONT_ID --paths "/*"
       - echo Deployment complete!

@@ -401,10 +401,18 @@
   all: initial;
   position: fixed;
   top: 0;
-  width: 100%;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100vw;
+  height: 100vh;
   background: rgba(0, 0, 0, 0.5);
   z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   animation: fade-in-modal 0.3s ease-out;
+  overflow-y: auto;
 }
 
 /**
@@ -417,10 +425,15 @@
   all: initial;
   position: relative;
   background: white;
-  border-radius: 16px 16px 0 0;
-  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
   animation: slide-up-modal 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   box-sizing: border-box;
+  width: 95%;
+  max-width: 1400px;
+  max-height: 90vh;
+  overflow: hidden;
+  display: block;
 }
 
 @media (max-width: 768px) {
@@ -526,10 +539,16 @@
     height: 48px;
   }
 
+  .kalifinder-widget-modal {
+    align-items: flex-end;
+  }
+
   .kalifinder-widget-modal-content {
-    height: 100vh;
-    max-height: 100vh;
-    border-radius: 0;
+    width: 100%;
+    max-width: 100%;
+    height: 95vh;
+    max-height: 95vh;
+    border-radius: 16px 16px 0 0;
   }
 
   .kalifinder-widget-modal-close {

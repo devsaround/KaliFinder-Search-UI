@@ -11,7 +11,6 @@
 
 import { useEffect, useRef, useState } from 'react';
 import KalifindSearch from './KalifindSearch';
-import WidgetTrigger from './WidgetTrigger';
 
 interface WidgetEmbedProps {
   storeUrl: string;
@@ -22,15 +21,6 @@ export default function WidgetEmbed({ storeUrl }: WidgetEmbedProps) {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [hasSearched, setHasSearched] = useState<boolean>(false);
   const containerRef = useRef<HTMLDivElement>(null);
-
-  /**
-   * Handle trigger button click - only responds to Kalifinder icon
-   */
-  const handleTriggerClick = (e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent event bubbling to host page
-    setIsOpen(!isOpen);
-    console.log('[KaliFinder] Widget toggled:', isOpen ? 'closed' : 'open');
-  };
 
   /**
    * Listen for host-page open/search events
@@ -65,10 +55,7 @@ export default function WidgetEmbed({ storeUrl }: WidgetEmbedProps) {
 
   return (
     <div ref={containerRef} className="kalifinder-widget-root" data-testid="widget-embed">
-      {/* Minimal trigger button - search icon only */}
-      {!isOpen && <WidgetTrigger onClick={handleTriggerClick} storeUrl={storeUrl} />}
-
-      {/* Full widget in modal - only visible when triggered */}
+      {/* Full widget in modal - only visible when triggered by host page */}
       {isOpen && (
         <div className="kalifinder-widget-modal" onClick={handleBackdropClick}>
           <div
@@ -96,13 +83,6 @@ export default function WidgetEmbed({ storeUrl }: WidgetEmbedProps) {
               />
             </div>
           </div>
-        </div>
-      )}
-
-      {/* Hidden trigger button indicator when widget is open (accessibility) */}
-      {isOpen && (
-        <div className="kalifinder-widget-trigger-hidden" role="status" aria-live="polite">
-          Search widget is open
         </div>
       )}
     </div>
