@@ -289,6 +289,7 @@
 /**
  * Widget Root Container
  * Minimal styling to avoid affecting host page
+ * CRITICAL: pointer-events none to avoid blocking host page clicks
  */
 .kalifinder-widget-root {
   all: initial;
@@ -302,14 +303,25 @@
     'Segoe UI',
     Roboto,
     sans-serif;
+  pointer-events: none;
+}
+
+/**
+ * Ensure all children inherit box-sizing
+ * Critical for consistent layout calculations
+ */
+.kalifinder-widget-root *,
+.kalifinder-widget-root *::before,
+.kalifinder-widget-root *::after {
+  box-sizing: border-box;
 }
 
 /**
  * Widget Embed Wrapper (Shadow DOM)
  * Contains all widget styles safely isolated
+ * REMOVED 'all: initial' to allow proper CSS inheritance for layout
  */
 .kalifinder-widget-embed {
-  all: initial;
   box-sizing: border-box;
   font-family:
     'Inter',
@@ -318,6 +330,9 @@
     'Segoe UI',
     Roboto,
     sans-serif;
+  display: block;
+  width: 100%;
+  height: 100%;
 }
 
 /**
@@ -396,9 +411,10 @@
  * Widget Modal - Full Widget Container
  * Overlays entire page with semi-transparent backdrop
  * Only appears when trigger is clicked
+ * CRITICAL: pointer-events auto to allow modal interactions
+ * REMOVED 'all: initial' to maintain flexbox layout
  */
 .kalifinder-widget-modal {
-  all: initial;
   position: fixed;
   top: 0;
   left: 0;
@@ -407,12 +423,18 @@
   width: 100vw;
   height: 100vh;
   background: rgba(0, 0, 0, 0.5);
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
   z-index: 9999;
   display: flex;
   align-items: center;
   justify-content: center;
   animation: fade-in-modal 0.3s ease-out;
   overflow-y: auto;
+  pointer-events: auto;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 20px;
 }
 
 /**
@@ -420,9 +442,9 @@
  * The actual widget panel
  * Mobile: full width, slides up from bottom
  * Desktop: centered, max-width container
+ * IMPORTANT: Don't use 'all: initial' - keeps font-family and text styles
  */
 .kalifinder-widget-modal-content {
-  all: initial;
   position: relative;
   background: white;
   border-radius: 16px;
@@ -432,16 +454,30 @@
   width: 95%;
   max-width: 1400px;
   max-height: 90vh;
+  height: 90vh;
   overflow: hidden;
-  display: block;
+  display: flex;
+  flex-direction: column;
+  font-family:
+    'Inter',
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    sans-serif;
+  color: #000;
+  margin: 0;
+  padding: 0;
 }
 
 @media (max-width: 768px) {
   .kalifinder-widget-modal-content {
-    max-width: 600px;
-    height: auto;
-    border-radius: 16px;
-    margin: auto;
+    width: 100%;
+    max-width: 100%;
+    height: 100vh;
+    max-height: 100vh;
+    border-radius: 0;
+    margin: 0;
   }
 }
 
@@ -480,11 +516,15 @@
 /**
  * Widget Content
  * Scrollable area for search results
+ * IMPORTANT: Don't use 'all: initial' - it breaks Tailwind classes
  */
 .kalifinder-widget-content {
-  all: initial;
   width: 100%;
+  height: 100%;
   box-sizing: border-box;
+  display: block;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 /**

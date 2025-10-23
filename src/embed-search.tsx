@@ -377,7 +377,9 @@ function initializeEmbeddedWidget(): void {
     // Create React mount point inside Shadow DOM
     const reactRoot = document.createElement('div');
     reactRoot.id = 'kalifinder-react-root';
-    reactRoot.style.cssText = 'width: 100%; height: 100%; pointer-events: auto;';
+    // CRITICAL: pointer-events: none to prevent blocking host page
+    // Modal will set pointer-events: auto when opened
+    reactRoot.style.cssText = 'width: 100%; height: 100%; pointer-events: none;';
     shadowRoot.appendChild(reactRoot);
 
     // Render React app inside Shadow DOM
