@@ -7,8 +7,8 @@
  *
  * Features:
  * - Shadow DOM isolation prevents CSS conflicts
- * - Only listens to Kalifinder search icon clicks
- * - Does NOT intercept host website search elements
+ * - Listens to common host-site search elements (inputs/forms/buttons) non-invasively
+ * - Also provides a Kalifinder search icon injection when no search exists
  * - Single JS file embedding
  */
 
@@ -41,17 +41,23 @@ function attachHostSearchListeners(): void {
     'header input[placeholder*="search" i]',
     'header input[name*="search" i]',
     'header input[name="q" i]',
+    'header input[name="s" i]',
     'header input[id*="search" i]',
     'header [role="search"] input',
     'input[type="search"]',
     'input[placeholder*="search" i]',
     'input[name*="search" i]',
     'input[name="q" i]',
+    'input[name="s" i]',
     'input[id*="search" i]',
     '[role="search"] input',
     '#search',
+    '#searchform input',
     '.search input',
     '.search-box input',
+    '.search-field',
+    'form[id*="search" i] input',
+    'form[class*="search" i] input',
     '[class*="search-input" i]',
     '[class*="search" i] input',
   ];
@@ -59,8 +65,13 @@ function attachHostSearchListeners(): void {
   const formSelectors = [
     'header form[role="search"]',
     'header form[action*="search" i]',
+    'header form[id*="search" i]',
+    'header form[class*="search" i]',
     'form[role="search"]',
     'form[action*="search" i]',
+    'form[id*="search" i]',
+    'form[class*="search" i]',
+    '#searchform',
   ];
 
   const buttonSelectors = [
@@ -74,8 +85,22 @@ function attachHostSearchListeners(): void {
     'a[aria-label*="search" i]',
     '[class*="search-button" i]',
     '[class*="search-icon" i]',
+    '[class*="search-action" i]',
+    '[class*="search-modal" i]',
+    'button[class*="search" i]',
+    'a[class*="search" i]',
+    '[class*="search-toggle" i]',
+    '[class*="sb-search-button-open" i]',
+    '[role="button"][class*="search" i]',
+    '[data-toggle-target*="search" i]',
+    '[data-set-focus*="search" i]',
+    '[on\\:click*="search" i]',
     '[id*="search" i]',
     'svg[class*="search" i]',
+    'search-button button',
+    'search-button',
+    'input[type="submit"][value*="search" i]',
+    '[aria-controls*="search" i]',
   ];
 
   const markBound = (el: Element) => el.setAttribute('data-kalifinder-bound', 'true');
@@ -119,7 +144,7 @@ function attachHostSearchListeners(): void {
         (e: Event) => {
           const form = e.currentTarget as HTMLFormElement;
           const input = form.querySelector<HTMLInputElement>(
-            'input[type="search"], input[name="q" i], input[name*="search" i], input[placeholder*="search" i]'
+            'input[type="search"], input[name="q" i], input[name="s" i], input[name*="search" i], input[id*="search" i], input[placeholder*="search" i], .search-field'
           );
           const q = input?.value?.trim() ?? '';
           openKalifinderWithQuery(q);
@@ -145,12 +170,11 @@ function attachHostSearchListeners(): void {
             (e.currentTarget as Element).closest('form, header, .search, [role="search"]') ||
             document;
           const input = root.querySelector<HTMLInputElement>(
-            'input[type="search"], input[name="q" i], input[name*="search" i], input[placeholder*="search" i]'
+            'input[type="search"], input[name="q" i], input[name="s" i], input[name*="search" i], input[id*="search" i], input[placeholder*="search" i], .search-field'
           );
           const q = input?.value?.trim() ?? '';
           openKalifinderWithQuery(q);
-          e.preventDefault();
-          e.stopPropagation();
+          // Do not prevent default or stop propagation so host behaviors (e.g., WordPress toggles) still work
         },
         { capture: true }
       );
@@ -206,13 +230,15 @@ function detectExistingSearch(): boolean {
     'input[placeholder*="search" i]',
     'input[placeholder*="Search" i]',
     'input[name*="search" i]',
-    'input[name*="q"]',
+    'input[name*="q" i]',
+    'input[name="s" i]',
     'input[class*="search" i]',
     '[role="searchbox"]',
     '.search-input',
     '.search-box',
     '#search',
     'form.search',
+    '#searchform',
   ];
 
   // Common search icon/button selectors
