@@ -3,6 +3,7 @@
   "private": true,
   "version": "1.0.0",
   "type": "module",
+  "packageManager": "pnpm@10.19.0",
   "scripts": {
     "dev": "vite",
     "build": "pnpm run clean && tsc -b && vite build --mode production",
@@ -68,6 +69,5 @@
     "typescript-eslint": "^8.46.2",
     "vite": "^7.1.12",
     "vite-plugin-css-injected-by-js": "^3.5.2"
-  },
-  "packageManager": "pnpm@10.19.0"
+  }
 }
