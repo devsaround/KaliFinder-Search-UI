@@ -1,1 +1,6 @@
+#!/usr/bin/env sh
+
+# Add known pnpm locations to PATH
+export PATH="/usr/local/bin:/opt/homebrew/bin:$HOME/Library/pnpm:$HOME/.local/share/pnpm:$PATH"
+
 pnpm run format && pnpm run lint && pnpm run type-check

@@ -1,0 +1,6 @@
+# Only allow pnpm as package manager
+package-manager-strict: true
+# Use strict peer dependencies
+strict-peer-dependencies: true
+# Enable shell emulator on Windows
+shell-emulator: true
