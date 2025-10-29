@@ -7,13 +7,16 @@ import type { WidgetConfig } from '@/config/widget-config';
 
 /**
  * API endpoint paths
+ * Based on https://api.kalifinder.com/api-docs
  */
 export const API_ENDPOINTS = {
-  SEARCH: '/search',
-  AUTOCOMPLETE: '/autocomplete',
-  RECOMMENDATIONS: '/recommendations',
-  FACETS: '/facets',
-  POPULAR_SEARCHES: '/popular-searches',
+  SEARCH: '/api/v1/search/search',
+  AUTOCOMPLETE: '/api/v1/search/autocomplete',
+  RECOMMENDATIONS: '/api/v1/search/recommended',
+  RECOMMENDATIONS_CONFIG: '/api/v1/search/recommendations-config',
+  FACETS: '/api/v1/facets',
+  FACETS_CONFIGURED: '/api/v1/facets/configured',
+  POPULAR_SEARCHES: '/api/v1/search/popular',
   PRODUCT_DETAILS: '/products/:id',
 } as const;
 

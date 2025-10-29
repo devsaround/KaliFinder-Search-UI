@@ -145,7 +145,7 @@ class ApiServiceImpl implements ApiService {
   }
 
   async searchProducts(params: URLSearchParams): Promise<SearchResponse> {
-    const url = `${this.baseUrl}/v1/search?${params.toString()}`;
+    const url = `${this.baseUrl}/api/v1/search/search?${params.toString()}`;
     const result = await this.fetchWithRateLimitHandling<SearchResponse>(url);
 
     if (!result) {
@@ -160,7 +160,7 @@ class ApiServiceImpl implements ApiService {
   }
 
   async fetchAutocomplete(query: string, storeUrl: string): Promise<AutocompleteResponse> {
-    const url = `${this.baseUrl}/v1/search/autocomplete?q=${encodeURIComponent(query)}&storeUrl=${encodeURIComponent(storeUrl)}`;
+    const url = `${this.baseUrl}/api/v1/search/autocomplete?q=${encodeURIComponent(query)}&storeUrl=${encodeURIComponent(storeUrl)}`;
     const result = await this.fetchWithRateLimitHandling<AutocompleteResponse>(url);
 
     if (!result) {
@@ -179,7 +179,7 @@ class ApiServiceImpl implements ApiService {
 
     try {
       const response = await fetch(
-        `${this.baseUrl}/v1/search/popular?storeUrl=${encodeURIComponent(storeUrl)}`
+        `${this.baseUrl}/api/v1/search/popular?storeUrl=${encodeURIComponent(storeUrl)}`
       );
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -203,7 +203,7 @@ class ApiServiceImpl implements ApiService {
 
     try {
       const response = await fetch(
-        `${this.baseUrl}/v1/facets?storeUrl=${encodeURIComponent(storeUrl)}`
+        `${this.baseUrl}/api/v1/facets/configured?storeUrl=${encodeURIComponent(storeUrl)}`
       );
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);

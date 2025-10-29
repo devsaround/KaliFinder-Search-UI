@@ -1,458 +1,214 @@
 # KaliFinder Search UI
 
-> **Embeddable search widget for intelligent e-commerce product discovery**
+> **Embeddable AI-powered search widget for e-commerce**
 
-[![Status](https://img.shields.io/badge/status-production-brightgreen)]()
-[![React](https://img.shields.io/badge/react-18.3%2B-blue)]()
-[![TypeScript](https://img.shields.io/badge/typescript-5.0%2B-blue)]()
-[![Shadow DOM](https://img.shields.io/badge/Shadow%20DOM-isolated-purple)]()
+[![React](https://img.shields.io/badge/react-19.2-blue)]() [![TypeScript](https://img.shields.io/badge/typescript-5.9-blue)]() [![Vite](https://img.shields.io/badge/vite-7.1-646CFF)]() [![Tailwind](https://img.shields.io/badge/tailwind-4.0-38B2AC)]()
 
----
-
-## 🚀 Overview
-
-KaliFinder Search UI is a lightweight, embeddable search widget that provides intelligent product search experiences for e-commerce websites. Built with React and Shadow DOM isolation, it integrates seamlessly into any website without style conflicts.
-
-### Key Features
-
-- 🔍 **Instant Search** - Real-time product search as you type
-- ⚡ **Smart Autocomplete** - Context-aware suggestions with images
-- 🎯 **Faceted Filters** - Category, price, brand filtering
-- 📱 **Mobile Responsive** - Perfect experience on all devices
-- 🎨 **Style Isolation** - Shadow DOM prevents CSS conflicts
-- 🚀 **Lightning Fast** - Optimized bundle size < 100KB
-- 📊 **Analytics Built-in** - User behavior tracking (UBI)
-- 🌐 **Universal** - Works with any e-commerce platform
+Lightweight, fast, and fully isolated search widget that integrates seamlessly into any e-commerce website using Shadow DOM.
 
 ---
 
-## 🏗️ Architecture
+## 🚀 Quick Start
 
-```
-┌─────────────────────────────────────────────────────┐
-│          E-commerce Website (Any Platform)           │
-│                                                       │
-│  <script src="kalifinder-search.js"></script>       │
-│  <div id="kalifinder-search"></div>                 │
-│                                                       │
-│  ┌────────────────────────────────────────────┐    │
-│  │        Shadow DOM (Style Isolated)          │    │
-│  │  ┌──────────────┐  ┌───────────────────┐   │    │
-│  │  │   Search     │  │   Autocomplete    │   │    │
-│  │  │    Input     │  │    Dropdown       │   │    │
-│  │  └──────────────┘  └───────────────────┘   │    │
-│  │  ┌──────────────┐  ┌───────────────────┐   │    │
-│  │  │   Filters    │  │   Product Grid    │   │    │
-│  │  │   Sidebar    │  │     Results       │   │    │
-│  │  └──────────────┘  └───────────────────┘   │    │
-│  └────────────────────────────────────────────┘    │
-└────────────────────┬────────────────────────────────┘
-                     │
-                     ▼
-        ┌────────────────────────┐
-        │   Backend REST API     │
-        │   (KaliFinder-Backend) │
-        └────────────────────────┘
+### CDN Installation
+
+```html
+<script
+  src="https://cdn.kalifinder.com/kalifind-search.js?storeUrl=https://your-store.com"
+  defer
+></script>
 ```
 
-### Tech Stack
-
-**Core**:
-
-- React 18.3 - UI library
-- TypeScript 5+ - Type safety
-- Vite 5 - Build tool
-- Bun - Fast package manager
-
-**UI & Styling**:
-
-- TailwindCSS - Utility-first CSS
-- Shadcn/ui - Component library
-- Radix UI - Accessible primitives
-- Shadow DOM - Style isolation
-
-**State Management**:
-
-- Zustand - Lightweight state
-- React Query - Server state
-
-**Analytics**:
-
-- UBI Client - User behavior tracking
-- Custom events - Search, clicks, conversions
+Widget auto-injects search button → Click → Instant search with filters & cart integration
 
 ---
 
-## 📦 Installation
+## 💻 Development
 
 ### Prerequisites
 
-- Bun runtime (or Node.js 18+)
-- Backend API running (KaliFinder-Backend)
+```bash
+node >= 20
+pnpm >= 10.19.0
+```
 
-### Quick Start
+### Setup
 
 ```bash
-# Clone repository
 git clone https://github.com/devsaround/KaliFinder-Search-UI.git
 cd KaliFinder-Search-UI
-
-# Install dependencies
-bun install
-
-# Setup environment
-cp .env.example .env
-# Edit .env with your API URL
-
-# Start development server
-bun dev
+pnpm install
+pnpm dev  # http://localhost:8080
 ```
 
-Widget will be available at `http://localhost:5174`
+### Commands
+
+| Command             | Description            |
+| ------------------- | ---------------------- |
+| `pnpm dev`          | Dev server with HMR    |
+| `pnpm build`        | Production build       |
+| `pnpm build:dev`    | Dev build (unminified) |
+| `pnpm test:cdn`     | Build + test locally   |
+| `pnpm type-check`   | TypeScript checking    |
+| `pnpm lint`         | ESLint                 |
+| `pnpm format`       | Prettier               |
+| `pnpm check:strict` | All checks + build     |
 
 ---
 
-## ⚙️ Environment Configuration
+## 🌍 Environment
 
-Create `.env` file from `.env.example`:
+### ⚠️ Critical: Backend URL
 
-```env
-# Backend API URL
-VITE_BACKEND_URL=http://localhost:8000/api
-```
-
-For production, use `.env.production` with your production API URL.
-
----
-
-## 🛠️ Development
-
-### Available Scripts
+`VITE_BACKEND_URL` should **NOT** include `/api` suffix:
 
 ```bash
-# Start development server
-bun dev
+# ✅ CORRECT
+VITE_BACKEND_URL=https://api.kalifinder.com
 
-# Build for production
-bun run build
-
-# Preview production build
-bun run preview
-
-# Lint code
-bun run lint
-
-# Format code
-bun run format
-
-# Type check
-bun run type-check
+# ❌ WRONG (creates /api/api/v1/...)
+VITE_BACKEND_URL=https://api.kalifinder.com/api
 ```
 
-### Project Structure
+**Why?** Endpoints already have full paths (`/api/v1/search/search`, not `/search`)
 
-```
-KaliFinder-Search-UI/
-├── src/
-│   ├── components/              # React components
-│   │   ├── ui/                  # Shadcn/ui components
-│   │   ├── KalifindSearch.tsx   # Main search component
-│   │   ├── SearchIcon.tsx       # Search icon/trigger
-│   │   ├── Recommendations.tsx  # Product recommendations
-│   │   └── ShadowDOMWrapper.tsx # Shadow DOM wrapper
-│   ├── services/                # API services
-│   │   └── api.service.ts       # Search API calls
-│   ├── analytics/               # UBI analytics
-│   │   └── ubiClient.ts         # Analytics client
-│   ├── hooks/                   # Custom hooks
-│   ├── lib/                     # Utilities
-│   │   ├── styleIsolation.ts    # Shadow DOM styles
-│   │   └── cssOverride.ts       # CSS injection
-│   ├── types/                   # TypeScript types
-│   ├── embed-search.tsx         # Embeddable entry point
-│   └── main.tsx                 # Standalone entry point
-├── public/                      # Static assets
-├── index.html                   # Development HTML
-└── vite.config.ts               # Vite configuration
-```
-
----
-
-## 🔌 Integration
-
-### Embed in Website (Single-Script - Recommended)
-
-Add this **single line** to your website's HTML:
-
-```html
-<!-- Simple one-line integration -->
-<script src="https://cdn.kalifinder.com/kalifind-search.js?storeUrl=YOUR_STORE_URL" defer></script>
-```
-
-**Parameters:**
-
-- `storeUrl` (required): Your store URL (e.g., `https://yourstore.myshopify.com`)
-- `vendorId` (optional): Your KaliFinder vendor ID
-- `storeId` (optional): Your store ID in KaliFinder
-
-**Example:**
-
-```html
-<script
-  src="https://cdn.kalifinder.com/kalifind-search.js?storeUrl=https://findifly-dev.myshopify.com&vendorId=123&storeId=456"
-  defer
-></script>
-```
-
-That's it! The widget will automatically:
-
-- ✅ Find your search icon/button in the header
-- ✅ Replace it with KaliFinder search
-- ✅ Handle all clicks and searches
-- ✅ Work with any theme (Shopify, WordPress, custom)
-
----
-
-### Alternative: Manual Initialization (Legacy)
-
-If you need more control, you can use the two-script method:
-
-```html
-<!-- Step 1: Add container -->
-<div id="kalifinder-search"></div>
-
-<!-- Step 2: Load script -->
-<script src="https://cdn.kalifinder.com/kalifind-search.js"></script>
-
-<!-- Step 3: Initialize manually -->
-<script>
-  window.addEventListener('DOMContentLoaded', function () {
-    if (window.KalifinderSearch) {
-      KalifinderSearch.init({
-        containerId: 'kalifinder-search',
-        storeUrl: 'https://yourstore.myshopify.com',
-        vendorId: 'your-vendor-id',
-        storeId: 'your-store-id',
-      });
-    }
-  });
-</script>
-```
-
-**Note:** Single-script method is recommended for simplicity.
-
-### WordPress Integration
-
-```html
-<!-- Add to theme's header.php or footer.php -->
-<script
-  src="https://cdn.kalifinder.com/kalifind-search.js?storeUrl=<?php echo esc_url(get_site_url()); ?>"
-  defer
-></script>
-```
-
-### Shopify Integration
-
-```liquid
-<!-- Add to theme.liquid before </body> -->
-<script
-  src="https://cdn.kalifinder.com/kalifind-search.js?storeUrl={{ shop.url }}"
-  defer
-></script>
-```
-
----
-
-## 🎨 Customization
-
-### Styling
-
-The widget uses Shadow DOM for style isolation. Customize via config:
-
-```javascript
-KalifinderSearch.init({
-  // ... other config
-  customStyles: {
-    primaryColor: '#FF6B6B',
-    borderRadius: '8px',
-    fontFamily: 'Inter, sans-serif',
-  },
-});
-```
-
-### Theme
-
-Switch between light and dark themes:
-
-```javascript
-KalifinderSearch.setTheme('dark'); // or 'light'
-```
-
-### Language
-
-Change UI language dynamically:
-
-```javascript
-KalifinderSearch.setLanguage('es'); // Spanish
-```
-
----
-
-## 📊 Analytics
-
-The widget tracks user behavior automatically:
-
-### Tracked Events
-
-- **Search Queries** - What users search for
-- **Product Clicks** - Which products users click
-- **Filter Usage** - How users refine results
-- **Conversions** - Add to cart, purchases
-
-### Disable Analytics
-
-```javascript
-KalifinderSearch.init({
-  // ... other config
-  enableAnalytics: false,
-});
-```
-
-### Custom Events
-
-Track custom events:
-
-```javascript
-KalifinderSearch.trackEvent('custom_event', {
-  eventType: 'button_click',
-  data: { buttonId: 'buy-now' },
-});
-```
-
----
-
-## 🚀 Deployment
-
-### Build for Production
+### Files
 
 ```bash
-# Create optimized production build
-bun run build
+# .env.development
+NODE_ENV=development
+VITE_BACKEND_URL=https://api.kalifinder.com
 
-# Output: dist/kalifinder-search.js (~80KB gzipped)
+# .env.production
+NODE_ENV=production
+VITE_BACKEND_URL=https://api.kalifinder.com
+VITE_WIDGET_CDN_URL=https://cdn.kalifinder.com/kalifind-search.js
 ```
 
-### Deploy to CDN
+---
 
-1. Build production bundle: `bun run build`
-2. Upload `dist/kalifinder-search.js` to CDN
-3. Use CDN URL in integration code
+## 🔌 API
 
-### Deploy to AWS
+**Base:** https://api.kalifinder.com  
+**Docs:** https://api.kalifinder.com/api-docs  
+**Health:** https://api.kalifinder.com/health
+
+### Endpoints
+
+```
+GET /api/v1/search/search?storeUrl={url}&q={query}
+GET /api/v1/search/autocomplete?storeUrl={url}&q={query}
+GET /api/v1/search/recommended?storeUrl={url}
+GET /api/v1/facets/configured?storeUrl={url}
+GET /api/v1/search/popular?storeUrl={url}
+```
+
+---
+
+## 📂 Structure
+
+```
+src/
+├── components/       # React components
+├── hooks/            # useSearch, useFilters, useAutocomplete
+├── stores/           # Zustand (search, filter, UI state)
+├── services/         # API client & endpoints
+├── analytics/        # UBI tracking
+├── index.css         # Tailwind (single source)
+├── main.tsx          # Dev entry
+└── embed-search.tsx  # Production (Shadow DOM)
+```
+
+---
+
+## 🧪 Testing
 
 ```bash
-# Upload to S3
-aws s3 cp dist/kalifinder-search.js s3://your-bucket/search-widget.js
-
-# Invalidate CloudFront cache
-aws cloudfront create-invalidation \
-  --distribution-id YOUR_DIST_ID \
-  --paths "/search-widget.js"
+pnpm test:cdn
+# Opens test-cdn.html → Click purple icon → Test search
 ```
+
+**Different stores:** Edit `test-cdn.html` → Change `storeUrl` parameter
 
 ---
 
-## 🎯 Performance
+## 📦 Build
 
-- **Bundle Size**: < 100KB (gzipped)
-- **First Paint**: < 500ms
-- **Search Latency**: < 100ms
-- **Memory**: < 10MB
+```bash
+pnpm build
+# Output: dist/kalifind-search.js (~465 KB)
+```
 
-### Optimization Features
+### AWS Deployment
 
-- Code splitting
-- Lazy loading for images
-- Debounced search input
-- Virtual scrolling for large lists
-- Shadow DOM isolation
-- Tree shaking
+`buildspec.yml` → CodeBuild → S3 + CloudFront
+
+**Required env vars:**
+
+- `S3_BUCKET`
+- `CLOUDFRONT_ID`
 
 ---
 
-## 🔧 Troubleshooting
+## 🚨 Troubleshooting
 
-### Common Issues
+### Widget Not Loading
 
-**Widget Not Showing**
+1. Verify script: `https://cdn.kalifinder.com/kalifind-search.js`
+2. Check `storeUrl` parameter
+3. Browser console for errors
 
-```javascript
-// Check container exists
-console.log(document.getElementById('kalifinder-search'));
+### Blank Mod├── API: `curl https://api.kalifinder.com/health`
 
-// Check script loaded
-console.log(window.KalifinderSearch);
-```
+- Check `VITE_BACKEND_URL` (no `/api` suffix)
+- Network tab → Verify endpoints
 
-**API Connection Error**
+### 404 Errors
 
-```javascript
-// Check API URL is correct
-// Verify CORS is configured
-// Check network tab in DevTools
-```
-
-**Style Conflicts**
-
-```javascript
-// Widget uses Shadow DOM for isolation
-// If styles leak, check Shadow DOM boundary
-```
+Endpoints must use `/api/v1/search/search` (not `/api/v1/search`)
 
 ---
 
-## 📱 Browser Support
+## 📊 Performance
 
-- Chrome/Edge (latest)
-- Firefox (latest)
-- Safari 14+ (Shadow DOM supported)
-- Mobile browsers (iOS Safari 14+, Chrome Mobile)
-
----
-
-## 📝 License
-
-Proprietary - All rights reserved by devsaround
+- Bundle: ~465 KB (gzipped: ~120 KB)
+- First paint: < 500ms
+- Supports 10,000+ products (virtualized)
+- Zero host page impact
 
 ---
 
 ## 🤝 Contributing
 
-This is a private repository. For internal development:
+```bash
+pnpm check:strict  # Before PR
+pnpm test:cdn
+```
 
-1. Create feature branch from `main`
-2. Follow React best practices
-3. Test on multiple browsers
-4. Update documentation
-5. Submit PR for review
+**Standards:**
 
----
-
-## 📞 Support
-
-For issues or questions:
-
-- **GitHub Issues**: [Create an issue](https://github.com/devsaround/KaliFinder-Search-UI/issues)
-- **Email**: support@kalifinder.com
-- **Documentation**: See integration examples above
+- TypeScript strict
+- Prettier (100 char, single quotes)
+- Conventional commits
 
 ---
 
-## 🔗 Related Projects
+## 📝 Changelog
 
-- [KaliFinder-Backend](https://github.com/devsaround/KaliFinder-Backend) - REST API
-- [KaliFinder-Frontend](https://github.com/devsaround/KaliFinder-Frontend) - Admin Dashboard
+### v1.0.0 (Oct 29, 2025)
+
+✅ Fixed API endpoint paths  
+✅ Fixed environment config (removed `/api` suffix)  
+✅ Updated autocomplete & facets endpoints
+
+**Updated endpoints:**
+
+- `/api/v1/search` → `/api/v1/search/search`
+- `/v1/autocomplete` → `/api/v1/search/autocomplete`
+- `/v1/facets` → `/api/v1/facets/configured`
 
 ---
 
-**Built with ❤️ by the devsaround team**
+**API Docs:** https://api.kalifinder.com/api-docs  
+**Support:** support@kalifinder.com  
+**Built with ❤️ by KaliFinder Team**

@@ -343,7 +343,7 @@
 .kalifinder-trigger-button {
   all: initial;
   position: fixed;
-  bottom: 30px;
+  top: 80px;
   right: 30px;
   width: 56px;
   height: 56px;
@@ -573,7 +573,7 @@
 
 @media (max-width: 640px) {
   .kalifinder-trigger-button {
-    bottom: 20px;
+    top: 70px;
     right: 20px;
     width: 48px;
     height: 48px;

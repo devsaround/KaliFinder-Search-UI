@@ -333,7 +333,7 @@ const KalifindSearch: React.FC<{
         return;
       }
       const backendUrl = import.meta.env.VITE_BACKEND_URL;
-      const response = await fetch(`${backendUrl}/api/v1/search?${params.toString()}`);
+      const response = await fetch(`${backendUrl}/api/v1/search/search?${params.toString()}`);
 
       if (!response.ok) {
         console.error('Failed to fetch global facets');
@@ -474,7 +474,7 @@ const KalifindSearch: React.FC<{
       }
       const backendUrl = import.meta.env.VITE_BACKEND_URL;
       const configResponse = await fetch(
-        `${backendUrl}/api/v1/recommendations/config?storeUrl=${storeUrl}`,
+        `${backendUrl}/api/v1/search/recommendations-config?storeUrl=${storeUrl}`,
         {}
       );
       if (!configResponse.ok) {
@@ -493,7 +493,7 @@ const KalifindSearch: React.FC<{
 
       // Fetch only vendor-configured recommendations
       const response = await fetch(
-        `${backendUrl}/v1/search/recommended?storeUrl=${storeUrl}&type=vendor-configured`,
+        `${backendUrl}/api/v1/search/recommended?storeUrl=${storeUrl}&type=vendor-configured`,
         {}
       );
 
@@ -818,9 +818,12 @@ const KalifindSearch: React.FC<{
               return;
             }
             const backendUrl = import.meta.env.VITE_BACKEND_URL;
-            const response = await fetch(`${backendUrl}/api/v1/search?${params.toString()}`, {
-              signal: newAbortController.signal,
-            });
+            const response = await fetch(
+              `${backendUrl}/api/v1/search/search?${params.toString()}`,
+              {
+                signal: newAbortController.signal,
+              }
+            );
 
             if (!response.ok) {
               throw new Error('bad response');
@@ -1276,7 +1279,7 @@ const KalifindSearch: React.FC<{
         return;
       }
       const backendUrl = import.meta.env.VITE_BACKEND_URL;
-      const response = await fetch(`${backendUrl}/api/v1/search?${params.toString()}`, {});
+      const response = await fetch(`${backendUrl}/api/v1/search/search?${params.toString()}`, {});
 
       if (!response.ok) {
         throw new Error('Failed to load more products');

@@ -81,7 +81,7 @@ export function useAutocomplete(options: UseAutocompleteOptions): UseAutocomplet
         params.append('storeUrl', storeUrl);
 
         const response = await fetch(
-          `${import.meta.env.VITE_BACKEND_URL}/v1/autocomplete?${params.toString()}`
+          `${import.meta.env.VITE_BACKEND_URL}/api/v1/search/autocomplete?${params.toString()}`
         );
 
         if (!response.ok) {

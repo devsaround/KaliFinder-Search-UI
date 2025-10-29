@@ -6,6 +6,8 @@
   "packageManager": "pnpm@10.19.0",
   "scripts": {
     "dev": "vite",
+    "dev:embed": "vite build --mode development --watch",
+    "test:cdn": "pnpm build:dev && open test-cdn.html",
     "build": "pnpm run clean && tsc -b && vite build --mode production",
     "build:dev": "tsc -b && vite build --mode development",
     "build:analyze": "pnpm run build && pnpm dlx vite-bundle-analyzer",

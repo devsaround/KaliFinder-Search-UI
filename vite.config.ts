@@ -5,7 +5,7 @@ import path from 'path';
 import { defineConfig } from 'vite';
 import cssInjectedByJsPlugin from 'vite-plugin-css-injected-by-js';
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   server: {
     host: '::',
     port: 8080,
@@ -56,4 +56,4 @@ export default defineConfig({
       },
     },
   },
-});
+}));

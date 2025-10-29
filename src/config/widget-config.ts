@@ -78,7 +78,7 @@ export const DEFAULT_WIDGET_CONFIG: WidgetConfig = {
   instanceId: `widget-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
 
   api: {
-    baseUrl: import.meta.env.VITE_BACKEND_URL || 'https://api.kalifinder.com/api',
+    baseUrl: import.meta.env.VITE_BACKEND_URL || 'https://api.kalifinder.com',
     timeout: 10000, // 10 seconds
     retryAttempts: 3,
     retryDelay: 1000, // 1 second
