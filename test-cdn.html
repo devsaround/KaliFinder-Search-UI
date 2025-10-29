@@ -64,10 +64,18 @@
         <h3>How to test different stores:</h3>
         <p>Edit the script tag below and change <code>storeUrl</code> parameter:</p>
         <pre><code>&lt;script src="./dist/kalifind-search.js?storeUrl=https://YOUR-STORE.com"&gt;&lt;/script&gt;</code></pre>
+
+        <div class="info" style="background: #fee2e2; margin-top: 20px;">
+            <strong>⚠️ Important:</strong><br>
+            Make sure the store URL you're testing has products indexed in the backend.<br>
+            Empty store = No products shown (you'll see empty state or loading skeletons).
+        </div>
     </div>
 
     <!-- KaliFinder Widget - Simulates CDN embedding -->
-    <script src="./dist/kalifind-search.js?storeUrl=https://findifly.kalifinder.com" defer></script>
+    <!-- Note: Change storeUrl to a store that has products in your backend -->
+    <!-- Cache busting: Add &v=timestamp to force reload after rebuild -->
+    <script src="./dist/kalifind-search.js?storeUrl=http://localhost:8080&v=1761732003" defer></script>
 </body>
 
 </html>

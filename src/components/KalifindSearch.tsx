@@ -20,6 +20,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Slider } from '@/components/ui/slider';
 import { useDebounce } from '@/hooks/use-debounce';
 import { useCart } from '@/hooks/useCart';
@@ -116,6 +117,7 @@ const KalifindSearch: React.FC<{
   const [notSaleCount, setNotSaleCount] = useState(0);
   const [sortOption, setSortOption] = useState('default');
   const [globalFacetsFetched, setGlobalFacetsFetched] = useState(false);
+  const [isInitialLoading, setIsInitialLoading] = useState(true); // Track initial data loading
 
   // Helper function to get sort option label
   const getSortLabel = (option: string) => {
@@ -133,21 +135,21 @@ const KalifindSearch: React.FC<{
     }
   };
 
-  // State for optional filters - only show if vendor has configured them
+  // State for optional filters - show all during loading, then update based on vendor config
   const [showOptionalFilters, setShowOptionalFilters] = useState({
-    brands: false,
-    colors: false,
-    sizes: false,
-    tags: false,
+    brands: true, // Show by default, will be updated based on vendor config
+    colors: true,
+    sizes: true,
+    tags: true,
   });
 
-  // State for mandatory filters - only show if vendor has configured them
+  // State for mandatory filters - show all during loading, then update based on vendor config
   const [showMandatoryFilters, setShowMandatoryFilters] = useState({
-    categories: false, // Default to false, will be set based on vendor config
-    price: false, // Default to false, will be set based on vendor config
-    stockStatus: false, // Default to false, will be set based on vendor config
-    featured: false, // Default to false, will be set based on vendor config
-    sale: false, // Default to false, will be set based on vendor config
+    categories: true, // Show by default, will be updated based on vendor config
+    price: true,
+    stockStatus: true,
+    featured: true,
+    sale: true,
   });
 
   // Use custom hooks for filters and cart
@@ -277,49 +279,59 @@ const KalifindSearch: React.FC<{
       const result = await apiService.fetchFacetConfiguration(storeUrl);
       console.log('🔧 Fetched facet configuration:', result);
 
-      // Update optional filters visibility based on vendor configuration
-      const optionalFilters = {
-        brands: result.some(
-          (facet: { field: string; visible: boolean }) => facet.field === 'brand' && facet.visible
-        ),
-        colors: result.some(
-          (facet: { field: string; visible: boolean }) => facet.field === 'color' && facet.visible
-        ),
-        sizes: result.some(
-          (facet: { field: string; visible: boolean }) => facet.field === 'size' && facet.visible
-        ),
-        tags: result.some(
-          (facet: { field: string; visible: boolean }) => facet.field === 'tags' && facet.visible
-        ),
-      };
-      setShowOptionalFilters(optionalFilters);
-      console.log('🎛️ Optional filters visibility:', optionalFilters);
+      // If no configuration is returned, keep all filters visible (default true)
+      // Only hide filters that are explicitly set to visible: false in the config
+      if (result && result.length > 0) {
+        // Update optional filters visibility based on vendor configuration
+        const optionalFilters = {
+          brands: result.some(
+            (facet: { field: string; visible: boolean }) => facet.field === 'brand' && facet.visible
+          ),
+          colors: result.some(
+            (facet: { field: string; visible: boolean }) => facet.field === 'color' && facet.visible
+          ),
+          sizes: result.some(
+            (facet: { field: string; visible: boolean }) => facet.field === 'size' && facet.visible
+          ),
+          tags: result.some(
+            (facet: { field: string; visible: boolean }) => facet.field === 'tags' && facet.visible
+          ),
+        };
+        setShowOptionalFilters(optionalFilters);
+        console.log('🎛️ Optional filters visibility:', optionalFilters);
 
-      // Update mandatory filters visibility based on vendor configuration
-      const mandatoryFilters = {
-        categories: result.some(
-          (facet: { field: string; visible: boolean }) =>
-            facet.field === 'category' && facet.visible
-        ),
-        price: result.some(
-          (facet: { field: string; visible: boolean }) => facet.field === 'price' && facet.visible
-        ),
-        stockStatus: result.some(
-          (facet: { field: string; visible: boolean }) => facet.field === 'instock' && facet.visible
-        ),
-        featured: result.some(
-          (facet: { field: string; visible: boolean }) =>
-            facet.field === 'featured' && facet.visible
-        ),
-        sale: result.some(
-          (facet: { field: string; visible: boolean }) => facet.field === 'insale' && facet.visible
-        ),
-      };
-      setShowMandatoryFilters(mandatoryFilters);
-      console.log('🎛️ Mandatory filters visibility:', mandatoryFilters);
+        // Update mandatory filters visibility based on vendor configuration
+        const mandatoryFilters = {
+          categories: result.some(
+            (facet: { field: string; visible: boolean }) =>
+              facet.field === 'category' && facet.visible
+          ),
+          price: result.some(
+            (facet: { field: string; visible: boolean }) => facet.field === 'price' && facet.visible
+          ),
+          stockStatus: result.some(
+            (facet: { field: string; visible: boolean }) =>
+              facet.field === 'instock' && facet.visible
+          ),
+          featured: result.some(
+            (facet: { field: string; visible: boolean }) =>
+              facet.field === 'featured' && facet.visible
+          ),
+          sale: result.some(
+            (facet: { field: string; visible: boolean }) =>
+              facet.field === 'insale' && facet.visible
+          ),
+        };
+        setShowMandatoryFilters(mandatoryFilters);
+        console.log('🎛️ Mandatory filters visibility:', mandatoryFilters);
+      } else {
+        // No config returned - keep all filters visible (use defaults)
+        console.log('🎛️ No facet configuration found, keeping all filters visible');
+      }
     } catch (error) {
       console.error('Failed to fetch facet configuration:', error);
-      // Keep default values (all false for both optional and mandatory filters)
+      // On error, keep all filters visible (don't change from default true)
+      console.log('🎛️ Error fetching facet config, keeping all filters visible');
     }
   }, [storeUrl]);
 
@@ -575,11 +587,14 @@ const KalifindSearch: React.FC<{
     setStoreType(null);
 
     const loadInitialData = async () => {
+      setIsInitialLoading(true);
       try {
         // Load recommendations, facet configuration, and global facets in parallel
         await Promise.all([fetchRecommendations(), fetchFacetConfiguration(), fetchGlobalFacets()]);
       } catch (error) {
         console.error('❌ Failed to load initial data:', error);
+      } finally {
+        setIsInitialLoading(false);
       }
     };
 
@@ -1940,28 +1955,45 @@ const KalifindSearch: React.FC<{
                 </AccordionTrigger>
                 <AccordionContent>
                   <div className="space-y-[8px]">
-                    {availableCategories.map((category) => (
-                      <label
-                        key={category}
-                        className="flex cursor-pointer items-center justify-between"
-                      >
-                        <div className="flex items-center gap-[10px]">
-                          <input
-                            type="checkbox"
-                            checked={filters.categories.includes(category)}
-                            onChange={() => handleCategoryChange(category)}
-                            disabled={!hasSearched}
-                            className="text-primary bg-background border-border top-0 h-4 w-4 rounded disabled:cursor-not-allowed disabled:opacity-50 lg:h-5 lg:w-5"
-                          />
-                          <span className="text-foreground text-[14px] lg:text-[16px]">
-                            {category}
+                    {isInitialLoading ? (
+                      // Show skeleton loaders while loading
+                      <>
+                        {[...Array(3)].map((_, idx) => (
+                          <div key={idx} className="flex items-center justify-between">
+                            <div className="flex items-center gap-[10px]">
+                              <Skeleton className="h-4 w-4 lg:h-5 lg:w-5" />
+                              <Skeleton className="h-4 w-24" />
+                            </div>
+                            <Skeleton className="h-3 w-8" />
+                          </div>
+                        ))}
+                      </>
+                    ) : availableCategories.length > 0 ? (
+                      availableCategories.map((category) => (
+                        <label
+                          key={category}
+                          className="flex cursor-pointer items-center justify-between"
+                        >
+                          <div className="flex items-center gap-[10px]">
+                            <input
+                              type="checkbox"
+                              checked={filters.categories.includes(category)}
+                              onChange={() => handleCategoryChange(category)}
+                              disabled={!hasSearched}
+                              className="text-primary bg-background border-border top-0 h-4 w-4 rounded disabled:cursor-not-allowed disabled:opacity-50 lg:h-5 lg:w-5"
+                            />
+                            <span className="text-foreground text-[14px] lg:text-[16px]">
+                              {category}
+                            </span>
+                          </div>
+                          <span className="text-muted-foreground mr-[8px] text-[12px] lg:text-[14px]">
+                            {categoryCounts[category] || 0}
                           </span>
-                        </div>
-                        <span className="text-muted-foreground mr-[8px] text-[12px] lg:text-[14px]">
-                          {categoryCounts[category] || 0}
-                        </span>
-                      </label>
-                    ))}
+                        </label>
+                      ))
+                    ) : (
+                      <p className="text-muted-foreground text-sm">No categories available</p>
+                    )}
                   </div>
                 </AccordionContent>
               </AccordionItem>
@@ -1973,28 +2005,45 @@ const KalifindSearch: React.FC<{
                 </AccordionTrigger>
                 <AccordionContent>
                   <div className="space-y-[8px]">
-                    {availableBrands.map((brand) => (
-                      <label
-                        key={brand}
-                        className="flex cursor-pointer items-center justify-between"
-                      >
-                        <div className="flex items-center gap-[8px]">
-                          <input
-                            type="checkbox"
-                            checked={filters.brands.includes(brand)}
-                            onChange={() => handleBrandChange(brand)}
-                            disabled={!hasSearched}
-                            className="text-primary bg-background border-border h-4 w-4 rounded disabled:cursor-not-allowed disabled:opacity-50 lg:h-5 lg:w-5"
-                          />
-                          <span className="text-foreground text-[14px] lg:text-[16px]">
-                            {brand}
+                    {isInitialLoading ? (
+                      // Show skeleton loaders while loading
+                      <>
+                        {[...Array(3)].map((_, idx) => (
+                          <div key={idx} className="flex items-center justify-between">
+                            <div className="flex items-center gap-[10px]">
+                              <Skeleton className="h-4 w-4 lg:h-5 lg:w-5" />
+                              <Skeleton className="h-4 w-24" />
+                            </div>
+                            <Skeleton className="h-3 w-8" />
+                          </div>
+                        ))}
+                      </>
+                    ) : availableBrands.length > 0 ? (
+                      availableBrands.map((brand) => (
+                        <label
+                          key={brand}
+                          className="flex cursor-pointer items-center justify-between"
+                        >
+                          <div className="flex items-center gap-[8px]">
+                            <input
+                              type="checkbox"
+                              checked={filters.brands.includes(brand)}
+                              onChange={() => handleBrandChange(brand)}
+                              disabled={!hasSearched}
+                              className="text-primary bg-background border-border h-4 w-4 rounded disabled:cursor-not-allowed disabled:opacity-50 lg:h-5 lg:w-5"
+                            />
+                            <span className="text-foreground text-[14px] lg:text-[16px]">
+                              {brand}
+                            </span>
+                          </div>
+                          <span className="text-muted-foreground mr-[8px] text-[12px] lg:text-[14px]">
+                            {brandCounts[brand] || 0}
                           </span>
-                        </div>
-                        <span className="text-muted-foreground mr-[8px] text-[12px] lg:text-[14px]">
-                          {brandCounts[brand] || 0}
-                        </span>
-                      </label>
-                    ))}
+                        </label>
+                      ))
+                    ) : (
+                      <p className="text-muted-foreground text-sm">No brands available</p>
+                    )}
                   </div>
                 </AccordionContent>
               </AccordionItem>
@@ -2030,23 +2079,33 @@ const KalifindSearch: React.FC<{
                   <b className="font-extrabold">Size</b>
                 </AccordionTrigger>
                 <AccordionContent>
-                  <div className="grid grid-cols-4 gap-2">
-                    {availableSizes.map((size) => (
-                      <button
-                        key={size}
-                        onClick={() => {
-                          if (!hasSearched) return;
-                          handleSizeChange(size);
-                        }}
-                        disabled={!hasSearched}
-                        className={`my-border rounded py-2 text-xs font-medium disabled:cursor-not-allowed disabled:opacity-50 lg:text-sm ${
-                          filters.sizes.includes(size) ? 'bg-primary text-primary-foreground' : ''
-                        }`}
-                      >
-                        {size}
-                      </button>
-                    ))}
-                  </div>
+                  {isInitialLoading ? (
+                    <div className="grid grid-cols-4 gap-2">
+                      {[...Array(4)].map((_, idx) => (
+                        <Skeleton key={idx} className="h-8 w-full" />
+                      ))}
+                    </div>
+                  ) : availableSizes.length > 0 ? (
+                    <div className="grid grid-cols-4 gap-2">
+                      {availableSizes.map((size) => (
+                        <button
+                          key={size}
+                          onClick={() => {
+                            if (!hasSearched) return;
+                            handleSizeChange(size);
+                          }}
+                          disabled={!hasSearched}
+                          className={`my-border rounded py-2 text-xs font-medium disabled:cursor-not-allowed disabled:opacity-50 lg:text-sm ${
+                            filters.sizes.includes(size) ? 'bg-primary text-primary-foreground' : ''
+                          }`}
+                        >
+                          {size}
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-muted-foreground text-sm">No sizes available</p>
+                  )}
                 </AccordionContent>
               </AccordionItem>
             )}
@@ -2056,26 +2115,36 @@ const KalifindSearch: React.FC<{
                   <b className="font-extrabold">Color</b>
                 </AccordionTrigger>
                 <AccordionContent>
-                  <div className="flex gap-[8px]">
-                    {availableColors.map((color) => (
-                      <button
-                        key={color}
-                        onClick={() => {
-                          if (!hasSearched) return;
-                          handleColorChange(color);
-                        }}
-                        disabled={!hasSearched}
-                        className={`h-6 w-6 rounded-full border-2 disabled:cursor-not-allowed disabled:opacity-50 lg:h-8 lg:w-8 ${
-                          filters.colors.includes(color)
-                            ? 'border-primary scale-110'
-                            : 'border-border'
-                        }`}
-                        data-color={color.toLowerCase()}
-                        title={`Filter by ${color} color`}
-                        aria-label={`Filter by ${color} color${filters.colors.includes(color) ? ' (selected)' : ''}`}
-                      />
-                    ))}
-                  </div>
+                  {isInitialLoading ? (
+                    <div className="flex gap-[8px]">
+                      {[...Array(5)].map((_, idx) => (
+                        <Skeleton key={idx} className="h-6 w-6 rounded-full lg:h-8 lg:w-8" />
+                      ))}
+                    </div>
+                  ) : availableColors.length > 0 ? (
+                    <div className="flex gap-[8px]">
+                      {availableColors.map((color) => (
+                        <button
+                          key={color}
+                          onClick={() => {
+                            if (!hasSearched) return;
+                            handleColorChange(color);
+                          }}
+                          disabled={!hasSearched}
+                          className={`h-6 w-6 rounded-full border-2 disabled:cursor-not-allowed disabled:opacity-50 lg:h-8 lg:w-8 ${
+                            filters.colors.includes(color)
+                              ? 'border-primary scale-110'
+                              : 'border-border'
+                          }`}
+                          data-color={color.toLowerCase()}
+                          title={`Filter by ${color} color`}
+                          aria-label={`Filter by ${color} color${filters.colors.includes(color) ? ' (selected)' : ''}`}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-muted-foreground text-sm">No colors available</p>
+                  )}
                 </AccordionContent>
               </AccordionItem>
             )}
@@ -2086,22 +2155,43 @@ const KalifindSearch: React.FC<{
                 </AccordionTrigger>
                 <AccordionContent>
                   <div className="space-y-[8px]">
-                    {availableTags.map((tag) => (
-                      <label key={tag} className="flex cursor-pointer items-center justify-between">
-                        <div className="flex items-center gap-[10px]">
-                          <input
-                            type="checkbox"
-                            checked={filters.tags.includes(tag)}
-                            onChange={() => handleTagChange(tag)}
-                            className="text-primary bg-background border-border top-0 h-4 w-4 rounded lg:h-5 lg:w-5"
-                          />
-                          <span className="text-foreground text-[14px] lg:text-[16px]">{tag}</span>
-                        </div>
-                        <span className="text-muted-foreground mr-[8px] text-[12px] lg:text-[14px]">
-                          {tagCounts[tag] || 0}
-                        </span>
-                      </label>
-                    ))}
+                    {isInitialLoading ? (
+                      <>
+                        {[...Array(3)].map((_, idx) => (
+                          <div key={idx} className="flex items-center justify-between">
+                            <div className="flex items-center gap-[10px]">
+                              <Skeleton className="h-4 w-4 lg:h-5 lg:w-5" />
+                              <Skeleton className="h-4 w-24" />
+                            </div>
+                            <Skeleton className="h-3 w-8" />
+                          </div>
+                        ))}
+                      </>
+                    ) : availableTags.length > 0 ? (
+                      availableTags.map((tag) => (
+                        <label
+                          key={tag}
+                          className="flex cursor-pointer items-center justify-between"
+                        >
+                          <div className="flex items-center gap-[10px]">
+                            <input
+                              type="checkbox"
+                              checked={filters.tags.includes(tag)}
+                              onChange={() => handleTagChange(tag)}
+                              className="text-primary bg-background border-border top-0 h-4 w-4 rounded lg:h-5 lg:w-5"
+                            />
+                            <span className="text-foreground text-[14px] lg:text-[16px]">
+                              {tag}
+                            </span>
+                          </div>
+                          <span className="text-muted-foreground mr-[8px] text-[12px] lg:text-[14px]">
+                            {tagCounts[tag] || 0}
+                          </span>
+                        </label>
+                      ))
+                    ) : (
+                      <p className="text-muted-foreground text-sm">No tags available</p>
+                    )}
                   </div>
                 </AccordionContent>
               </AccordionItem>
@@ -2349,17 +2439,36 @@ const KalifindSearch: React.FC<{
               {(() => {
                 return null;
               })()}
-              {recommendations.length > 0 ? (
-                <Recommendations
-                  recommendations={recommendations}
-                  handleProductClick={handleProductClick}
-                  calculateDiscountPercentage={calculateDiscountPercentage}
-                  addingToCart={addingToCart}
-                  handleAddToCart={handleAddToCart}
-                />
+              {isInitialLoading || recommendations.length > 0 ? (
+                recommendations.length > 0 ? (
+                  <Recommendations
+                    recommendations={recommendations}
+                    handleProductClick={handleProductClick}
+                    calculateDiscountPercentage={calculateDiscountPercentage}
+                    addingToCart={addingToCart}
+                    handleAddToCart={handleAddToCart}
+                  />
+                ) : (
+                  // Show skeleton loaders while recommendations are loading
+                  <LoadingSkeleton />
+                )
               ) : (
-                // Show skeleton loaders while recommendations are loading
-                <LoadingSkeleton />
+                // Show empty state when initial loading is complete and no recommendations
+                <div className="animate-in fade-in w-full py-12 text-center duration-300">
+                  <div className="flex flex-col items-center gap-4">
+                    <div className="bg-muted animate-in zoom-in flex h-16 w-16 items-center justify-center rounded-full duration-500">
+                      <Search className="text-muted-foreground h-8 w-8" />
+                    </div>
+                    <div className="animate-in slide-in-from-bottom-2 duration-500">
+                      <p className="text-foreground mb-2 text-lg font-semibold lg:text-xl">
+                        No products available
+                      </p>
+                      <p className="text-muted-foreground text-sm lg:text-base">
+                        Start typing to search for products.
+                      </p>
+                    </div>
+                  </div>
+                </div>
               )}
             </div>
           ) : isLoading || isPending ? (

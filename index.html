@@ -9,13 +9,72 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
     rel="stylesheet" />
-  <title>Kalifind Search</title>
+  <title>KaliFinder Search - Dev Mode (Same as CDN)</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      margin: 0;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      background: white;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    h1 {
+      color: #7c3aed;
+    }
+
+    .info {
+      background: #dbeafe;
+      padding: 15px;
+      border-radius: 6px;
+      margin: 20px 0;
+    }
+
+    code {
+      background: #f3f4f6;
+      padding: 2px 6px;
+      border-radius: 3px;
+    }
+  </style>
 </head>
 
 <body>
-  <div id="root"></div>
-  <!-- Vite will replace this script with your bundled entry -->
-  <script type="module" src="/src/main.tsx"></script>
+  <div class="container">
+    <h1>🧪 KaliFinder Dev Mode - Identical to CDN</h1>
+    <p>This dev environment now uses the <strong>exact same setup as CDN</strong>:</p>
+
+    <div class="info">
+      <strong>✅ Same Entry Point:</strong> <code>embed-search.tsx</code><br>
+      <strong>✅ Same Shadow DOM:</strong> Complete CSS/JS isolation<br>
+      <strong>✅ Same Component Flow:</strong> WidgetEmbed → KalifindSearch<br>
+      <strong>✅ Same CSS Loading:</strong> Injected into Shadow DOM<br>
+      <strong>✅ Same Store URL:</strong> <code>http://localhost:8080</code>
+    </div>
+
+    <h2>How to Test:</h2>
+    <ul>
+      <li>Click the purple search icon in the top-right corner</li>
+      <li>The search widget modal will open in Shadow DOM</li>
+      <li>Type to search for products</li>
+      <li>Test filters, autocomplete, and product cards</li>
+      <li>Click outside the modal or the X button to close</li>
+    </ul>
+
+    <p><strong>Note:</strong> What you see here is EXACTLY what users will see when the widget is embedded via CDN on
+      their website.</p>
+  </div>
+
+  <!-- Load the same embed-search.tsx entry point used in production -->
+  <!-- This ensures dev mode = CDN mode (same Shadow DOM, same everything) -->
+  <script type="module" src="/src/embed-search.tsx"></script>
 </body>
 
 </html>

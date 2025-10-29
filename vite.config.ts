@@ -17,10 +17,10 @@ export default defineConfig(({ mode }) => ({
   },
   define: {
     'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'development'),
-    __VITE_BACKEND_URL__: JSON.stringify(
+    'import.meta.env.VITE_BACKEND_URL': JSON.stringify(
       process.env.VITE_BACKEND_URL || 'https://api.kalifinder.com'
     ),
-    __VITE_WIDGET_CDN_URL__: JSON.stringify(
+    'import.meta.env.VITE_WIDGET_CDN_URL': JSON.stringify(
       process.env.VITE_WIDGET_CDN_URL || 'https://cdn.kalifinder.com'
     ),
   },

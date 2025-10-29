@@ -36,6 +36,8 @@ import './index.css';
 
 // __WIDGET_CSS__ will be injected at the top of the bundle by inline-css-build.mjs
 // after Tailwind processes the CSS
+// In development mode, this will be undefined
+declare const __WIDGET_CSS__: string | undefined;
 
 // Type augmentation for custom window properties
 declare global {
@@ -362,17 +364,38 @@ function initializeEmbeddedWidget(): void {
 
     // Inject CSS reset and widget styles into Shadow DOM
     const styleSheet = document.createElement('style');
+
+    // In development mode, __WIDGET_CSS__ is undefined
+    // In production (after inline-css-build.mjs), it contains the full CSS
+    const widgetCSS = typeof __WIDGET_CSS__ !== 'undefined' ? __WIDGET_CSS__ : '';
+
+    console.log('[KaliFinder] CSS Injection Debug:', {
+      hasWidgetCSS: typeof __WIDGET_CSS__ !== 'undefined',
+      cssLength: widgetCSS.length,
+      isDev: import.meta.env.DEV,
+      mode: import.meta.env.MODE,
+    });
+
     styleSheet.textContent = `
-      /* CSS Reset to prevent host CSS interference */
-      :host {
-        all: initial;
-        display: block;
-      }
-      
-      /* Widget styles (Tailwind CSS + custom styles - completely isolated) */
-      ${__WIDGET_CSS__}
+      /* Widget styles (Tailwind CSS + custom styles - completely isolated by Shadow DOM) */
+      ${widgetCSS}
     `;
-    shadowRoot.appendChild(styleSheet); // Create React mount point inside Shadow DOM
+    shadowRoot.appendChild(styleSheet);
+
+    console.log(
+      '[KaliFinder] StyleSheet appended to Shadow DOM, length:',
+      styleSheet.textContent.length
+    );
+
+    // In dev mode, also inject a link to the Vite-served CSS
+    // This ensures dev mode has the same styling as production
+    if (typeof __WIDGET_CSS__ === 'undefined' && import.meta.env.DEV) {
+      const devStyleLink = document.createElement('link');
+      devStyleLink.rel = 'stylesheet';
+      devStyleLink.href = '/src/index.css'; // Vite will process this
+      shadowRoot.appendChild(devStyleLink);
+      console.log('[KaliFinder Dev] Loading CSS via Vite for hot reload');
+    } // Create React mount point inside Shadow DOM
     const reactRoot = document.createElement('div');
     reactRoot.id = 'kalifinder-react-root';
     // CRITICAL: pointer-events: none to prevent blocking host page

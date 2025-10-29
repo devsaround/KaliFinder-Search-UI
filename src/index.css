@@ -38,7 +38,9 @@
       sans-serif;
   }
 
-  :root {
+  /* Define on :root for normal usage AND :host for Shadow DOM */
+  :root,
+  :host {
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
 
