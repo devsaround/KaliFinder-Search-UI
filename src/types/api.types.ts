@@ -1,36 +1,56 @@
 // API Response type guards and utilities
 import type { Product } from './index';
 
+// Facet bucket types
+export interface FacetBucket {
+  key: string | number | boolean;
+  key_as_string?: string;
+  doc_count: number;
+  from?: number;
+  to?: number;
+}
+
+export interface StringFacetBucket {
+  key: string;
+  doc_count: number;
+}
+
+export interface BooleanFacetBucket {
+  key: number | boolean;
+  key_as_string?: string;
+  doc_count: number;
+}
+
 export interface SearchResponse {
   products: Product[];
   total: number;
   facets?: {
     category?: {
-      buckets: Array<{ key: string; doc_count: number }>;
+      buckets: StringFacetBucket[];
     };
     brands?: {
-      buckets: Array<{ key: string; doc_count: number }>;
+      buckets: StringFacetBucket[];
     };
     colors?: {
-      buckets: Array<{ key: string; doc_count: number }>;
+      buckets: StringFacetBucket[];
     };
     sizes?: {
-      buckets: Array<{ key: string; doc_count: number }>;
+      buckets: StringFacetBucket[];
     };
     tags?: {
-      buckets: Array<{ key: string; doc_count: number }>;
+      buckets: StringFacetBucket[];
     };
     price?: {
       buckets: Array<{ key: string; from?: number; to?: number; doc_count: number }>;
     };
     instock?: {
-      buckets: Array<{ key: string; key_as_string?: string; doc_count: number }>;
+      buckets: StringFacetBucket[];
     };
     featured?: {
-      buckets: Array<{ key: number; key_as_string: string; doc_count: number }>;
+      buckets: BooleanFacetBucket[];
     };
     insale?: {
-      buckets: Array<{ key: number; key_as_string: string; doc_count: number }>;
+      buckets: BooleanFacetBucket[];
     };
   };
   hasMore?: boolean;

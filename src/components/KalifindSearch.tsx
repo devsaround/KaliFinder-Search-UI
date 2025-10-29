@@ -26,7 +26,12 @@ import { useCart } from '@/hooks/useCart';
 import { useFilters } from '@/hooks/useFilters';
 
 import type { Product } from '../types';
-import { isAutocompleteResponse, isSearchResponse } from '../types/api.types';
+import {
+  isAutocompleteResponse,
+  isSearchResponse,
+  type BooleanFacetBucket,
+  type StringFacetBucket,
+} from '../types/api.types';
 import { ProductCard } from './products/ProductCard';
 import Recommendations from './Recommendations';
 
@@ -347,7 +352,7 @@ const KalifindSearch: React.FC<{
         // Process stock status facets
         if (result.facets.instock && Array.isArray(result.facets.instock.buckets)) {
           const stockStatusCounts: { [key: string]: number } = {};
-          result.facets.instock.buckets.forEach((bucket: any) => {
+          result.facets.instock.buckets.forEach((bucket: StringFacetBucket) => {
             const status = bucket.key;
             const displayName =
               status === 'instock'
@@ -366,7 +371,7 @@ const KalifindSearch: React.FC<{
         if (result.facets.featured && Array.isArray(result.facets.featured.buckets)) {
           let featuredCount = 0;
           let notFeaturedCount = 0;
-          result.facets.featured.buckets.forEach((bucket: any) => {
+          result.facets.featured.buckets.forEach((bucket: BooleanFacetBucket) => {
             // OpenSearch returns boolean fields as 1 (true) or 0 (false) in bucket.key
             if (bucket.key === 1 || bucket.key === true) {
               featuredCount = bucket.doc_count;
@@ -382,7 +387,7 @@ const KalifindSearch: React.FC<{
         if (result.facets.insale && Array.isArray(result.facets.insale.buckets)) {
           let saleCount = 0;
           let notSaleCount = 0;
-          result.facets.insale.buckets.forEach((bucket: any) => {
+          result.facets.insale.buckets.forEach((bucket: BooleanFacetBucket) => {
             // OpenSearch returns boolean fields as 1 (true) or 0 (false) in bucket.key
             if (bucket.key === 1 || bucket.key === true) {
               saleCount = bucket.doc_count;
@@ -397,7 +402,7 @@ const KalifindSearch: React.FC<{
         // Process category facets
         if (result.facets.category && Array.isArray(result.facets.category.buckets)) {
           const categoryCounts: { [key: string]: number } = {};
-          result.facets.category.buckets.forEach((bucket: any) => {
+          result.facets.category.buckets.forEach((bucket: StringFacetBucket) => {
             categoryCounts[bucket.key] = bucket.doc_count;
           });
           setCategoryCounts(categoryCounts);
@@ -407,7 +412,7 @@ const KalifindSearch: React.FC<{
         // Process brand facets
         if (result.facets.brands && Array.isArray(result.facets.brands.buckets)) {
           const brandCounts: { [key: string]: number } = {};
-          result.facets.brands.buckets.forEach((bucket: any) => {
+          result.facets.brands.buckets.forEach((bucket: StringFacetBucket) => {
             brandCounts[bucket.key] = bucket.doc_count;
           });
           setBrandCounts(brandCounts);
@@ -417,7 +422,7 @@ const KalifindSearch: React.FC<{
         // Process color facets
         if (result.facets.colors && Array.isArray(result.facets.colors.buckets)) {
           const colorCounts: { [key: string]: number } = {};
-          result.facets.colors.buckets.forEach((bucket: any) => {
+          result.facets.colors.buckets.forEach((bucket: StringFacetBucket) => {
             colorCounts[bucket.key] = bucket.doc_count;
           });
           setAvailableColors(Object.keys(colorCounts));
@@ -426,7 +431,7 @@ const KalifindSearch: React.FC<{
         // Process size facets
         if (result.facets.sizes && Array.isArray(result.facets.sizes.buckets)) {
           const sizeCounts: { [key: string]: number } = {};
-          result.facets.sizes.buckets.forEach((bucket: any) => {
+          result.facets.sizes.buckets.forEach((bucket: StringFacetBucket) => {
             sizeCounts[bucket.key] = bucket.doc_count;
           });
           setAvailableSizes(Object.keys(sizeCounts));
@@ -435,7 +440,7 @@ const KalifindSearch: React.FC<{
         // Process tag facets
         if (result.facets.tags && Array.isArray(result.facets.tags.buckets)) {
           const tagCounts: { [key: string]: number } = {};
-          result.facets.tags.buckets.forEach((bucket: any) => {
+          result.facets.tags.buckets.forEach((bucket: StringFacetBucket) => {
             tagCounts[bucket.key] = bucket.doc_count;
           });
           setTagCounts(tagCounts);
@@ -446,7 +451,7 @@ const KalifindSearch: React.FC<{
       // Extract max price from products in global facets
       if (result.products && Array.isArray(result.products) && result.products.length > 0) {
         const prices = result.products
-          .map((p: any) => parseFloat(p.price || p.regularPrice || '0'))
+          .map((p: Product) => parseFloat(p.price || p.regularPrice || '0'))
           .filter((price: number) => !isNaN(price) && price > 0);
 
         if (prices.length > 0) {
@@ -512,9 +517,14 @@ const KalifindSearch: React.FC<{
       } else if (isSearchResponse(result)) {
         const { products: responseProducts } = result;
         products = responseProducts;
-      } else if (result && typeof result === 'object' && Array.isArray((result as any).products)) {
+      } else if (
+        result &&
+        typeof result === 'object' &&
+        'products' in result &&
+        Array.isArray(result.products)
+      ) {
         // Handle recommendations response format
-        products = (result as any).products;
+        products = result.products as Product[];
       } else {
         products = [];
       }

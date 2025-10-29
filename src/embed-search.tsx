@@ -31,7 +31,18 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import WidgetEmbed from './components/WidgetEmbed';
-import styles from './index.css?inline';
+// Import CSS normally - it will be processed by Tailwind
+import './index.css';
+
+// __WIDGET_CSS__ will be injected at the top of the bundle by inline-css-build.mjs
+// after Tailwind processes the CSS
+
+// Type augmentation for custom window properties
+declare global {
+  interface Window {
+    __KALIFINDER_STORE_URL__?: string;
+  }
+}
 
 /**
  * Dispatch a window event to open the Kalifinder widget with an optional query
@@ -41,9 +52,11 @@ function openKalifinderWithQuery(query?: string) {
     const event = new CustomEvent('kalifinder:open', { detail: { query: query ?? '' } });
     window.dispatchEvent(event);
   } catch (_error) {
-    // Fallback for very old browsers (unlikely)
-    (window as any).dispatchEvent &&
-      (window as any).dispatchEvent({ type: 'kalifinder:open', detail: { query: query ?? '' } });
+    // Fallback for very old browsers (unlikely) - use type assertion for legacy API
+    const legacyWindow = window as unknown as {
+      dispatchEvent?: (event: { type: string; detail: { query: string } }) => void;
+    };
+    legacyWindow.dispatchEvent?.({ type: 'kalifinder:open', detail: { query: query ?? '' } });
   }
 }
 
@@ -237,12 +250,12 @@ function getStoreUrlFromScript(): string {
   }
 
   // Method 3: Try to get from window variable (for alternative init)
-  if ((window as any).__KALIFINDER_STORE_URL__) {
+  if (window.__KALIFINDER_STORE_URL__) {
     console.log(
       '[KaliFinder] Found storeUrl from window variable:',
-      (window as any).__KALIFINDER_STORE_URL__
+      window.__KALIFINDER_STORE_URL__
     );
-    return (window as any).__KALIFINDER_STORE_URL__;
+    return window.__KALIFINDER_STORE_URL__;
   }
 
   // Default fallback for development
@@ -347,7 +360,7 @@ function initializeEmbeddedWidget(): void {
     // Create Shadow DOM for complete isolation
     const shadowRoot = container.attachShadow({ mode: 'open' });
 
-    // Inject all widget styles into Shadow DOM (isolated from host)
+    // Inject CSS reset and widget styles into Shadow DOM
     const styleSheet = document.createElement('style');
     styleSheet.textContent = `
       /* CSS Reset to prevent host CSS interference */
@@ -356,12 +369,10 @@ function initializeEmbeddedWidget(): void {
         display: block;
       }
       
-      /* Widget styles (completely isolated) */
-      ${styles}
+      /* Widget styles (Tailwind CSS + custom styles - completely isolated) */
+      ${__WIDGET_CSS__}
     `;
-    shadowRoot.appendChild(styleSheet);
-
-    // Create React mount point inside Shadow DOM
+    shadowRoot.appendChild(styleSheet); // Create React mount point inside Shadow DOM
     const reactRoot = document.createElement('div');
     reactRoot.id = 'kalifinder-react-root';
     // CRITICAL: pointer-events: none to prevent blocking host page

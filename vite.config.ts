@@ -3,14 +3,13 @@ import react from '@vitejs/plugin-react-swc';
 import autoprefixer from 'autoprefixer';
 import path from 'path';
 import { defineConfig } from 'vite';
-import cssInjectedByJsPlugin from 'vite-plugin-css-injected-by-js';
 
 export default defineConfig(({ mode }) => ({
   server: {
     host: '::',
     port: 8080,
   },
-  plugins: [react(), tailwindcss(), cssInjectedByJsPlugin()],
+  plugins: [react(), tailwindcss()],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
@@ -34,6 +33,7 @@ export default defineConfig(({ mode }) => ({
     sourcemap: false,
     minify: 'esbuild',
     cssMinify: true,
+    cssCodeSplit: false, // Bundle all CSS into one file
     reportCompressedSize: false,
     emptyOutDir: true,
     outDir: 'dist',
@@ -48,9 +48,11 @@ export default defineConfig(({ mode }) => ({
         inlineDynamicImports: true,
         // Force .js extension for UMD format
         entryFileNames: 'kalifind-search.js',
-        // Inline all CSS and assets into the single JS file
+        // Output CSS as separate file that we'll inline
         assetFileNames: (assetInfo) => {
-          if (assetInfo.name === 'style.css') return 'styles.css';
+          if (assetInfo.name && assetInfo.name.endsWith('.css')) {
+            return 'kalifind-search.css';
+          }
           return assetInfo.name || 'assets/[name][extname]';
         },
       },

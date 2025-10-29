@@ -16,6 +16,11 @@ interface WidgetEmbedProps {
   storeUrl: string;
 }
 
+// Type definition for custom Kalifinder events
+interface KalifinderOpenEvent extends CustomEvent {
+  detail: { query?: string };
+}
+
 export default function WidgetEmbed({ storeUrl }: WidgetEmbedProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -30,7 +35,7 @@ export default function WidgetEmbed({ storeUrl }: WidgetEmbedProps) {
   useEffect(() => {
     const handleOpen = (evt: Event) => {
       // Using CustomEvent to access detail safely
-      const ce = evt as CustomEvent<{ query?: string }>;
+      const ce = evt as KalifinderOpenEvent;
       const q = ce?.detail?.query ?? '';
       setIsOpen(true);
       if (typeof q === 'string') {
@@ -40,9 +45,9 @@ export default function WidgetEmbed({ storeUrl }: WidgetEmbedProps) {
       console.log('[KaliFinder] Received open event from host with query:', q);
     };
 
-    window.addEventListener('kalifinder:open' as any, handleOpen);
+    window.addEventListener('kalifinder:open', handleOpen as EventListener);
     return () => {
-      window.removeEventListener('kalifinder:open' as any, handleOpen);
+      window.removeEventListener('kalifinder:open', handleOpen as EventListener);
     };
   }, []);
 

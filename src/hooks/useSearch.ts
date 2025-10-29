@@ -64,7 +64,18 @@ export function useSearch(options: UseSearchOptions) {
         setIsLoading(false);
       }
     },
-    [apiClient, config, sortOrder, setProducts, setTotal, setIsLoading, setError, setLastResponse]
+    [
+      apiClient,
+      config,
+      sortOrder,
+      setProducts,
+      setTotal,
+      setIsLoading,
+      setError,
+      setLastResponse,
+      onSearchComplete,
+      onError,
+    ]
   );
 
   /**

@@ -13,6 +13,7 @@ export default tseslint.config(
       '**/*.config.ts',
       '.husky/**',
       'backup_*/**',
+      'inline-css-build.mjs',
     ],
   },
   js.configs.recommended,
