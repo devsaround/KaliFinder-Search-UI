@@ -56,7 +56,7 @@
       <strong>✅ Same Shadow DOM:</strong> Complete CSS/JS isolation<br>
       <strong>✅ Same Component Flow:</strong> WidgetEmbed → KalifindSearch<br>
       <strong>✅ Same CSS Loading:</strong> Injected into Shadow DOM<br>
-      <strong>✅ Same Store URL:</strong> <code>http://localhost:8080</code>
+      <strong>✅ Default Store URL:</strong> <code>https://findifly.kalifinder.com</code>
     </div>
 
     <h2>How to Test:</h2>
@@ -72,9 +72,18 @@
       their website.</p>
   </div>
 
-  <!-- Load the same embed-search.tsx entry point used in production -->
-  <!-- This ensures dev mode = CDN mode (same Shadow DOM, same everything) -->
-  <script type="module" src="/src/embed-search.tsx"></script>
+  <!-- Provide default demo store for dev so UI is populated -->
+  <script>
+    (function () {
+      const store = 'https://findifly.kalifinder.com';
+      // Use UMD API in dev too
+      import('/src/embed/bootstrap.tsx').then((m) => {
+        const ctl = m.init({ storeUrl: store });
+        // Expose for quick manual testing
+        window.KalifinderDev = ctl;
+      });
+    })();
+  </script>
 </body>
 
 </html>

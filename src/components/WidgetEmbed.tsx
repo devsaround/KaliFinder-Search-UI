@@ -42,7 +42,8 @@ export default function WidgetEmbed({ storeUrl }: WidgetEmbedProps) {
         setSearchQuery(q);
         setHasSearched(Boolean(q.trim()));
       }
-      console.log('[KaliFinder] Received open event from host with query:', q);
+      if (import.meta.env.DEV)
+        console.warn('[KaliFinder] Received open event from host with query:', q);
     };
 
     window.addEventListener('kalifinder:open', handleOpen as EventListener);

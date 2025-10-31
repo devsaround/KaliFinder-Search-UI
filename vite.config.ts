@@ -32,15 +32,19 @@ export default defineConfig(({ mode }) => ({
   build: {
     sourcemap: false,
     minify: 'esbuild',
+    esbuild: {
+      // Strip debug statements from the final CDN bundle
+      drop: ['console', 'debugger'],
+    },
     cssMinify: true,
     cssCodeSplit: false, // Bundle all CSS into one file
     reportCompressedSize: false,
     emptyOutDir: true,
     outDir: 'dist',
     lib: {
-      entry: path.resolve(__dirname, 'src/embed-search.tsx'),
-      name: 'KaliFinderSearch',
-      fileName: (format) => `kalifind-search.js`,
+      entry: path.resolve(__dirname, 'src/embed/bootstrap.tsx'),
+      name: 'Kalifinder',
+      fileName: () => `kalifind-search.js`,
       formats: ['umd'],
     },
     rollupOptions: {

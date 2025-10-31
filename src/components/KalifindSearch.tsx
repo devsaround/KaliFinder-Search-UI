@@ -2308,7 +2308,7 @@ const KalifindSearch: React.FC<{
           )}
         </aside>
 
-        <main className="flex-1">
+        <main className="kalifinder-results flex-1">
           {recentSearches.length > 0 && (
             <div className="mb-6">
               <div className="mb-3 flex items-center justify-between">

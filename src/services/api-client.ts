@@ -25,6 +25,7 @@ export interface SearchParams {
   limit?: number;
   filters?: Record<string, unknown>;
   sort?: string;
+  storeUrl?: string; // align with backend requirement
 }
 
 /**
@@ -65,6 +66,7 @@ export class ApiClient {
       limit: params.limit || this.config.behavior.maxResults,
       ...(params.filters && { filters: params.filters }),
       ...(params.sort && { sort: params.sort }),
+      ...(params.storeUrl && { storeUrl: params.storeUrl }),
     });
 
     const response = await this.httpClient.get<SearchResponse>(url, {
@@ -83,7 +85,7 @@ export class ApiClient {
   /**
    * Get autocomplete suggestions
    */
-  async getAutocomplete(query: string): Promise<AutocompleteResponse> {
+  async getAutocomplete(query: string, storeUrl?: string): Promise<AutocompleteResponse> {
     if (!query || query.trim().length < this.config.behavior.minCharsForSearch) {
       return { suggestions: [] };
     }
@@ -98,7 +100,9 @@ export class ApiClient {
       }
     }
 
-    const url = buildAutocompleteUrl(this.config.api.baseUrl, query);
+    const url =
+      buildAutocompleteUrl(this.config.api.baseUrl, query) +
+      (storeUrl ? `&storeUrl=${encodeURIComponent(storeUrl)}` : '');
 
     const response = await this.httpClient.get<AutocompleteResponse>(url, {
       headers: buildRequestHeaders(this.config),
@@ -116,7 +120,7 @@ export class ApiClient {
   /**
    * Get search facets/filters
    */
-  async getFacets(query?: string): Promise<Record<string, unknown>> {
+  async getFacets(query?: string, storeUrl?: string): Promise<Record<string, unknown>> {
     const cacheKey = buildCacheKey('/facets', { q: query });
 
     // Check cache first
@@ -127,7 +131,9 @@ export class ApiClient {
       }
     }
 
-    const url = buildFacetsUrl(this.config.api.baseUrl, query);
+    const url =
+      buildFacetsUrl(this.config.api.baseUrl, query) +
+      (storeUrl ? `&storeUrl=${encodeURIComponent(storeUrl)}` : '');
 
     const response = await this.httpClient.get<Record<string, unknown>>(url, {
       headers: buildRequestHeaders(this.config),
@@ -145,8 +151,9 @@ export class ApiClient {
   /**
    * Get popular/trending searches
    */
-  async getPopularSearches(): Promise<string[]> {
-    const cacheKey = '/popular-searches';
+  async getPopularSearches(storeUrl?: string): Promise<string[]> {
+    const cacheKey =
+      '/popular-searches' + (storeUrl ? `?storeUrl=${encodeURIComponent(storeUrl)}` : '');
 
     // Check cache first
     if (this.config.cache.enabled) {
@@ -156,7 +163,10 @@ export class ApiClient {
       }
     }
 
-    const url = buildPopularSearchesUrl(this.config.api.baseUrl);
+    let url = buildPopularSearchesUrl(this.config.api.baseUrl);
+    if (storeUrl) {
+      url += (url.includes('?') ? '&' : '?') + `storeUrl=${encodeURIComponent(storeUrl)}`;
+    }
 
     const response = await this.httpClient.get<{ searches: string[] }>(url, {
       headers: buildRequestHeaders(this.config),

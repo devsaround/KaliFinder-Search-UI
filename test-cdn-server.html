@@ -71,15 +71,13 @@
 
         <div class="info" style="background: #fee2e2; margin-top: 20px;">
             <strong>⚠️ Important:</strong><br>
-            The store URL (<code>http://localhost:8080</code>) has no products indexed.<br>
-            You'll see skeleton loaders → then empty states with "No X available" messages.
+            Default store URL: <code>https://findifly.kalifinder.com</code>
         </div>
     </div>
 
     <!-- KaliFinder Widget - Loaded via HTTP Server (no cache) -->
     <!-- Cache-busting timestamp added to force fresh load -->
-    <script src="http://localhost:3000/dist/kalifind-search.js?v=1730222000&storeUrl=http://localhost:8080"
-        defer></script>
+    <script src="http://localhost:3000/dist/kalifind-search.js" defer onload="Kalifinder.init({storeUrl:'https://findifly.kalifinder.com'})"></script>
 </body>
 
 </html>
