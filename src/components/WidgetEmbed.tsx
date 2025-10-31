@@ -25,6 +25,7 @@ export default function WidgetEmbed({ storeUrl }: WidgetEmbedProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [hasSearched, setHasSearched] = useState<boolean>(false);
+  const [isReady, setIsReady] = useState<boolean | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
   /**
@@ -33,6 +34,41 @@ export default function WidgetEmbed({ storeUrl }: WidgetEmbedProps) {
    * detail: { query?: string }
    */
   useEffect(() => {
+    async function checkWidgetReady(): Promise<void> {
+      try {
+        const baseUrl = import.meta.env.VITE_BACKEND_URL || '';
+        // Resolve storeId and storeType from storeUrl
+        const rcUrl = new URL('/api/v1/search/recommendations-config', baseUrl);
+        rcUrl.searchParams.append('storeUrl', storeUrl);
+        const rcRes = await fetch(rcUrl.toString());
+        if (!rcRes.ok) {
+          setIsReady(null);
+          return;
+        }
+        const rcJson = (await rcRes.json()) as {
+          storeId?: number;
+          storeType?: 'shopify' | 'woocommerce';
+        };
+        if (!rcJson.storeId || !rcJson.storeType) {
+          setIsReady(null);
+          return;
+        }
+        // Call widget-ready
+        const wrUrl = new URL('/api/v1/analytics-status/widget-ready', baseUrl);
+        wrUrl.searchParams.append('storeId', String(rcJson.storeId));
+        wrUrl.searchParams.append('storeType', rcJson.storeType);
+        const wrRes = await fetch(wrUrl.toString());
+        if (!wrRes.ok) {
+          setIsReady(null);
+          return;
+        }
+        const wrJson = (await wrRes.json()) as { ready: boolean };
+        setIsReady(Boolean(wrJson.ready));
+      } catch {
+        setIsReady(null);
+      }
+    }
+
     const handleOpen = (evt: Event) => {
       // Using CustomEvent to access detail safely
       const ce = evt as KalifinderOpenEvent;
@@ -44,13 +80,14 @@ export default function WidgetEmbed({ storeUrl }: WidgetEmbedProps) {
       }
       if (import.meta.env.DEV)
         console.warn('[KaliFinder] Received open event from host with query:', q);
+      void checkWidgetReady();
     };
 
     window.addEventListener('kalifinder:open', handleOpen as EventListener);
     return () => {
       window.removeEventListener('kalifinder:open', handleOpen as EventListener);
     };
-  }, []);
+  }, [storeUrl]);
 
   /**
    * Close widget when clicking outside
@@ -68,6 +105,11 @@ export default function WidgetEmbed({ storeUrl }: WidgetEmbedProps) {
             className="kalifinder-widget-modal-content"
             onClick={(e) => e.stopPropagation()} // Prevent modal close on content click
           >
+            {isReady === false && (
+              <div className="kalifinder-widget-banner" role="status" aria-live="polite">
+                Indexing in progress. Results may be limited.
+              </div>
+            )}
             {/* Close button */}
             <button
               className="kalifinder-widget-modal-close"

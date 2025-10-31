@@ -3,13 +3,15 @@ import react from '@vitejs/plugin-react-swc';
 import autoprefixer from 'autoprefixer';
 import path from 'path';
 import { defineConfig } from 'vite';
+import { shadowCssPlugin } from './vite-plugin-shadow-css';
+import { inlineCssPlugin } from './vite-plugin-inline-css';
 
 export default defineConfig(({ mode }) => ({
   server: {
     host: '::',
     port: 8080,
   },
-  plugins: [react(), tailwindcss()],
+  plugins: [react(), tailwindcss(), shadowCssPlugin(), inlineCssPlugin()],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
@@ -37,29 +39,43 @@ export default defineConfig(({ mode }) => ({
       drop: ['console', 'debugger'],
     },
     cssMinify: true,
-    cssCodeSplit: false, // Bundle all CSS into one file
+    // Enable CSS asset emission so shadowCssPlugin can capture processed CSS
+    cssCodeSplit: true,
     reportCompressedSize: false,
     emptyOutDir: true,
     outDir: 'dist',
-    lib: {
-      entry: path.resolve(__dirname, 'src/embed/bootstrap.tsx'),
-      name: 'Kalifinder',
-      fileName: () => `kalifind-search.js`,
-      formats: ['umd'],
-    },
-    rollupOptions: {
-      output: {
-        inlineDynamicImports: true,
-        // Force .js extension for UMD format
-        entryFileNames: 'kalifind-search.js',
-        // Output CSS as separate file that we'll inline
-        assetFileNames: (assetInfo) => {
-          if (assetInfo.name && assetInfo.name.endsWith('.css')) {
-            return 'kalifind-search.css';
+    lib:
+      process.env.BUILD_TARGET === 'esm'
+        ? {
+            entry: path.resolve(__dirname, 'src/esm.tsx'),
+            name: 'KalifinderESM',
+            fileName: () => `index.es.js`,
+            formats: ['es'],
           }
-          return assetInfo.name || 'assets/[name][extname]';
-        },
-      },
-    },
+        : {
+            entry: path.resolve(__dirname, 'src/embed/bootstrap.tsx'),
+            name: 'Kalifinder',
+            fileName: () => `kalifind-search.js`,
+            formats: ['umd'],
+          },
+    rollupOptions:
+      process.env.BUILD_TARGET === 'esm'
+        ? {
+            output: {
+              entryFileNames: 'index.es.js',
+            },
+          }
+        : {
+            output: {
+              inlineDynamicImports: true,
+              entryFileNames: 'kalifind-search.js',
+              assetFileNames: (assetInfo) => {
+                if (assetInfo.name && assetInfo.name.endsWith('.css')) {
+                  return 'kalifind-search.css';
+                }
+                return assetInfo.name || 'assets/[name][extname]';
+              },
+            },
+          },
   },
 }));

@@ -72,18 +72,8 @@
       their website.</p>
   </div>
 
-  <!-- Provide default demo store for dev so UI is populated -->
-  <script>
-    (function () {
-      const store = 'https://findifly.kalifinder.com';
-      // Use UMD API in dev too
-      import('/src/embed/bootstrap.tsx').then((m) => {
-        const ctl = m.init({ storeUrl: store });
-        // Expose for quick manual testing
-        window.KalifinderDev = ctl;
-      });
-    })();
-  </script>
+  <!-- Load the same UMD bundle as CDN to ensure identical behavior (shows purple FAB) -->
+  <script src="/dist/kalifind-search.js?storeUrl=https://findifly.kalifinder.com" defer></script>
 </body>
 
 </html>

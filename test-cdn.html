@@ -72,10 +72,10 @@
         </div>
     </div>
 
-    <!-- KaliFinder Widget - Simulates CDN embedding -->
+    <!-- KaliFinder Widget - Simulates CDN embedding (same as production usage) -->
     <!-- Note: Change storeUrl to a store that has products in your backend -->
     <!-- Cache busting: Add &v=timestamp to force reload after rebuild -->
-    <script src="./dist/kalifind-search.js" defer onload="Kalifinder.init({storeUrl:'https://findifly.kalifinder.com'})"></script>
+    <script src="./dist/kalifind-search.js?storeUrl=https://findifly.kalifinder.com" defer></script>
 </body>
 
 </html>

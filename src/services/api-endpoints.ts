@@ -17,6 +17,7 @@ export const API_ENDPOINTS = {
   FACETS: '/api/v1/facets',
   FACETS_CONFIGURED: '/api/v1/facets/configured',
   POPULAR_SEARCHES: '/api/v1/search/popular',
+  WIDGET_READY: '/api/v1/analytics-status/widget-ready',
   PRODUCT_DETAILS: '/products/:id',
 } as const;
 
@@ -107,4 +108,17 @@ export function buildRequestHeaders(config: WidgetConfig): HeadersInit {
     'X-Widget-Version': '1.0.0',
     'X-Widget-Instance': config.instanceId,
   };
+}
+
+/**
+ * Build widget-ready URL
+ */
+export function buildWidgetReadyUrl(
+  baseUrl: string,
+  params: { storeId: string | number; storeType: 'shopify' | 'woocommerce' }
+): string {
+  const url = new URL(API_ENDPOINTS.WIDGET_READY, baseUrl);
+  url.searchParams.append('storeId', String(params.storeId));
+  url.searchParams.append('storeType', params.storeType);
+  return url.toString();
 }
