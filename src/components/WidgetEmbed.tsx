@@ -130,6 +130,13 @@ export default function WidgetEmbed({ storeUrl }: WidgetEmbedProps) {
                 storeUrl={storeUrl}
               />
             </div>
+
+            {/* Footer - floating at bottom right */}
+            <div className="absolute right-0 bottom-0 z-50 mr-4 mb-4">
+              <span className="text-muted-foreground rounded-full bg-white px-3 py-2 text-xs shadow-md">
+                Powered by KaliFinder
+              </span>
+            </div>
           </div>
         </div>
       )}

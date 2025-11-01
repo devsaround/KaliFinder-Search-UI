@@ -1,4 +1,4 @@
-import { ChevronDown, Filter, Search, X } from 'lucide-react';
+import { ChevronDown, Filter, Search, X } from '@/components/icons';
 import React, { useCallback, useEffect, useMemo, useRef, useState, useTransition } from 'react';
 
 import { getUBIClient } from '@/analytics/ubiClient';
@@ -1464,10 +1464,10 @@ const KalifindSearch: React.FC<{
             </div>
 
             <div className="relative flex-1 px-4 md:px-0" ref={searchRef}>
-              <div className="flex items-center gap-2" ref={searchRef}>
+              <div className="flex flex-col gap-2" ref={searchRef}>
                 <div className="flex w-full">
-                  <div className="border-border bg-input hover:border-primary/50 focus-within:border-primary relative flex-1 rounded-lg border-2 shadow-sm transition-all focus-within:shadow-md">
-                    <Search className="text-muted-foreground absolute top-1/2 left-3 h-5 w-5 -translate-y-1/2 transform" />
+                  <div className="border-border bg-input hover:border-primary/50 focus-within:border-primary flex w-full items-center gap-2 rounded-lg border-2 px-3 shadow-sm transition-all focus-within:shadow-md">
+                    <Search className="text-muted-foreground test-search-icon h-5 w-5 flex-shrink-0" />
                     <input
                       ref={inputRef}
                       type="text"
@@ -1503,23 +1503,25 @@ const KalifindSearch: React.FC<{
                       }}
                       onKeyDown={handleKeyDown}
                       placeholder="Search products..."
-                      className="text-foreground placeholder-muted-foreground w-full border-none bg-transparent py-3 pr-10 pl-10 text-sm outline-none focus:ring-0"
+                      className="text-foreground placeholder-muted-foreground w-full border-none bg-transparent py-3 text-sm outline-none focus:ring-0"
                     />
-                    {searchQuery && (
-                      <button
-                        onClick={() => {
-                          setSearchQuery('');
-                          inputRef.current?.focus();
-                        }}
-                        className="text-muted-foreground hover:text-foreground absolute top-1/2 right-3 -translate-y-1/2 transform transition-colors"
-                        aria-label="Clear search"
-                        type="button"
-                      >
-                        <X className="h-4 w-4" />
-                      </button>
-                    )}
                   </div>
                 </div>
+                {searchQuery && (
+                  <div className="flex items-center justify-end">
+                    <button
+                      onClick={() => {
+                        setSearchQuery('');
+                        inputRef.current?.focus();
+                      }}
+                      className="text-muted-foreground hover:text-foreground hover:bg-accent rounded-full px-4 py-2 text-sm transition-colors"
+                      aria-label="Clear search"
+                      type="button"
+                    >
+                      Clear
+                    </button>
+                  </div>
+                )}
               </div>
 
               {showAutocomplete &&

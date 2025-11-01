@@ -1,4 +1,4 @@
-import { Search } from 'lucide-react';
+import { Search } from '@/components/icons';
 import React from 'react';
 
 const SearchIcon: React.FC = () => {

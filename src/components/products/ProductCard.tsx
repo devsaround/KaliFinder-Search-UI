@@ -1,5 +1,5 @@
-import { ShoppingCart } from 'lucide-react';
 import React from 'react';
+import { ShoppingCart } from '@/components/icons';
 import type { Product } from '../../types';
 
 interface ProductCardProps {

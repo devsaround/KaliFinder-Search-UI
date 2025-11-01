@@ -1,4 +1,4 @@
-import { Search, X } from 'lucide-react';
+import { Search, X } from '@/components/icons';
 import React from 'react';
 
 interface KalifindSearchDesktopProps {
@@ -44,7 +44,7 @@ const KalifindSearchDesktop: React.FC<KalifindSearchDesktopProps> = ({
               <div className="flex w-full flex-1 items-center gap-2" ref={searchRef}>
                 <div className="flex w-full">
                   <div className="border-border bg-input relative w-full flex-1 rounded-lg border-2 shadow-sm transition-shadow hover:shadow-md">
-                    <Search className="text-muted-foreground absolute top-1/2 left-3 h-5 w-5 -translate-y-1/2 transform" />
+                    <Search className="text-muted-foreground test-search-icon" />
                     <input
                       ref={inputRef}
                       type="text"

@@ -1,6 +1,6 @@
 import * as React from 'react';
 import * as AccordionPrimitive from '@radix-ui/react-accordion';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown } from '@/components/icons';
 
 import { cn } from '@/lib/utils';
 
@@ -10,7 +10,7 @@ const AccordionItem = React.forwardRef<
   React.ElementRef<typeof AccordionPrimitive.Item>,
   React.ComponentPropsWithoutRef<typeof AccordionPrimitive.Item>
 >(({ className, ...props }, ref) => (
-  <AccordionPrimitive.Item ref={ref} className={cn('kf:border-b', className)} {...props} />
+  <AccordionPrimitive.Item ref={ref} className={cn('border-b', className)} {...props} />
 ));
 AccordionItem.displayName = 'AccordionItem';
 
@@ -22,13 +22,13 @@ const AccordionTrigger = React.forwardRef<
     <AccordionPrimitive.Trigger
       ref={ref}
       className={cn(
-        'kf:flex kf:flex-1 kf:items-center kf:justify-between kf:py-4 kf:font-[700] kf:hover:underline kf:[&[data-state=open]>svg]:rotate-180',
+        'flex flex-1 items-center justify-between py-4 font-[700] hover:underline [&[data-state=open]>svg]:rotate-180',
         className
       )}
       {...props}
     >
       {children}
-      <ChevronDown className="kf:mr-[2px] kf:h-[24px] kf:w-[24px] kf:shrink-0 kf:transition-transform kf:duration-200" />
+      <ChevronDown className="mr-[2px] h-[24px] w-[24px] shrink-0 transition-transform duration-200" />
     </AccordionPrimitive.Trigger>
   </AccordionPrimitive.Header>
 ));
@@ -40,10 +40,10 @@ const AccordionContent = React.forwardRef<
 >(({ className, children, ...props }, ref) => (
   <AccordionPrimitive.Content
     ref={ref}
-    className="kf:data-[state=closed]:kf-animate-accordion-up kf:data-[state=open]:kf-animate-accordion-down kf:overflow-hidden kf:text-[14px] kf:leading-[24px]"
+    className="data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down overflow-hidden text-[14px] leading-[24px]"
     {...props}
   >
-    <div className={cn('kf:pt-0 kf:pb-4', className)}>{children}</div>
+    <div className={cn('pt-0 pb-4', className)}>{children}</div>
   </AccordionPrimitive.Content>
 ));
 

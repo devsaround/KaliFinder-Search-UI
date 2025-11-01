@@ -1,0 +1,157 @@
+/**
+ * Helper Utilities
+ * Common utility classes used throughout the widget
+ */
+
+/* ========================================
+   LAYOUT UTILITIES
+   ======================================== */
+
+.kalifinder-widget-content .w-full {
+  width: 100%;
+}
+
+.kalifinder-widget-content .h-full {
+  height: 100%;
+}
+
+.kalifinder-widget-content .flex {
+  display: flex;
+}
+
+.kalifinder-widget-content .flex-1 {
+  flex: 1 1 0%;
+}
+
+.kalifinder-widget-content .flex-shrink-0 {
+  flex-shrink: 0;
+}
+
+.kalifinder-widget-content .hidden {
+  display: none;
+}
+
+@media (min-width: 1024px) {
+  .kalifinder-widget-content .lg\:block {
+    display: block;
+  }
+}
+
+.kalifinder-widget-content .sticky {
+  position: sticky;
+}
+
+.kalifinder-widget-content .top-24 {
+  top: var(--kf-space-12);
+}
+
+/* ========================================
+   COLOR UTILITIES
+   ======================================== */
+
+.kalifinder-widget-content .bg-background {
+  background-color: var(--kf-background);
+}
+
+.kalifinder-widget-content .text-foreground {
+  color: var(--kf-foreground);
+}
+
+.kalifinder-widget-content .text-muted-foreground {
+  color: var(--kf-muted-foreground);
+}
+
+.kalifinder-widget-content .border-border {
+  border-color: var(--kf-border);
+}
+
+/* ========================================
+   SPACING UTILITIES
+   ======================================== */
+
+.kalifinder-widget-content .border {
+  border-width: var(--kf-border-width);
+  border-style: solid;
+}
+
+.kalifinder-widget-content .p-4 {
+  padding: var(--kf-space-4);
+}
+
+.kalifinder-widget-content .rounded {
+  border-radius: var(--kf-radius-sm);
+}
+
+.kalifinder-widget-content .rounded-lg {
+  border-radius: var(--kf-radius-lg);
+}
+
+.kalifinder-widget-content .rounded-full {
+  border-radius: var(--kf-radius-full);
+}
+
+.kalifinder-widget-content .shadow-sm {
+  box-shadow: var(--kf-shadow-sm);
+}
+
+/* ========================================
+   TEXT UTILITIES
+   ======================================== */
+
+.kalifinder-widget-content .text-\[12px\] {
+  font-size: var(--kf-font-size-xs);
+}
+
+.kalifinder-widget-content .text-\[14px\],
+.kalifinder-widget-content .text-sm {
+  font-size: var(--kf-font-size-sm);
+}
+
+.kalifinder-widget-content .text-\[16px\] {
+  font-size: var(--kf-font-size-base);
+}
+
+.kalifinder-widget-content .text-\[18px\] {
+  font-size: var(--kf-font-size-lg);
+}
+
+/* ========================================
+   LOADING SKELETON
+   ======================================== */
+
+.kalifinder-widget-content [class*='Skeleton'],
+.kalifinder-widget-content .skeleton {
+  background: var(--kf-muted);
+  animation: kf-pulse 2s infinite;
+  border-radius: var(--kf-radius-sm);
+}
+
+/* ========================================
+   ACCESSIBILITY
+   ======================================== */
+
+.kalifinder-widget-trigger-hidden {
+  display: none;
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* ========================================
+   GRID UTILITIES
+   ======================================== */
+
+.kalifinder-widget-content .grid-cols-4 {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.kalifinder-widget-content .gap-2 {
+  gap: var(--kf-space-2);
+}

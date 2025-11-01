@@ -1,0 +1,237 @@
+/**
+ * Animation Keyframes & Utilities
+ * Reusable animations for components
+ */
+
+/* ========================================
+   KEYFRAME DEFINITIONS
+   ======================================== */
+
+@keyframes kf-accordion-down {
+  from {
+    height: 0;
+    opacity: 0;
+  }
+  to {
+    height: var(--radix-accordion-content-height);
+    opacity: 1;
+  }
+}
+
+@keyframes kf-accordion-up {
+  from {
+    height: var(--radix-accordion-content-height);
+    opacity: 1;
+  }
+  to {
+    height: 0;
+    opacity: 0;
+  }
+}
+
+@keyframes kf-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes kf-fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes kf-slide-up {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes kf-slide-down {
+  from {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes kf-slide-in-from-left {
+  from {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes kf-slide-in-from-right {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes kf-shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes kf-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@keyframes kf-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes kf-bounce {
+  0%,
+  100% {
+    transform: translateY(-25%);
+    animation-timing-function: cubic-bezier(0.8, 0, 1, 1);
+  }
+  50% {
+    transform: translateY(0);
+    animation-timing-function: cubic-bezier(0, 0, 0.2, 1);
+  }
+}
+
+@keyframes kf-zoom-in {
+  from {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes kf-zoom-out {
+  from {
+    transform: scale(1);
+    opacity: 1;
+  }
+  to {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+}
+
+/* ========================================
+   ANIMATION UTILITY CLASSES
+   ======================================== */
+
+.kf-animate-accordion-down {
+  animation: kf-accordion-down 200ms ease-out;
+}
+
+.kf-animate-accordion-up {
+  animation: kf-accordion-up 200ms ease-out;
+}
+
+.kf-animate-fade-in {
+  animation: kf-fade-in 300ms ease-out;
+}
+
+.kf-animate-fade-out {
+  animation: kf-fade-out 300ms ease-out;
+}
+
+.kf-animate-slide-up {
+  animation: kf-slide-up 300ms var(--kf-easing-out);
+}
+
+.kf-animate-slide-down {
+  animation: kf-slide-down 400ms var(--kf-easing-out);
+}
+
+.kf-animate-shimmer {
+  animation: kf-shimmer 2s infinite;
+}
+
+.kf-animate-pulse {
+  animation: kf-pulse 2s infinite;
+}
+
+.kf-animate-spin {
+  animation: kf-spin 1s linear infinite;
+}
+
+.kf-animate-bounce {
+  animation: kf-bounce 1s infinite;
+}
+
+.kf-animate-zoom-in {
+  animation: kf-zoom-in 200ms var(--kf-easing-out);
+}
+
+.kf-animate-zoom-out {
+  animation: kf-zoom-out 200ms var(--kf-easing-in);
+}
+
+/* ========================================
+   TRANSITION UTILITIES
+   ======================================== */
+
+.kf-transition-fast {
+  transition: all var(--kf-transition-fast);
+}
+
+.kf-transition-base {
+  transition: all var(--kf-transition-base);
+}
+
+.kf-transition-slow {
+  transition: all var(--kf-transition-slow);
+}
+
+.kf-transition-colors {
+  transition:
+    color var(--kf-transition-base),
+    background-color var(--kf-transition-base),
+    border-color var(--kf-transition-base);
+}
+
+.kf-transition-transform {
+  transition: transform var(--kf-transition-base);
+}
+
+.kf-transition-opacity {
+  transition: opacity var(--kf-transition-base);
+}

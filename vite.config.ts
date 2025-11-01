@@ -36,14 +36,19 @@ export default defineConfig(({ mode }) => ({
     minify: 'esbuild',
     esbuild: {
       // Strip debug statements from the final CDN bundle
-      drop: ['console', 'debugger'],
+      drop: mode === 'production' ? ['console', 'debugger'] : [],
+      // More aggressive minification
+      legalComments: 'none',
+      treeShaking: true,
     },
-    cssMinify: true,
-    // Enable CSS asset emission so shadowCssPlugin can capture processed CSS
-    cssCodeSplit: true,
+    cssMinify: 'esbuild',
+    // Disable code splitting to bundle all CSS together for shadowCssPlugin
+    cssCodeSplit: false,
     reportCompressedSize: false,
     emptyOutDir: true,
     outDir: 'dist',
+    // Optimize chunk size
+    chunkSizeWarningLimit: 500,
     lib:
       process.env.BUILD_TARGET === 'esm'
         ? {
@@ -61,11 +66,21 @@ export default defineConfig(({ mode }) => ({
     rollupOptions:
       process.env.BUILD_TARGET === 'esm'
         ? {
+            treeshake: {
+              moduleSideEffects: false,
+              propertyReadSideEffects: false,
+              unknownGlobalSideEffects: false,
+            },
             output: {
               entryFileNames: 'index.es.js',
             },
           }
         : {
+            treeshake: {
+              moduleSideEffects: false,
+              propertyReadSideEffects: false,
+              unknownGlobalSideEffects: false,
+            },
             output: {
               inlineDynamicImports: true,
               entryFileNames: 'kalifind-search.js',

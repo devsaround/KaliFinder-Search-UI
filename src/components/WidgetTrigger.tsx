@@ -8,7 +8,7 @@
  * - Keyboard accessible
  */
 
-import { Search } from 'lucide-react';
+import { Search } from '@/components/icons';
 
 interface WidgetTriggerProps {
   onClick: (e: React.MouseEvent) => void;

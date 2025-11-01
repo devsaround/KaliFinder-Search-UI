@@ -1,0 +1,66 @@
+/**
+ * Checkbox Component Styles
+ * Custom-styled checkboxes for filter selections
+ */
+
+.kalifinder-widget-content input[type='checkbox'] {
+  appearance: none;
+  width: var(--kf-checkbox-size);
+  height: var(--kf-checkbox-size);
+  border: var(--kf-border-width-thick) solid var(--kf-border);
+  border-radius: var(--kf-radius-sm);
+  background: var(--kf-background);
+  cursor: pointer;
+  position: relative;
+  vertical-align: middle;
+  margin: 0;
+  flex-shrink: 0;
+  display: inline-block;
+  transition: all var(--kf-transition-fast);
+}
+
+.kalifinder-widget-content input[type='checkbox']:hover:not(:disabled) {
+  border-color: var(--kf-primary);
+}
+
+.kalifinder-widget-content input[type='checkbox']:checked {
+  background: var(--kf-primary);
+  border-color: var(--kf-primary);
+}
+
+.kalifinder-widget-content input[type='checkbox']:checked::after {
+  content: '✓';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: var(--kf-primary-foreground);
+  font-size: var(--kf-font-size-sm);
+  font-weight: var(--kf-font-weight-bold);
+  line-height: 1;
+}
+
+.kalifinder-widget-content input[type='checkbox']:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.kalifinder-widget-content input[type='checkbox']:focus-visible {
+  outline: 2px solid var(--kf-ring);
+  outline-offset: 2px;
+}
+
+/* Checkbox Labels */
+.kalifinder-widget-content label {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  box-sizing: border-box;
+  transition: color var(--kf-transition-fast);
+}
+
+.kalifinder-widget-content label:hover {
+  color: var(--kf-foreground);
+}

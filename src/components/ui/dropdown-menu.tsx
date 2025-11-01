@@ -1,5 +1,5 @@
 import * as DropdownMenuPrimitive from '@radix-ui/react-dropdown-menu';
-import { Check, ChevronRight, Circle } from 'lucide-react';
+import { Check, ChevronRight, Circle } from '@/components/icons';
 import * as React from 'react';
 
 import { useShadowRoot } from '@/contexts/ShadowRootContext';
@@ -26,14 +26,14 @@ const DropdownMenuSubTrigger = React.forwardRef<
   <DropdownMenuPrimitive.SubTrigger
     ref={ref}
     className={cn(
-      'kf:focus:bg-accent kf:data-[state=open]:bg-accent kf:flex kf:cursor-default kf:items-center kf:rounded-sm kf:px-2 kf:py-1.5 kf:text-sm kf:outline-none kf:select-none',
-      inset && 'kf:pl-8',
+      'focus:bg-accent data-[state=open]:bg-accent flex cursor-default items-center rounded-sm px-2 py-1.5 text-sm outline-none select-none',
+      inset && 'pl-8',
       className
     )}
     {...props}
   >
     {children}
-    <ChevronRight className="kf:ml-auto kf:h-4 kf:w-4" />
+    <ChevronRight className="ml-auto h-4 w-4" />
   </DropdownMenuPrimitive.SubTrigger>
 ));
 DropdownMenuSubTrigger.displayName = DropdownMenuPrimitive.SubTrigger.displayName;
@@ -45,7 +45,7 @@ const DropdownMenuSubContent = React.forwardRef<
   <DropdownMenuPrimitive.SubContent
     ref={ref}
     className={cn(
-      'kf:bg-popover kf:text-popover-foreground kf:data-[state=open]:animate-in kf:data-[state=closed]:animate-out kf:data-[state=closed]:fade-out-0 kf:data-[state=open]:fade-in-0 kf:data-[state=closed]:zoom-out-95 kf:data-[state=open]:zoom-in-95 kf:data-[side=bottom]:slide-in-from-top-2 kf:data-[side=left]:slide-in-from-right-2 kf:data-[side=right]:slide-in-from-left-2 kf:data-[side=top]:slide-in-from-bottom-2 kf:z-50 kf:min-w-[8rem] kf:overflow-hidden kf:rounded-md kf:border kf:p-1 kf:shadow-lg',
+      'bg-popover text-popover-foreground data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-50 min-w-[8rem] overflow-hidden rounded-md border p-1 shadow-lg',
       className
     )}
     {...props}
@@ -60,17 +60,8 @@ const DropdownMenuContent = React.forwardRef<
   // Use shadow root container for portal rendering to ensure styles apply
   const { container } = useShadowRoot();
 
-  // Inline styles as fallback for shadow DOM - ensure background is always visible
-  const inlineStyles: React.CSSProperties = {
-    backgroundColor: 'white',
-    border: '1px solid hsl(220, 13%, 91%)',
-    borderRadius: '0.375rem',
-    padding: '0.25rem',
-    minWidth: '8rem',
-    boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1)',
-    zIndex: 2147483647,
-    ...style,
-  };
+  // Let CSS handle styling - only provide essential overrides
+  const inlineStyles: React.CSSProperties = style || {};
 
   return (
     <DropdownMenuPortal container={container}>
@@ -79,7 +70,7 @@ const DropdownMenuContent = React.forwardRef<
         sideOffset={sideOffset}
         style={inlineStyles}
         className={cn(
-          'kf:bg-popover kf:text-popover-foreground kf:data-[state=open]:animate-in kf:data-[state=closed]:animate-out kf:data-[state=closed]:fade-out-0 kf:data-[state=open]:fade-in-0 kf:data-[state=closed]:zoom-out-95 kf:data-[state=open]:zoom-in-95 kf:data-[side=bottom]:slide-in-from-top-2 kf:data-[side=left]:slide-in-from-right-2 kf:data-[side=right]:slide-in-from-left-2 kf:data-[side=top]:slide-in-from-bottom-2 kf:z-50 kf:min-w-[8rem] kf:overflow-hidden kf:rounded-md kf:border kf:p-1 kf:shadow-lg kf:md:min-w-[10rem]',
+          'bg-popover text-popover-foreground data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-[2147483647] min-w-[8rem] overflow-hidden rounded-md border p-1 shadow-lg md:min-w-[10rem]',
           className
         )}
         {...props}
@@ -98,8 +89,8 @@ const DropdownMenuItem = React.forwardRef<
   <DropdownMenuPrimitive.Item
     ref={ref}
     className={cn(
-      'kf:relative kf:flex kf:cursor-default kf:select-none kf:items-center kf:rounded-sm kf:px-2 kf:py-1.5 kf:text-sm kf:outline-none kf:transition-colors kf:focus:bg-accent kf:focus:text-accent-foreground kf:hover:bg-accent kf:hover:text-accent-foreground kf:data-[disabled]:pointer-events-none kf:data-[disabled]:opacity-50',
-      inset && 'kf:pl-8',
+      'focus:bg-accent focus:text-accent-foreground hover:bg-accent hover:text-accent-foreground relative flex cursor-default items-center rounded-sm px-2 py-1.5 text-sm transition-colors outline-none select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
+      inset && 'pl-8',
       className
     )}
     {...props}
@@ -114,15 +105,15 @@ const DropdownMenuCheckboxItem = React.forwardRef<
   <DropdownMenuPrimitive.CheckboxItem
     ref={ref}
     className={cn(
-      'kf:relative kf:flex kf:cursor-default kf:select-none kf:items-center kf:rounded-sm kf:py-1.5 kf:pl-8 kf:pr-2 kf:text-sm kf:outline-none kf:transition-colors kf:focus:bg-accent kf:focus:text-accent-foreground kf:hover:bg-accent kf:hover:text-accent-foreground kf:data-[disabled]:pointer-events-none kf:data-[disabled]:opacity-50',
+      'focus:bg-accent focus:text-accent-foreground hover:bg-accent hover:text-accent-foreground relative flex cursor-default items-center rounded-sm py-1.5 pr-2 pl-8 text-sm transition-colors outline-none select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
       className
     )}
     checked={checked}
     {...props}
   >
-    <span className="kf:absolute kf:left-2 kf:flex kf:h-3.5 kf:w-3.5 kf:items-center kf:justify-center">
+    <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
       <DropdownMenuPrimitive.ItemIndicator>
-        <Check className="kf:h-4 kf:w-4" />
+        <Check className="h-4 w-4" />
       </DropdownMenuPrimitive.ItemIndicator>
     </span>
     {children}
@@ -137,14 +128,14 @@ const DropdownMenuRadioItem = React.forwardRef<
   <DropdownMenuPrimitive.RadioItem
     ref={ref}
     className={cn(
-      'kf:relative kf:flex kf:cursor-default kf:select-none kf:items-center kf:rounded-sm kf:py-1.5 kf:pl-8 kf:pr-2 kf:text-sm kf:outline-none kf:transition-colors kf:focus:bg-accent kf:focus:text-accent-foreground kf:hover:bg-accent kf:hover:text-accent-foreground kf:data-[disabled]:pointer-events-none kf:data-[disabled]:opacity-50',
+      'focus:bg-accent focus:text-accent-foreground hover:bg-accent hover:text-accent-foreground relative flex cursor-default items-center rounded-sm py-1.5 pr-2 pl-8 text-sm transition-colors outline-none select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
       className
     )}
     {...props}
   >
-    <span className="kf:absolute kf:left-2 kf:flex kf:h-3.5 kf:w-3.5 kf:items-center kf:justify-center">
+    <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
       <DropdownMenuPrimitive.ItemIndicator>
-        <Circle className="kf:h-2 kf:w-2 kf:fill-current" />
+        <Circle className="h-2 w-2 fill-current" />
       </DropdownMenuPrimitive.ItemIndicator>
     </span>
     {children}
@@ -160,11 +151,7 @@ const DropdownMenuLabel = React.forwardRef<
 >(({ className, inset, ...props }, ref) => (
   <DropdownMenuPrimitive.Label
     ref={ref}
-    className={cn(
-      'kf:px-2 kf:py-1.5 kf:text-sm kf:font-semibold kf:select-none',
-      inset && 'kf:pl-8',
-      className
-    )}
+    className={cn('px-2 py-1.5 text-sm font-semibold select-none', inset && 'pl-8', className)}
     {...props}
   />
 ));
@@ -176,7 +163,7 @@ const DropdownMenuSeparator = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <DropdownMenuPrimitive.Separator
     ref={ref}
-    className={cn('kf:-mx-1 kf:my-1 kf:h-px kf:bg-muted', className)}
+    className={cn('bg-muted -mx-1 my-1 h-px', className)}
     {...props}
   />
 ));
@@ -184,10 +171,7 @@ DropdownMenuSeparator.displayName = DropdownMenuPrimitive.Separator.displayName;
 
 const DropdownMenuShortcut = ({ className, ...props }: React.HTMLAttributes<HTMLSpanElement>) => {
   return (
-    <span
-      className={cn('kf:ml-auto kf:text-xs kf:tracking-widest kf:opacity-60', className)}
-      {...props}
-    />
+    <span className={cn('ml-auto text-xs tracking-widest opacity-60', className)} {...props} />
   );
 };
 DropdownMenuShortcut.displayName = 'DropdownMenuShortcut';

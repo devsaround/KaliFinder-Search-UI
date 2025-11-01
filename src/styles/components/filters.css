@@ -1,0 +1,327 @@
+/**
+ * Filter Sidebar & Accordion Styles
+ * Desktop filter sidebar and mobile drawer components
+ */
+
+/* ========================================
+   FILTER SIDEBAR CONTAINER
+   ======================================== */
+
+.kalifinder-widget-content aside {
+  flex-shrink: 0;
+  width: var(--kf-sidebar-width);
+  min-width: var(--kf-sidebar-width);
+  max-width: var(--kf-sidebar-width);
+  height: fit-content;
+  position: sticky;
+  top: var(--kf-space-12);
+  background: var(--kf-background);
+  border: var(--kf-border-width) solid var(--kf-border);
+  border-radius: var(--kf-radius-lg);
+  padding: var(--kf-space-4);
+  box-shadow: var(--kf-shadow-sm);
+  overflow-y: auto;
+  max-height: calc(100vh - 8rem);
+}
+
+/* Responsive Visibility */
+@media (max-width: 1023px) {
+  .kalifinder-widget-content aside {
+    display: none;
+  }
+}
+
+@media (min-width: 1024px) {
+  .kalifinder-widget-content aside {
+    display: block;
+  }
+}
+
+/* ========================================
+   ACCORDION STRUCTURE
+   ======================================== */
+
+.kalifinder-widget-content [data-radix-accordion-root] {
+  width: 100%;
+  display: block;
+}
+
+.kalifinder-widget-content [data-radix-accordion-item] {
+  border-bottom: var(--kf-border-width) solid var(--kf-border);
+  margin-bottom: 0;
+  width: 100%;
+  display: block;
+}
+
+.kalifinder-widget-content [data-radix-accordion-item]:last-child {
+  border-bottom: none;
+}
+
+.kalifinder-widget-content [data-radix-accordion-header] {
+  display: flex;
+  width: 100%;
+}
+
+/* ========================================
+   ACCORDION TRIGGER
+   ======================================== */
+
+.kalifinder-widget-content [data-radix-accordion-trigger] {
+  display: flex;
+  flex: 1 1 0%;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--kf-space-4) 0;
+  font-weight: var(--kf-font-weight-bold);
+  font-size: var(--kf-font-size-base);
+  cursor: pointer;
+  transition: all var(--kf-transition-base);
+  width: 100%;
+  background: transparent;
+  border: none;
+  text-align: left;
+  color: var(--kf-foreground);
+}
+
+.kalifinder-widget-content [data-radix-accordion-trigger]:hover {
+  text-decoration: underline;
+  color: var(--kf-primary);
+}
+
+/* Accordion Icon */
+.kalifinder-widget-content [data-radix-accordion-trigger] svg {
+  flex-shrink: 0;
+  width: var(--kf-icon-size-sm);
+  height: var(--kf-icon-size-sm);
+  transition: transform var(--kf-transition-base);
+}
+
+.kalifinder-widget-content [data-radix-accordion-trigger][data-state='open'] svg {
+  transform: rotate(180deg);
+}
+
+/* ========================================
+   ACCORDION CONTENT
+   ======================================== */
+
+.kalifinder-widget-content [data-radix-accordion-content] {
+  overflow: hidden;
+  font-size: var(--kf-font-size-sm);
+  line-height: var(--kf-line-height-normal);
+  display: block;
+  width: 100%;
+}
+
+.kalifinder-widget-content [data-radix-accordion-content][data-state='open'] {
+  animation: kf-accordion-down 200ms ease-out;
+}
+
+.kalifinder-widget-content [data-radix-accordion-content][data-state='closed'] {
+  animation: kf-accordion-up 200ms ease-out;
+}
+
+.kalifinder-widget-content [data-radix-accordion-content] > div {
+  padding-top: 0;
+  padding-bottom: var(--kf-space-4);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* ========================================
+   FILTER OPTIONS
+   ======================================== */
+
+/* Filter Option List */
+.kalifinder-widget-content .space-y-2 > * + * {
+  margin-top: var(--kf-space-2);
+}
+
+.kalifinder-widget-content .space-y-\[8px\] > * + * {
+  margin-top: 8px;
+}
+
+/* Filter Option Item */
+.kalifinder-widget-content .flex.items-center {
+  display: flex;
+  align-items: center;
+}
+
+.kalifinder-widget-content .flex.justify-between {
+  justify-content: space-between;
+}
+
+.kalifinder-widget-content .flex.cursor-pointer {
+  cursor: pointer;
+}
+
+/* Filter Count Badge */
+.kalifinder-widget-content .text-muted-foreground {
+  color: var(--kf-muted-foreground);
+  font-size: var(--kf-font-size-xs);
+}
+
+/* ========================================
+   CLEAR ALL FILTERS BUTTON
+   ======================================== */
+
+.kalifinder-widget-content aside button[class*='border-search-highlight'] {
+  width: 100%;
+  margin-top: var(--kf-space-4);
+  padding: var(--kf-space-4);
+  border-radius: var(--kf-radius-lg);
+  font-weight: var(--kf-font-weight-bold);
+  background: var(--kf-primary);
+  color: var(--kf-primary-foreground);
+  border: var(--kf-border-width-thick) solid var(--kf-primary);
+  cursor: pointer;
+  transition: all var(--kf-transition-base);
+}
+
+.kalifinder-widget-content aside button[class*='border-search-highlight']:hover {
+  background: var(--kf-primary-hover);
+}
+
+/* ========================================
+   SIZE & COLOR FILTER BUTTONS
+   ======================================== */
+
+/* Size Buttons Grid */
+.kalifinder-widget-content .grid-cols-4 {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--kf-space-2);
+}
+
+/* Size/Style Buttons */
+.kalifinder-widget-content button.my-border {
+  border: var(--kf-border-width) solid var(--kf-border);
+  background: var(--kf-background);
+  color: var(--kf-foreground);
+  transition: all var(--kf-transition-base);
+  padding: var(--kf-space-2);
+  border-radius: var(--kf-radius-sm);
+  font-size: var(--kf-font-size-sm);
+}
+
+.kalifinder-widget-content button.my-border:hover:not(:disabled) {
+  background: var(--kf-muted);
+  border-color: var(--kf-primary);
+}
+
+.kalifinder-widget-content button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Color Filter Buttons */
+.kalifinder-widget-content button[data-color] {
+  border-radius: var(--kf-radius-full);
+  padding: 0;
+  width: 2rem;
+  height: 2rem;
+  border: var(--kf-border-width-thick) solid transparent;
+  transition: all var(--kf-transition-base);
+}
+
+.kalifinder-widget-content button[data-color]:hover:not(:disabled) {
+  transform: scale(1.1);
+  box-shadow: var(--kf-shadow-md);
+}
+
+.kalifinder-widget-content button[data-color][aria-pressed='true'] {
+  border-color: var(--kf-primary);
+  box-shadow: 0 0 0 2px var(--kf-accent);
+}
+
+/* Color Mappings */
+.kalifinder-widget-content button[data-color='red'] {
+  background-color: #ef4444;
+}
+.kalifinder-widget-content button[data-color='blue'] {
+  background-color: #3b82f6;
+}
+.kalifinder-widget-content button[data-color='green'] {
+  background-color: #22c55e;
+}
+.kalifinder-widget-content button[data-color='yellow'] {
+  background-color: #eab308;
+}
+.kalifinder-widget-content button[data-color='purple'] {
+  background-color: #a855f7;
+}
+.kalifinder-widget-content button[data-color='pink'] {
+  background-color: #ec4899;
+}
+.kalifinder-widget-content button[data-color='orange'] {
+  background-color: #f97316;
+}
+.kalifinder-widget-content button[data-color='black'] {
+  background-color: #000000;
+}
+.kalifinder-widget-content button[data-color='white'] {
+  background-color: #ffffff;
+  border-color: var(--kf-border);
+}
+.kalifinder-widget-content button[data-color='gray'],
+.kalifinder-widget-content button[data-color='grey'] {
+  background-color: #6b7280;
+}
+.kalifinder-widget-content button[data-color='brown'] {
+  background-color: #92400e;
+}
+.kalifinder-widget-content button[data-color='beige'] {
+  background-color: #f5f5dc;
+}
+.kalifinder-widget-content button[data-color='navy'] {
+  background-color: #1e3a8a;
+}
+.kalifinder-widget-content button[data-color='teal'] {
+  background-color: #14b8a6;
+}
+.kalifinder-widget-content button[data-color='maroon'] {
+  background-color: #881337;
+}
+.kalifinder-widget-content button[data-color='olive'] {
+  background-color: #84cc16;
+}
+.kalifinder-widget-content button[data-color='silver'] {
+  background-color: #d1d5db;
+}
+.kalifinder-widget-content button[data-color='gold'] {
+  background-color: #fbbf24;
+}
+.kalifinder-widget-content button[data-color='cream'] {
+  background-color: #fffbeb;
+}
+
+/* ========================================
+   PRICE RANGE SLIDER
+   ======================================== */
+
+.kalifinder-widget-content [role='slider'] {
+  cursor: pointer;
+}
+
+/* ========================================
+   UTILITY SPACING
+   ======================================== */
+
+.kalifinder-widget-content .gap-\[8px\] {
+  gap: 8px;
+}
+
+.kalifinder-widget-content .gap-\[10px\] {
+  gap: 10px;
+}
+
+.kalifinder-widget-content .gap-2 {
+  gap: var(--kf-space-2);
+}
+
+.kalifinder-widget-content .gap-3 {
+  gap: var(--kf-space-3);
+}
+
+.kalifinder-widget-content .gap-4 {
+  gap: var(--kf-space-4);
+}

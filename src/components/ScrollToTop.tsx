@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronUp } from 'lucide-react';
+import { ChevronUp } from '@/components/icons';
 
 interface ScrollToTopProps {
   containerRef?: React.RefObject<HTMLElement>;
@@ -58,11 +58,11 @@ const ScrollToTop: React.FC<ScrollToTopProps> = ({
   return (
     <button
       onClick={scrollToTop}
-      className={`kf:bg-primary kf:text-primary-foreground kf:fixed kf:right-6 kf:bottom-6 kf:z-[1000] kf:flex kf:h-12 kf:w-12 kf:items-center kf:justify-center kf:rounded-full kf:shadow-lg kf:transition-all kf:duration-300 kf:ease-in-out kf:hover:scale-110 kf:hover:shadow-xl kf:active:scale-95 ${isVisible ? 'kf:translate-y-0 kf:opacity-100' : 'kf:pointer-events-none kf:translate-y-4 kf:opacity-0'} ${className} `}
+      className={`bg-primary text-primary-foreground fixed right-6 bottom-6 z-[1000] flex h-12 w-12 items-center justify-center rounded-full shadow-lg transition-all duration-300 ease-in-out hover:scale-110 hover:shadow-xl active:scale-95 ${isVisible ? 'translate-y-0 opacity-100' : 'pointer-events-none translate-y-4 opacity-0'} ${className} `}
       aria-label="Scroll to top"
       title="Back to top"
     >
-      <ChevronUp className="kf:h-6 kf:w-6" />
+      <ChevronUp className="h-6 w-6" />
     </button>
   );
 };

@@ -1,0 +1,195 @@
+/**
+ * KaliFinder Design System - CSS Custom Properties
+ * Central definition of all design tokens for consistency and theming
+ */
+
+:root,
+:host {
+  /* ========================================
+     COLOR SYSTEM - HSL Values
+     ======================================== */
+
+  /* Primary Brand Colors */
+  --kf-primary-h: 264;
+  --kf-primary-s: 83%;
+  --kf-primary-l: 58%;
+  --kf-primary: hsl(var(--kf-primary-h), var(--kf-primary-s), var(--kf-primary-l));
+  --kf-primary-hover: hsl(var(--kf-primary-h), var(--kf-primary-s), 52%);
+  --kf-primary-foreground: hsl(0, 0%, 100%);
+
+  /* Neutral Colors */
+  --kf-background: hsl(0, 0%, 100%);
+  --kf-foreground: hsl(222.2, 84%, 4.9%);
+  --kf-border: hsl(220, 13%, 91%);
+  --kf-input: hsl(220, 13%, 91%);
+  --kf-ring: hsl(264, 83%, 58%);
+
+  /* Semantic Colors */
+  --kf-muted: hsl(250, 7%, 97%);
+  --kf-muted-foreground: hsl(215.4, 16.3%, 46.9%);
+  --kf-accent: hsl(264, 83%, 95%);
+  --kf-accent-foreground: hsl(264, 83%, 25%);
+  --kf-card: hsl(0, 0%, 100%);
+  --kf-card-foreground: hsl(222.2, 84%, 4.9%);
+  --kf-popover: hsl(0, 0%, 100%);
+  --kf-popover-foreground: hsl(222.2, 84%, 4.9%);
+
+  /* Secondary Colors */
+  --kf-secondary: hsl(250, 7%, 97%);
+  --kf-secondary-foreground: hsl(222.2, 47.4%, 11.2%);
+
+  /* Destructive/Error */
+  --kf-destructive: hsl(0, 84.2%, 60.2%);
+  --kf-destructive-foreground: hsl(210, 40%, 98%);
+
+  /* Search-specific */
+  --kf-search-highlight: hsl(264, 83%, 58%);
+  --kf-search-bar: hsl(0, 0%, 98%);
+  --kf-filter-bg: hsl(0, 0%, 100%);
+
+  /* Loading States */
+  --kf-loading: hsl(220, 13%, 91%);
+  --kf-loading-shimmer: hsl(0, 0%, 98%);
+
+  /* ========================================
+     SPACING SYSTEM (8px base)
+     ======================================== */
+
+  --kf-space-0: 0;
+  --kf-space-1: 0.25rem; /* 4px */
+  --kf-space-2: 0.5rem; /* 8px */
+  --kf-space-3: 0.75rem; /* 12px */
+  --kf-space-4: 1rem; /* 16px */
+  --kf-space-5: 1.25rem; /* 20px */
+  --kf-space-6: 1.5rem; /* 24px */
+  --kf-space-8: 2rem; /* 32px */
+  --kf-space-10: 2.5rem; /* 40px */
+  --kf-space-12: 3rem; /* 48px */
+  --kf-space-16: 4rem; /* 64px */
+
+  /* ========================================
+     TYPOGRAPHY SYSTEM
+     ======================================== */
+
+  /* Font Family */
+  --kf-font-family:
+    'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
+    sans-serif;
+
+  /* Font Sizes */
+  --kf-font-size-xs: 0.75rem; /* 12px */
+  --kf-font-size-sm: 0.875rem; /* 14px */
+  --kf-font-size-base: 1rem; /* 16px */
+  --kf-font-size-lg: 1.125rem; /* 18px */
+  --kf-font-size-xl: 1.25rem; /* 20px */
+  --kf-font-size-2xl: 1.5rem; /* 24px */
+
+  /* Line Heights */
+  --kf-line-height-tight: 1.25;
+  --kf-line-height-normal: 1.5;
+  --kf-line-height-relaxed: 1.75;
+
+  /* Font Weights */
+  --kf-font-weight-normal: 400;
+  --kf-font-weight-medium: 500;
+  --kf-font-weight-semibold: 600;
+  --kf-font-weight-bold: 700;
+
+  /* ========================================
+     BORDERS & RADIUS
+     ======================================== */
+
+  --kf-radius-sm: 0.25rem; /* 4px */
+  --kf-radius-md: 0.375rem; /* 6px */
+  --kf-radius-lg: 0.5rem; /* 8px */
+  --kf-radius-xl: 1rem; /* 16px */
+  --kf-radius-full: 9999px;
+
+  --kf-border-width: 1px;
+  --kf-border-width-thick: 2px;
+
+  /* ========================================
+     SHADOWS
+     ======================================== */
+
+  --kf-shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --kf-shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --kf-shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --kf-shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 10px 10px -5px rgb(0 0 0 / 0.04);
+
+  /* ========================================
+     COMPONENT SIZES
+     ======================================== */
+
+  --kf-sidebar-width: 320px;
+  --kf-header-height: 64px;
+  --kf-checkbox-size: 1.25rem; /* 20px */
+  --kf-icon-size-sm: 1rem; /* 16px */
+  --kf-icon-size-md: 1.5rem; /* 24px */
+  --kf-icon-size-lg: 2rem; /* 32px */
+
+  /* ========================================
+     Z-INDEX SCALE
+     ======================================== */
+
+  --kf-z-base: 0;
+  --kf-z-dropdown: 1000;
+  --kf-z-sticky: 1020;
+  --kf-z-fixed: 1030;
+  --kf-z-modal-backdrop: 1040;
+  --kf-z-modal: 9999;
+  --kf-z-popover: 10000;
+  --kf-z-tooltip: 10010;
+  --kf-z-max: 2147483647; /* For Shadow DOM portals */
+
+  /* ========================================
+     TRANSITIONS & ANIMATIONS
+     ======================================== */
+
+  --kf-transition-fast: 150ms ease;
+  --kf-transition-base: 200ms ease;
+  --kf-transition-slow: 300ms ease;
+  --kf-transition-slowest: 500ms ease;
+
+  --kf-easing-linear: linear;
+  --kf-easing-in: cubic-bezier(0.4, 0, 1, 1);
+  --kf-easing-out: cubic-bezier(0, 0, 0.2, 1);
+  --kf-easing-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* ========================================
+     BREAKPOINTS (for reference in JS)
+     ======================================== */
+
+  --kf-breakpoint-sm: 640px;
+  --kf-breakpoint-md: 768px;
+  --kf-breakpoint-lg: 1024px;
+  --kf-breakpoint-xl: 1280px;
+  --kf-breakpoint-2xl: 1536px;
+}
+
+/* ========================================
+   DARK MODE (Future Support)
+   ======================================== */
+
+.dark,
+[data-theme='dark'] {
+  --kf-background: hsl(222.2, 84%, 4.9%);
+  --kf-foreground: hsl(210, 40%, 98%);
+  --kf-card: hsl(222.2, 84%, 4.9%);
+  --kf-card-foreground: hsl(210, 40%, 98%);
+  --kf-popover: hsl(222.2, 84%, 4.9%);
+  --kf-popover-foreground: hsl(210, 40%, 98%);
+  --kf-primary: hsl(210, 40%, 98%);
+  --kf-primary-foreground: hsl(222.2, 47.4%, 11.2%);
+  --kf-secondary: hsl(217.2, 32.6%, 17.5%);
+  --kf-secondary-foreground: hsl(210, 40%, 98%);
+  --kf-muted: hsl(217.2, 32.6%, 17.5%);
+  --kf-muted-foreground: hsl(215, 20.2%, 65.1%);
+  --kf-accent: hsl(217.2, 32.6%, 17.5%);
+  --kf-accent-foreground: hsl(210, 40%, 98%);
+  --kf-destructive: hsl(0, 62.8%, 30.6%);
+  --kf-destructive-foreground: hsl(210, 40%, 98%);
+  --kf-border: hsl(217.2, 32.6%, 17.5%);
+  --kf-input: hsl(217.2, 32.6%, 17.5%);
+  --kf-ring: hsl(212.7, 26.8%, 83.9%);
+}

@@ -1,5 +1,5 @@
 import { useAutocomplete } from '@/hooks/useAutocomplete';
-import { Search, X } from 'lucide-react';
+import { Search, X } from '@/components/icons';
 import React, { useState } from 'react';
 
 interface KalifindSearchMobileProps {
@@ -131,7 +131,7 @@ const KalifindSearchMobile: React.FC<KalifindSearchMobileProps> = ({
             <div className="flex h-full w-full flex-1 items-center gap-2">
               <div className="flex h-full w-full">
                 <div className="border-border bg-input relative h-full w-full flex-1 rounded-lg border-2 shadow-sm">
-                  <Search className="text-muted-foreground absolute top-1/2 left-3 h-5 w-5 -translate-y-1/2 transform" />
+                  <Search className="text-muted-foreground test-search-icon" />
                   <input
                     ref={inputRef}
                     type="text"

@@ -1,0 +1,50 @@
+/**
+ * Base Styles & Reset
+ * Minimal reset for Shadow DOM context
+ */
+
+/* Shadow DOM Font */
+#my-ui :where(*) {
+  font-family: var(--kf-font-family);
+}
+
+/* Base Layer */
+@layer base {
+  * {
+    border-color: var(--kf-border);
+  }
+
+  body {
+    background: var(--kf-background);
+    color: var(--kf-foreground);
+    font-family: var(--kf-font-family);
+  }
+
+  /* Shadow DOM specific */
+  #my-ui * {
+    border-color: var(--kf-border);
+  }
+
+  #my-ui body {
+    background: var(--kf-background);
+    color: var(--kf-foreground);
+  }
+}
+
+/* Legacy utilities */
+.kf-my-border {
+  border: 1px solid black;
+}
+
+.my-border {
+  border: 1px solid var(--kf-border);
+}
+
+.w-70 {
+  width: var(--kf-sidebar-width);
+}
+
+/* Results column */
+.kalifinder-results {
+  min-width: 0;
+}

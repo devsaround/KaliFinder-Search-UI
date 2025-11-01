@@ -7,6 +7,10 @@
   "scripts": {
     "dev": "sh -c 'vite build --mode development --watch & pnpm dlx wait-on dist/kalifind-search.js && vite preview --host --port 8080'",
     "dev:embed": "vite build --mode development --watch",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:run": "vitest run",
+    "test:coverage": "vitest run --coverage",
     "test:cdn": "pnpm build && pnpm dlx serve . -l 8080",
     "build": "pnpm run clean && tsc -b && vite build --mode production",
     "build:esm": "pnpm run clean && tsc -b && BUILD_TARGET=esm vite build --mode production",
@@ -19,8 +23,8 @@
     "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,css,scss,md}\"",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "check:all": "pnpm run type-check && pnpm run format:check && pnpm run lint",
-    "check:strict": "pnpm run type-check && pnpm run format && pnpm run lint && pnpm run build",
+    "check:all": "pnpm run type-check && pnpm run format:check && pnpm run lint && pnpm run test:run",
+    "check:strict": "pnpm run type-check && pnpm run format && pnpm run lint && pnpm run test:coverage && pnpm run build",
     "validate:files": "node .husky/pre-commit.cjs",
     "cleanup": "rm -rf node_modules pnpm-lock.yaml .vite .vite-cache .eslintcache node_modules/.tmp && pnpm i",
     "prepare": "husky"
@@ -52,16 +56,21 @@
   "devDependencies": {
     "@eslint/js": "^9.38.0",
     "@tailwindcss/vite": "^4.1.16",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.0",
+    "@testing-library/user-event": "^14.6.1",
     "@types/node": "^24.9.1",
     "@types/react": "^19.2.2",
     "@types/react-dom": "^19.2.2",
     "@vitejs/plugin-react-swc": "^4.2.0",
+    "@vitest/ui": "^4.0.6",
     "autoprefixer": "^10.4.21",
     "eslint": "^9.38.0",
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.4.24",
     "globals": "^16.4.0",
     "husky": "^9.1.7",
+    "jsdom": "^27.1.0",
     "lovable-tagger": "^1.1.11",
     "postcss": "^8.5.6",
     "prettier": "^3.6.2",
@@ -71,6 +80,7 @@
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.46.2",
     "vite": "^7.1.12",
-    "vite-plugin-css-injected-by-js": "^3.5.2"
+    "vite-plugin-css-injected-by-js": "^3.5.2",
+    "vitest": "^4.0.6"
   }
 }

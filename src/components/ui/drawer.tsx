@@ -23,7 +23,7 @@ const DrawerOverlay = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <DrawerPrimitive.Overlay
     ref={ref}
-    className={cn('kf:fixed kf:inset-0 kf:z-[99999] kf:bg-black/80', className)}
+    className={cn('fixed inset-0 z-[99999] bg-black/80', className)}
     {...props}
   />
 ));
@@ -38,12 +38,12 @@ const DrawerContent = React.forwardRef<
     <DrawerPrimitive.Content
       ref={ref}
       className={cn(
-        'kf:bg-background kf:fixed kf:inset-x-0 kf:bottom-0 kf:z-[100000] kf:flex kf:h-auto kf:flex-col kf:rounded-t-2xl kf:border',
+        'bg-background fixed inset-x-0 bottom-0 z-[100000] flex h-auto flex-col rounded-t-2xl border',
         className
       )}
       {...props}
     >
-      <div className="kf:bg-muted kf:mx-auto kf:h-2 kf:w-[100px]" />
+      <div className="bg-muted mx-auto h-2 w-[100px]" />
       {children}
     </DrawerPrimitive.Content>
   </DrawerPortal>
@@ -51,12 +51,12 @@ const DrawerContent = React.forwardRef<
 DrawerContent.displayName = DrawerPrimitive.Content.displayName;
 
 const DrawerHeader = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
-  <div className={cn('kf:grid kf:gap-1.5 kf:p-4', className)} {...props} />
+  <div className={cn('grid gap-1.5 p-4', className)} {...props} />
 );
 DrawerHeader.displayName = 'DrawerHeader';
 
 const DrawerFooter = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
-  <div className={cn('kf:mt-auto kf:flex kf:flex-col kf:gap-2 kf:p-4', className)} {...props} />
+  <div className={cn('mt-auto flex flex-col gap-2 p-4', className)} {...props} />
 );
 DrawerFooter.displayName = 'DrawerFooter';
 
@@ -66,7 +66,7 @@ const DrawerTitle = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <DrawerPrimitive.Title
     ref={ref}
-    className={cn('kf:text-lg kf:font-semibold kf:leading-none kf:tracking-tight', className)}
+    className={cn('text-lg leading-none font-semibold tracking-tight', className)}
     {...props}
   />
 ));
@@ -78,7 +78,7 @@ const DrawerDescription = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <DrawerPrimitive.Description
     ref={ref}
-    className={cn('kf:text-sm kf:text-muted-foreground', className)}
+    className={cn('text-muted-foreground text-sm', className)}
     {...props}
   />
 ));

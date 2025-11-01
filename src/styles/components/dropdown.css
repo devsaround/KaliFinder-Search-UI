@@ -1,0 +1,161 @@
+/**
+ * Dropdown Menu Component (Radix UI)
+ * Sort dropdown and other dropdown menus
+ */
+
+/* ========================================
+   DROPDOWN PORTAL & WRAPPER
+   ======================================== */
+
+:host [data-radix-portal],
+#kalifinder-portal-container [data-radix-portal],
+.kalifinder-widget-content [data-radix-portal] {
+  z-index: var(--kf-z-max) !important;
+}
+
+:host [data-radix-popper-content-wrapper],
+#kalifinder-portal-container [data-radix-popper-content-wrapper],
+.kalifinder-widget-content [data-radix-popper-content-wrapper] {
+  z-index: var(--kf-z-max);
+  width: fit-content;
+  max-width: min-content;
+  display: inline-block;
+}
+
+/* ========================================
+   DROPDOWN CONTENT
+   ======================================== */
+
+:host [data-radix-dropdown-menu-content],
+:host [data-radix-select-content],
+#kalifinder-portal-container [data-radix-dropdown-menu-content],
+#kalifinder-portal-container [data-radix-select-content],
+.kalifinder-widget-content [data-radix-dropdown-menu-content],
+.kalifinder-widget-content [data-radix-select-content] {
+  background: var(--kf-popover);
+  color: var(--kf-popover-foreground);
+  border: var(--kf-border-width) solid var(--kf-border);
+  border-radius: var(--kf-radius-md);
+  min-width: 10rem;
+  max-width: 15rem;
+  width: fit-content;
+  padding: var(--kf-space-1);
+  z-index: var(--kf-z-max);
+  box-shadow: var(--kf-shadow-lg);
+  font-family: var(--kf-font-family);
+  font-size: var(--kf-font-size-sm);
+  line-height: var(--kf-line-height-normal);
+  display: block;
+  overflow: hidden;
+}
+
+/* ========================================
+   DROPDOWN ITEMS
+   ======================================== */
+
+:host [data-radix-dropdown-menu-item],
+:host [data-radix-select-item],
+#kalifinder-portal-container [data-radix-dropdown-menu-item],
+#kalifinder-portal-container [data-radix-select-item],
+.kalifinder-widget-content [data-radix-dropdown-menu-item],
+.kalifinder-widget-content [data-radix-select-item] {
+  position: relative;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  user-select: none;
+  padding: var(--kf-space-2) var(--kf-space-2);
+  border-radius: var(--kf-radius-sm);
+  color: var(--kf-foreground);
+  font-size: var(--kf-font-size-sm);
+  line-height: var(--kf-line-height-normal);
+  transition:
+    background-color var(--kf-transition-fast),
+    color var(--kf-transition-fast);
+  outline: none;
+}
+
+/* Hover & Focus States */
+:host [data-radix-dropdown-menu-item]:hover,
+:host [data-radix-dropdown-menu-item]:focus,
+:host [data-radix-dropdown-menu-item][data-highlighted],
+:host [data-radix-select-item]:hover,
+:host [data-radix-select-item]:focus,
+:host [data-radix-select-item][data-highlighted],
+#kalifinder-portal-container [data-radix-dropdown-menu-item]:hover,
+#kalifinder-portal-container [data-radix-dropdown-menu-item]:focus,
+#kalifinder-portal-container [data-radix-dropdown-menu-item][data-highlighted],
+#kalifinder-portal-container [data-radix-select-item]:hover,
+#kalifinder-portal-container [data-radix-select-item]:focus,
+#kalifinder-portal-container [data-radix-select-item][data-highlighted],
+.kalifinder-widget-content [data-radix-dropdown-menu-item]:hover,
+.kalifinder-widget-content [data-radix-dropdown-menu-item]:focus,
+.kalifinder-widget-content [data-radix-dropdown-menu-item][data-highlighted],
+.kalifinder-widget-content [data-radix-select-item]:hover,
+.kalifinder-widget-content [data-radix-select-item]:focus,
+.kalifinder-widget-content [data-radix-select-item][data-highlighted] {
+  background: var(--kf-accent);
+  color: var(--kf-accent-foreground);
+}
+
+/* Disabled State */
+:host [data-radix-dropdown-menu-item][data-disabled],
+:host [data-radix-select-item][data-disabled],
+#kalifinder-portal-container [data-radix-dropdown-menu-item][data-disabled],
+#kalifinder-portal-container [data-radix-select-item][data-disabled],
+.kalifinder-widget-content [data-radix-dropdown-menu-item][data-disabled],
+.kalifinder-widget-content [data-radix-select-item][data-disabled] {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+/* ========================================
+   DROPDOWN LABELS & SEPARATORS
+   ======================================== */
+
+:host [data-radix-dropdown-menu-label],
+#kalifinder-portal-container [data-radix-dropdown-menu-label],
+.kalifinder-widget-content [data-radix-dropdown-menu-label] {
+  color: var(--kf-foreground);
+  padding: var(--kf-space-2) var(--kf-space-2);
+  font-size: var(--kf-font-size-sm);
+  font-weight: var(--kf-font-weight-semibold);
+  user-select: none;
+  display: block;
+}
+
+:host [data-radix-dropdown-menu-separator],
+#kalifinder-portal-container [data-radix-dropdown-menu-separator],
+.kalifinder-widget-content [data-radix-dropdown-menu-separator] {
+  background: var(--kf-border);
+  height: 1px;
+  margin: var(--kf-space-1) calc(-1 * var(--kf-space-1));
+  display: block;
+}
+
+/* ========================================
+   DROPDOWN CHECKBOX & RADIO ITEMS
+   ======================================== */
+
+:host [data-radix-dropdown-menu-checkbox-item],
+:host [data-radix-dropdown-menu-radio-item],
+#kalifinder-portal-container [data-radix-dropdown-menu-checkbox-item],
+#kalifinder-portal-container [data-radix-dropdown-menu-radio-item],
+.kalifinder-widget-content [data-radix-dropdown-menu-checkbox-item],
+.kalifinder-widget-content [data-radix-dropdown-menu-radio-item] {
+  padding-left: var(--kf-space-8);
+  position: relative;
+}
+
+/* Item Indicator */
+:host [data-radix-dropdown-menu-item-indicator],
+#kalifinder-portal-container [data-radix-dropdown-menu-item-indicator],
+.kalifinder-widget-content [data-radix-dropdown-menu-item-indicator] {
+  position: absolute;
+  left: var(--kf-space-2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1rem;
+  height: 1rem;
+}
