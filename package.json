@@ -9,7 +9,7 @@
     "dev:embed": "vite build --mode development --watch",
     "test": "vitest",
     "test:ui": "vitest --ui",
-    "test:run": "vitest run",
+    "test:run": "vitest run --passWithNoTests",
     "test:coverage": "vitest run --coverage",
     "test:cdn": "pnpm build && pnpm dlx serve . -l 8080",
     "build": "pnpm run clean && tsc -b && vite build --mode production",
