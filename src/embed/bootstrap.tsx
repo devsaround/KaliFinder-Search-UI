@@ -160,9 +160,11 @@ export function init(options: InitOptions): Controller {
 
   // Create a portal container for Radix UI components inside shadow root
   // This ensures dropdowns, tooltips, and dialogs render with shadow-scoped styles
+  // Must be positioned absolutely to overlay the entire shadow root
   const portalContainer = document.createElement('div');
   portalContainer.id = 'kalifinder-portal-container';
-  portalContainer.style.cssText = 'position: relative; z-index: 2147483647;';
+  portalContainer.style.cssText =
+    'position: absolute; inset: 0; z-index: 2147483647; pointer-events: none;';
   shadowRoot.appendChild(portalContainer);
 
   // Await style injection before rendering

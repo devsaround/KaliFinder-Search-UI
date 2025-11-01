@@ -1172,13 +1172,33 @@
    ============================================================ */
 
 /**
+ * CRITICAL: Portal container styling
+ * The portal container is a direct child of shadow root (sibling to widget content)
+ * Must style it and ALL its descendants to ensure Radix components get proper styling
+ */
+#kalifinder-portal-container {
+  position: fixed !important;
+  z-index: 2147483647 !important;
+  pointer-events: none !important;
+}
+
+#kalifinder-portal-container > * {
+  pointer-events: auto !important;
+}
+
+/**
  * CRITICAL: Radix UI Portal/Popper content wrapper
  * This fixes missing background for dropdowns, tooltips, and popovers
  * The user specifically reported: "data-radix-popper-content-wrapper does not show background color"
+ * 
+ * Target BOTH inside widget content AND inside portal container
  */
+:host [data-radix-popper-content-wrapper],
+#kalifinder-portal-container [data-radix-popper-content-wrapper],
 .kalifinder-widget-content [data-radix-popper-content-wrapper] {
   z-index: 2147483647 !important;
   position: relative !important;
+  background: white !important;
   background: hsl(var(--popover)) !important;
   border-radius: 0.5rem !important;
   box-shadow:
@@ -1189,15 +1209,23 @@
 /**
  * Portal container - ensure it's in the shadow root
  */
+:host [data-radix-portal],
+#kalifinder-portal-container [data-radix-portal],
 .kalifinder-widget-content [data-radix-portal] {
   z-index: 2147483647 !important;
 }
 
 /**
  * Dropdown menu and select content styling
+ * Target BOTH locations: widget content and portal container
  */
+:host [data-radix-dropdown-menu-content],
+:host [data-radix-select-content],
+#kalifinder-portal-container [data-radix-dropdown-menu-content],
+#kalifinder-portal-container [data-radix-select-content],
 .kalifinder-widget-content [data-radix-dropdown-menu-content],
 .kalifinder-widget-content [data-radix-select-content] {
+  background: white !important;
   background: hsl(var(--popover)) !important;
   color: hsl(var(--popover-foreground)) !important;
   border: 1px solid hsl(var(--border)) !important;
@@ -1212,7 +1240,12 @@
 
 /**
  * Dropdown menu items and select items
+ * Target BOTH locations: widget content and portal container
  */
+:host [data-radix-dropdown-menu-item],
+:host [data-radix-select-item],
+#kalifinder-portal-container [data-radix-dropdown-menu-item],
+#kalifinder-portal-container [data-radix-select-item],
 .kalifinder-widget-content [data-radix-dropdown-menu-item],
 .kalifinder-widget-content [data-radix-select-item] {
   cursor: pointer !important;
@@ -1222,6 +1255,10 @@
   transition: background-color 0.15s !important;
 }
 
+:host [data-radix-dropdown-menu-item]:hover,
+:host [data-radix-select-item]:hover,
+#kalifinder-portal-container [data-radix-dropdown-menu-item]:hover,
+#kalifinder-portal-container [data-radix-select-item]:hover,
 .kalifinder-widget-content [data-radix-dropdown-menu-item]:hover,
 .kalifinder-widget-content [data-radix-select-item]:hover {
   background: hsl(var(--accent)) !important;
@@ -1230,7 +1267,10 @@
 
 /**
  * Dropdown menu labels
+ * Target BOTH locations
  */
+:host [data-radix-dropdown-menu-label],
+#kalifinder-portal-container [data-radix-dropdown-menu-label],
 .kalifinder-widget-content [data-radix-dropdown-menu-label] {
   color: hsl(var(--foreground)) !important;
   padding: 0.375rem 0.5rem !important;
@@ -1240,7 +1280,10 @@
 
 /**
  * Dropdown menu separators
+ * Target BOTH locations
  */
+:host [data-radix-dropdown-menu-separator],
+#kalifinder-portal-container [data-radix-dropdown-menu-separator],
 .kalifinder-widget-content [data-radix-dropdown-menu-separator] {
   background: hsl(var(--border)) !important;
   height: 1px !important;
@@ -1249,8 +1292,12 @@
 
 /**
  * Tooltip content styling
+ * Target BOTH locations
  */
+:host [data-radix-tooltip-content],
+#kalifinder-portal-container [data-radix-tooltip-content],
 .kalifinder-widget-content [data-radix-tooltip-content] {
+  background: white !important;
   background: hsl(var(--popover)) !important;
   color: hsl(var(--popover-foreground)) !important;
   border: 1px solid hsl(var(--border)) !important;
@@ -1265,13 +1312,19 @@
 
 /**
  * Dialog content styling (if used)
+ * Target BOTH locations
  */
+:host [data-radix-dialog-overlay],
+#kalifinder-portal-container [data-radix-dialog-overlay],
 .kalifinder-widget-content [data-radix-dialog-overlay] {
   background: rgba(0, 0, 0, 0.5) !important;
   z-index: 2147483646 !important;
 }
 
+:host [data-radix-dialog-content],
+#kalifinder-portal-container [data-radix-dialog-content],
 .kalifinder-widget-content [data-radix-dialog-content] {
+  background: white !important;
   background: hsl(var(--card)) !important;
   color: hsl(var(--card-foreground)) !important;
   border: 1px solid hsl(var(--border)) !important;

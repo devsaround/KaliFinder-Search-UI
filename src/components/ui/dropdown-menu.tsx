@@ -56,15 +56,28 @@ DropdownMenuSubContent.displayName = DropdownMenuPrimitive.SubContent.displayNam
 const DropdownMenuContent = React.forwardRef<
   React.ElementRef<typeof DropdownMenuPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.Content>
->(({ className, sideOffset = 4, ...props }, ref) => {
+>(({ className, sideOffset = 4, style, ...props }, ref) => {
   // Use shadow root container for portal rendering to ensure styles apply
   const { container } = useShadowRoot();
+
+  // Inline styles as fallback for shadow DOM - ensure background is always visible
+  const inlineStyles: React.CSSProperties = {
+    backgroundColor: 'white',
+    border: '1px solid hsl(220, 13%, 91%)',
+    borderRadius: '0.375rem',
+    padding: '0.25rem',
+    minWidth: '8rem',
+    boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1)',
+    zIndex: 2147483647,
+    ...style,
+  };
 
   return (
     <DropdownMenuPortal container={container}>
       <DropdownMenuPrimitive.Content
         ref={ref}
         sideOffset={sideOffset}
+        style={inlineStyles}
         className={cn(
           'kf:bg-popover kf:text-popover-foreground kf:data-[state=open]:animate-in kf:data-[state=closed]:animate-out kf:data-[state=closed]:fade-out-0 kf:data-[state=open]:fade-in-0 kf:data-[state=closed]:zoom-out-95 kf:data-[state=open]:zoom-in-95 kf:data-[side=bottom]:slide-in-from-top-2 kf:data-[side=left]:slide-in-from-right-2 kf:data-[side=right]:slide-in-from-left-2 kf:data-[side=top]:slide-in-from-bottom-2 kf:z-50 kf:min-w-[8rem] kf:overflow-hidden kf:rounded-md kf:border kf:p-1 kf:shadow-lg kf:md:min-w-[10rem]',
           className
@@ -194,5 +207,6 @@ export {
   DropdownMenuSub,
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
-  DropdownMenuTrigger,
+  DropdownMenuTrigger
 };
+
