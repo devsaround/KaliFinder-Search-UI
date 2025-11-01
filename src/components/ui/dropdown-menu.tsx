@@ -1,7 +1,8 @@
-import * as React from 'react';
 import * as DropdownMenuPrimitive from '@radix-ui/react-dropdown-menu';
 import { Check, ChevronRight, Circle } from 'lucide-react';
+import * as React from 'react';
 
+import { useShadowRoot } from '@/contexts/ShadowRootContext';
 import { cn } from '@/lib/utils';
 
 const DropdownMenu = DropdownMenuPrimitive.Root;
@@ -55,19 +56,24 @@ DropdownMenuSubContent.displayName = DropdownMenuPrimitive.SubContent.displayNam
 const DropdownMenuContent = React.forwardRef<
   React.ElementRef<typeof DropdownMenuPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.Content>
->(({ className, sideOffset = 4, ...props }, ref) => (
-  <DropdownMenuPortal>
-    <DropdownMenuPrimitive.Content
-      ref={ref}
-      sideOffset={sideOffset}
-      className={cn(
-        'kf:bg-popover kf:text-popover-foreground kf:data-[state=open]:animate-in kf:data-[state=closed]:animate-out kf:data-[state=closed]:fade-out-0 kf:data-[state=open]:fade-in-0 kf:data-[state=closed]:zoom-out-95 kf:data-[state=open]:zoom-in-95 kf:data-[side=bottom]:slide-in-from-top-2 kf:data-[side=left]:slide-in-from-right-2 kf:data-[side=right]:slide-in-from-left-2 kf:data-[side=top]:slide-in-from-bottom-2 kf:z-50 kf:min-w-[8rem] kf:overflow-hidden kf:rounded-md kf:border kf:p-1 kf:shadow-lg kf:md:min-w-[10rem]',
-        className
-      )}
-      {...props}
-    />
-  </DropdownMenuPortal>
-));
+>(({ className, sideOffset = 4, ...props }, ref) => {
+  // Use shadow root container for portal rendering to ensure styles apply
+  const { container } = useShadowRoot();
+
+  return (
+    <DropdownMenuPortal container={container}>
+      <DropdownMenuPrimitive.Content
+        ref={ref}
+        sideOffset={sideOffset}
+        className={cn(
+          'kf:bg-popover kf:text-popover-foreground kf:data-[state=open]:animate-in kf:data-[state=closed]:animate-out kf:data-[state=closed]:fade-out-0 kf:data-[state=open]:fade-in-0 kf:data-[state=closed]:zoom-out-95 kf:data-[state=open]:zoom-in-95 kf:data-[side=bottom]:slide-in-from-top-2 kf:data-[side=left]:slide-in-from-right-2 kf:data-[side=right]:slide-in-from-left-2 kf:data-[side=top]:slide-in-from-bottom-2 kf:z-50 kf:min-w-[8rem] kf:overflow-hidden kf:rounded-md kf:border kf:p-1 kf:shadow-lg kf:md:min-w-[10rem]',
+          className
+        )}
+        {...props}
+      />
+    </DropdownMenuPortal>
+  );
+});
 DropdownMenuContent.displayName = DropdownMenuPrimitive.Content.displayName;
 
 const DropdownMenuItem = React.forwardRef<
@@ -175,18 +181,18 @@ DropdownMenuShortcut.displayName = 'DropdownMenuShortcut';
 
 export {
   DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
   DropdownMenuCheckboxItem,
-  DropdownMenuRadioItem,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
   DropdownMenuLabel,
+  DropdownMenuPortal,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuShortcut,
-  DropdownMenuGroup,
-  DropdownMenuPortal,
   DropdownMenuSub,
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
-  DropdownMenuRadioGroup,
+  DropdownMenuTrigger,
 };

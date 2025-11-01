@@ -1,6 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import WidgetEmbed from '../components/WidgetEmbed';
+import { ShadowRootProvider } from '../contexts/ShadowRootContext';
 import '../index.css';
 // Statically inline compiled Tailwind CSS as text; guaranteed available at build-time
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -12,12 +13,23 @@ declare const __INLINED_WIDGET_CSS__: string | undefined;
 
 export type InitOptions = {
   storeUrl: string;
+  debug?: boolean; // Enable console logging for troubleshooting
 };
 
 type Controller = {
   open: (query?: string) => void;
   destroy: () => void;
 };
+
+// Global debug flag
+let DEBUG_MODE = false;
+
+// Helper to conditionally log
+function log(...args: unknown[]) {
+  if (DEBUG_MODE || import.meta.env.DEV) {
+    console.log('[Kalifinder]', ...args);
+  }
+}
 
 async function createStyles(shadowRoot: ShadowRoot): Promise<void> {
   // Prefer build-time inlined CSS from plugin; otherwise use statically imported CSS text
@@ -125,6 +137,11 @@ function openWidget(query?: string) {
 }
 
 export function init(options: InitOptions): Controller {
+  // Set debug mode from options
+  DEBUG_MODE = options.debug ?? false;
+
+  log('Initializing widget with options:', options);
+
   const container = document.createElement('div');
   container.style.cssText =
     'position: fixed; z-index: 2147483647; inset: 0; width: 100%; height: 100%; pointer-events: none;';
@@ -141,13 +158,22 @@ export function init(options: InitOptions): Controller {
   // Inject styles BEFORE rendering React to avoid FOUC
   const root = ReactDOM.createRoot(rootEl);
 
+  // Create a portal container for Radix UI components inside shadow root
+  // This ensures dropdowns, tooltips, and dialogs render with shadow-scoped styles
+  const portalContainer = document.createElement('div');
+  portalContainer.id = 'kalifinder-portal-container';
+  portalContainer.style.cssText = 'position: relative; z-index: 2147483647;';
+  shadowRoot.appendChild(portalContainer);
+
   // Await style injection before rendering
   createStyles(shadowRoot)
     .then(() => {
       // Styles are now injected - safe to render React components
       root.render(
         <React.StrictMode>
-          <WidgetEmbed storeUrl={options.storeUrl} />
+          <ShadowRootProvider container={portalContainer}>
+            <WidgetEmbed storeUrl={options.storeUrl} />
+          </ShadowRootProvider>
         </React.StrictMode>
       );
     })
@@ -156,7 +182,9 @@ export function init(options: InitOptions): Controller {
       // Render anyway - might have partial styling
       root.render(
         <React.StrictMode>
-          <WidgetEmbed storeUrl={options.storeUrl} />
+          <ShadowRootProvider container={portalContainer}>
+            <WidgetEmbed storeUrl={options.storeUrl} />
+          </ShadowRootProvider>
         </React.StrictMode>
       );
     });
@@ -174,37 +202,143 @@ export function init(options: InitOptions): Controller {
     const selectors = [
       // Generic search buttons/links
       'button[type="submit"][aria-label*="search" i]',
-      'button[aria-label="Search" i]',
+      'button[aria-label*="Search" i]',
       'a[aria-label*="search" i]',
       'button[class*="search" i]',
       'a[class*="search" i]',
+      'button[id*="search" i]',
+      'a[id*="search" i]',
       // Inputs/forms
       'form[action*="search" i]',
       'input[type="search"]',
       'input[name="q"]',
       'input[name="s"]',
+      'input[placeholder*="search" i]',
       // Shopify common
+      '.site-header__search',
       '.site-header__search-toggle',
       '.search-modal__toggle',
+      '.header__search',
+      '.header-search',
       'form.search',
+      '.search-form',
+      '#search',
+      '.search',
+      'details[class*="search" i]',
+      'summary[class*="search" i]',
       // WooCommerce common
       '.woocommerce-product-search',
       'form[role="search"]',
+      '.wp-block-search',
+      '.search-submit',
+      // WordPress common
+      '.search-toggle',
+      '.menu-item-search',
+      'button.search-button',
+      'a.search-icon',
+      // Additional patterns
+      '[data-search]',
+      '[data-toggle*="search" i]',
+      '[data-action*="search" i]',
     ];
 
     const found = new Set<Element>();
-    selectors.forEach((sel) => document.querySelectorAll(sel).forEach((el) => found.add(el)));
+    selectors.forEach((sel) => {
+      try {
+        document.querySelectorAll(sel).forEach((el) => found.add(el));
+      } catch (e) {
+        // Invalid selector, skip
+        console.warn(`[Kalifinder] Invalid selector: ${sel}`, e);
+      }
+    });
+
+    // Also find elements by text content (search icons/text)
+    const allButtons = document.querySelectorAll('button, a');
+    allButtons.forEach((el) => {
+      const text = el.textContent?.toLowerCase().trim() || '';
+      const ariaLabel = el.getAttribute('aria-label')?.toLowerCase() || '';
+      const title = el.getAttribute('title')?.toLowerCase() || '';
+
+      if (
+        text.includes('search') ||
+        text.includes('🔍') ||
+        ariaLabel.includes('search') ||
+        title.includes('search')
+      ) {
+        found.add(el);
+      }
+    });
+
+    console.log(`[Kalifinder] Found ${found.size} search elements to bind`);
 
     if (found.size === 0) return false;
 
     found.forEach((el) => {
+      // Mark element as bound to avoid duplicate bindings
+      if (el.hasAttribute('data-kalifinder-bound')) {
+        return;
+      }
+      el.setAttribute('data-kalifinder-bound', 'true');
+
       // Intercept clicks on buttons/links
       if (el instanceof HTMLButtonElement || el instanceof HTMLAnchorElement) {
         el.addEventListener(
           'click',
           (e) => {
+            console.log('[Kalifinder] Search element clicked, opening widget:', el);
             // Try to find a nearby input to seed query
             const root = (el.closest('form') as HTMLFormElement | null) || document;
+            const input = root.querySelector(
+              'input[type="search"], input[name="q"], input[name="s"], input[placeholder*="search" i]'
+            ) as HTMLInputElement | null;
+            e.preventDefault();
+            e.stopPropagation();
+            seedAndOpenFromInput(input);
+          },
+          { capture: true }
+        );
+        console.log('[Kalifinder] Bound click handler to:', el.tagName, el.className || el.id);
+      }
+
+      // Intercept form submissions
+      if (el instanceof HTMLFormElement) {
+        el.addEventListener(
+          'submit',
+          (e) => {
+            console.log('[Kalifinder] Search form submitted, opening widget:', el);
+            const input = el.querySelector(
+              'input[type="search"], input[name="q"], input[name="s"], input[placeholder*="search" i]'
+            ) as HTMLInputElement | null;
+            e.preventDefault();
+            e.stopPropagation();
+            seedAndOpenFromInput(input);
+          },
+          { capture: true }
+        );
+        console.log('[Kalifinder] Bound submit handler to form:', el.className || el.id);
+      }
+
+      // Intercept input focus (for search inputs)
+      if (el instanceof HTMLInputElement) {
+        el.addEventListener(
+          'focus',
+          (e) => {
+            console.log('[Kalifinder] Search input focused, opening widget:', el);
+            e.preventDefault();
+            seedAndOpenFromInput(el);
+          },
+          { capture: true, once: false }
+        );
+        console.log('[Kalifinder] Bound focus handler to input:', el.name || el.id);
+      }
+
+      // Intercept click on details/summary (Shopify often uses these for search)
+      if (el instanceof HTMLDetailsElement || el.tagName.toLowerCase() === 'summary') {
+        el.addEventListener(
+          'click',
+          (e) => {
+            console.log('[Kalifinder] Details/summary clicked, opening widget:', el);
+            const root = (el.closest('form') as HTMLFormElement | null) || el;
             const input = root.querySelector(
               'input[type="search"], input[name="q"], input[name="s"]'
             ) as HTMLInputElement | null;
@@ -214,31 +348,73 @@ export function init(options: InitOptions): Controller {
           },
           { capture: true }
         );
-      }
-
-      // Intercept form submissions
-      if (el instanceof HTMLFormElement) {
-        el.addEventListener(
-          'submit',
-          (e) => {
-            const input = el.querySelector(
-              'input[type="search"], input[name="q"], input[name="s"]'
-            ) as HTMLInputElement | null;
-            e.preventDefault();
-            e.stopPropagation();
-            seedAndOpenFromInput(input);
-          },
-          { capture: true }
-        );
+        console.log('[Kalifinder] Bound click handler to details/summary:', el.className || el.id);
       }
     });
 
     return true;
   }
 
-  const bound = bindSearchTriggers();
+  // Initial binding
+  let bound = bindSearchTriggers();
+
+  // Watch for dynamically added search elements (for SPAs and lazy-loaded headers)
+  let bindingAttempts = 0;
+  const MAX_BINDING_ATTEMPTS = 10;
+
+  const observer = new MutationObserver((mutations) => {
+    // Debounce: only try to bind again if we see significant changes
+    let shouldRebind = false;
+
+    for (const mutation of mutations) {
+      if (mutation.addedNodes.length > 0) {
+        for (const node of mutation.addedNodes) {
+          if (node instanceof Element) {
+            // Check if the added node or its children contain search elements
+            const hasSearch =
+              node.matches('[class*="search" i], [id*="search" i]') ||
+              node.querySelector('[class*="search" i], [id*="search" i]') !== null;
+
+            if (hasSearch) {
+              shouldRebind = true;
+              break;
+            }
+          }
+        }
+      }
+      if (shouldRebind) break;
+    }
+
+    if (shouldRebind && bindingAttempts < MAX_BINDING_ATTEMPTS) {
+      bindingAttempts++;
+      console.log(
+        `[Kalifinder] Detected new DOM changes, rebinding search triggers (attempt ${bindingAttempts})`
+      );
+      const newlyBound = bindSearchTriggers();
+      if (newlyBound && !bound) {
+        bound = true;
+        // Remove fallback trigger if we now found native search elements
+        if (fallbackTrigger && document.body.contains(fallbackTrigger)) {
+          document.body.removeChild(fallbackTrigger);
+          fallbackTrigger = null;
+          console.log('[Kalifinder] Native search elements found, removed fallback trigger');
+        }
+      }
+    }
+  });
+
+  // Start observing after a short delay to let page finish initial render
+  setTimeout(() => {
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+    });
+    console.log('[Kalifinder] MutationObserver started watching for dynamic search elements');
+  }, 1000);
+
   if (!bound) {
     // Host-page trigger button (fixed) with inline styles so it doesn't depend on CSS
+    console.log('[Kalifinder] No native search elements found, creating fallback trigger button');
     const trigger = document.createElement('button');
     trigger.setAttribute('aria-label', 'Open search');
     trigger.style.position = 'fixed';
@@ -262,11 +438,17 @@ export function init(options: InitOptions): Controller {
     trigger.onclick = () => openWidget('');
     document.body.appendChild(trigger);
     fallbackTrigger = trigger;
+  } else {
+    console.log('[Kalifinder] Successfully bound to native search elements');
   }
 
   return {
     open: openWidget,
     destroy: () => {
+      // Disconnect mutation observer
+      observer.disconnect();
+      console.log('[Kalifinder] MutationObserver disconnected');
+
       try {
         root.unmount();
       } catch {
@@ -301,8 +483,9 @@ declare global {
     if (current && current.src && current.src.includes('kalifind-search')) {
       const url = new URL(current.src);
       const storeUrl = url.searchParams.get('storeUrl');
+      const debug = url.searchParams.get('debug') === 'true';
       if (storeUrl) {
-        const ctl = init({ storeUrl });
+        const ctl = init({ storeUrl, debug });
         (window as unknown as Window).KalifinderController = ctl;
       }
     }

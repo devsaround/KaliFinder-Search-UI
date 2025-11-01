@@ -535,11 +535,620 @@
   width: 100%;
   height: 100%;
   box-sizing: border-box;
-  display: flex;
-  flex-direction: row; /* sidebar + results */
-  gap: 24px;
+  display: block;
   overflow-y: auto;
   overflow-x: hidden;
+}
+
+/**
+ * Ensure proper flex layout for filter sidebar and results
+ * This fixes the layout in shadow DOM
+ * Target the direct child div that contains the flex layout
+ */
+.kalifinder-widget-content > div {
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+}
+
+/**
+ * Target the flex container with filters and results
+ * Ensure proper flex layout in shadow DOM
+ * This targets the main wrapper div with class="flex w-full gap-6 px-4 py-6 lg:px-12"
+ */
+.kalifinder-widget-content > div > div.flex,
+.kalifinder-widget-content > div > div[class*='flex'] {
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+  width: 100% !important;
+  align-items: flex-start !important;
+  box-sizing: border-box !important;
+}
+
+/* Specific targeting for containers with aside */
+.kalifinder-widget-content div:has(> aside) {
+  display: flex !important;
+  flex-direction: row !important;
+  gap: 1.5rem !important;
+}
+
+.kalifinder-widget-content > div > div.gap-6 {
+  gap: 1.5rem !important; /* 24px */
+}
+
+.kalifinder-widget-content > div > div.px-4 {
+  padding-left: 1rem !important;
+  padding-right: 1rem !important;
+}
+
+.kalifinder-widget-content > div > div.py-6 {
+  padding-top: 1.5rem !important;
+  padding-bottom: 1.5rem !important;
+}
+
+/* Responsive padding for large screens */
+.kalifinder-widget-content > div > div.lg\:px-12 {
+  padding-left: 3rem !important;
+  padding-right: 3rem !important;
+}
+
+@media (min-width: 1024px) {
+  .kalifinder-widget-content > div > div.lg\:px-12 {
+    padding-left: 3rem !important;
+    padding-right: 3rem !important;
+  }
+}
+
+/**
+ * Filter sidebar - ensure proper width and visibility in shadow DOM
+ * Force display on large screens (override Tailwind hidden class)
+ */
+.kalifinder-widget-content aside {
+  flex-shrink: 0 !important;
+  width: 320px !important;
+  min-width: 320px !important;
+  max-width: 320px !important;
+  height: fit-content !important;
+  box-sizing: border-box !important;
+  position: sticky !important;
+  top: 6rem !important; /* top-24 = 96px */
+  background: hsl(var(--background)) !important;
+  border: 1px solid hsl(var(--border)) !important;
+  border-radius: 0.5rem !important;
+  padding: 1rem !important;
+  box-shadow:
+    0 1px 3px 0 rgb(0 0 0 / 0.1),
+    0 1px 2px -1px rgb(0 0 0 / 0.1) !important;
+  overflow-y: auto !important;
+  max-height: calc(100vh - 8rem) !important;
+}
+
+/**
+ * Results container - allow it to grow and shrink
+ */
+.kalifinder-widget-content main {
+  flex: 1 1 0% !important;
+  min-width: 0 !important;
+  width: 100% !important;
+  overflow-x: hidden !important;
+  box-sizing: border-box !important;
+}
+
+.kalifinder-widget-content main.kalifinder-results {
+  min-width: 0 !important;
+}
+
+/**
+ * Responsive filter sidebar visibility in shadow DOM
+ * Mobile: hide filters, show in drawer instead
+ * Desktop (lg): show filters sidebar
+ */
+@media (max-width: 1023px) {
+  .kalifinder-widget-content aside {
+    display: none !important;
+  }
+}
+
+@media (min-width: 1024px) {
+  .kalifinder-widget-content aside {
+    display: block !important;
+  }
+}
+
+/**
+ * Accordion styling fixes for shadow DOM
+ * Ensure proper display and spacing
+ */
+.kalifinder-widget-content [data-radix-accordion-root] {
+  width: 100% !important;
+  display: block !important;
+}
+
+.kalifinder-widget-content [data-radix-accordion-item] {
+  border-bottom: 1px solid hsl(var(--border)) !important;
+  margin-bottom: 0 !important;
+  width: 100% !important;
+  display: block !important;
+}
+
+.kalifinder-widget-content [data-radix-accordion-header] {
+  display: flex !important;
+  width: 100% !important;
+}
+
+.kalifinder-widget-content [data-radix-accordion-trigger] {
+  display: flex !important;
+  flex: 1 1 0% !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 1rem 0 !important;
+  font-weight: 700 !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  width: 100% !important;
+  background: transparent !important;
+  border: none !important;
+  text-align: left !important;
+  color: hsl(var(--foreground)) !important;
+}
+
+.kalifinder-widget-content [data-radix-accordion-trigger]:hover {
+  text-decoration: underline !important;
+}
+
+.kalifinder-widget-content [data-radix-accordion-trigger] svg {
+  flex-shrink: 0 !important;
+  transition: transform 0.2s ease !important;
+}
+
+.kalifinder-widget-content [data-radix-accordion-trigger][data-state='open'] svg {
+  transform: rotate(180deg) !important;
+}
+
+.kalifinder-widget-content [data-radix-accordion-content] {
+  overflow: hidden !important;
+  font-size: 0.875rem !important;
+  line-height: 1.5rem !important;
+  display: block !important;
+  width: 100% !important;
+}
+
+.kalifinder-widget-content [data-radix-accordion-content][data-state='open'] {
+  animation: accordion-down 0.2s ease-out !important;
+}
+
+.kalifinder-widget-content [data-radix-accordion-content][data-state='closed'] {
+  animation: accordion-up 0.2s ease-out !important;
+}
+
+.kalifinder-widget-content [data-radix-accordion-content] > div {
+  padding-top: 0 !important;
+  padding-bottom: 1rem !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+/**
+ * Radix Popper (Dropdown Menu) styling for shadow DOM
+ */
+.kalifinder-widget-content [data-radix-popper-content-wrapper] {
+  z-index: 50 !important;
+}
+
+.kalifinder-widget-content [data-radix-portal] {
+  z-index: 2147483647 !important;
+}
+
+.kalifinder-widget-content [data-radix-dropdown-menu-content],
+.kalifinder-widget-content [data-radix-select-content] {
+  background: hsl(var(--popover)) !important;
+  color: hsl(var(--popover-foreground)) !important;
+  border: 1px solid hsl(var(--border)) !important;
+  border-radius: 0.375rem !important;
+  padding: 0.25rem !important;
+  box-shadow:
+    0 10px 15px -3px rgb(0 0 0 / 0.1),
+    0 4px 6px -4px rgb(0 0 0 / 0.1) !important;
+  min-width: 8rem !important;
+  z-index: 2147483647 !important;
+}
+
+.kalifinder-widget-content [data-radix-dropdown-menu-item],
+.kalifinder-widget-content [data-radix-select-item] {
+  padding: 0.375rem 0.5rem !important;
+  border-radius: 0.25rem !important;
+  cursor: pointer !important;
+  transition: background-color 0.15s ease !important;
+  color: hsl(var(--foreground)) !important;
+}
+
+.kalifinder-widget-content [data-radix-dropdown-menu-item]:hover,
+.kalifinder-widget-content [data-radix-select-item]:hover {
+  background: hsl(var(--accent)) !important;
+  color: hsl(var(--accent-foreground)) !important;
+}
+
+.kalifinder-widget-content [data-radix-dropdown-menu-label] {
+  padding: 0.375rem 0.5rem !important;
+  font-size: 0.875rem !important;
+  font-weight: 600 !important;
+  color: hsl(var(--foreground)) !important;
+}
+
+.kalifinder-widget-content [data-radix-dropdown-menu-separator] {
+  height: 1px !important;
+  background: hsl(var(--border)) !important;
+  margin: 0.25rem 0 !important;
+}
+
+/**
+ * Checkbox styling in filters (shadow DOM)
+ */
+.kalifinder-widget-content input[type='checkbox'] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 1rem;
+  height: 1rem;
+  border: 2px solid hsl(var(--border));
+  border-radius: 0.25rem;
+  background: hsl(var(--background));
+  cursor: pointer;
+  position: relative;
+  vertical-align: middle;
+}
+
+.kalifinder-widget-content input[type='checkbox']:checked {
+  background: hsl(var(--primary));
+  border-color: hsl(var(--primary));
+}
+
+.kalifinder-widget-content input[type='checkbox']:checked::after {
+  content: '✓';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  font-size: 0.75rem;
+  font-weight: bold;
+}
+
+.kalifinder-widget-content input[type='checkbox']:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/**
+ * Label styling in filters
+ */
+.kalifinder-widget-content label {
+  cursor: pointer !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+/**
+ * Flex utilities for filter items
+ */
+.kalifinder-widget-content .flex.items-center {
+  display: flex !important;
+  align-items: center !important;
+}
+
+.kalifinder-widget-content .flex.justify-between {
+  justify-content: space-between !important;
+}
+
+.kalifinder-widget-content .flex.cursor-pointer {
+  cursor: pointer !important;
+}
+
+/**
+ * Button styling in filters (size/color buttons)
+ */
+.kalifinder-widget-content button.my-border {
+  border: 1px solid hsl(var(--border));
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
+  transition: all 0.2s ease;
+}
+
+.kalifinder-widget-content button.my-border:hover:not(:disabled) {
+  background: hsl(var(--muted));
+}
+
+.kalifinder-widget-content button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/**
+ * Slider component styling in shadow DOM
+ */
+.kalifinder-widget-content [role='slider'] {
+  cursor: pointer;
+}
+
+/**
+ * Color filter buttons - ensure proper circular display
+ */
+.kalifinder-widget-content button[data-color] {
+  border-radius: 50%;
+  padding: 0;
+  transition: all 0.2s ease;
+}
+
+/* Color mappings for filter buttons */
+.kalifinder-widget-content button[data-color='red'] {
+  background-color: #ef4444;
+}
+.kalifinder-widget-content button[data-color='blue'] {
+  background-color: #3b82f6;
+}
+.kalifinder-widget-content button[data-color='green'] {
+  background-color: #22c55e;
+}
+.kalifinder-widget-content button[data-color='yellow'] {
+  background-color: #eab308;
+}
+.kalifinder-widget-content button[data-color='purple'] {
+  background-color: #a855f7;
+}
+.kalifinder-widget-content button[data-color='pink'] {
+  background-color: #ec4899;
+}
+.kalifinder-widget-content button[data-color='orange'] {
+  background-color: #f97316;
+}
+.kalifinder-widget-content button[data-color='black'] {
+  background-color: #000000;
+}
+.kalifinder-widget-content button[data-color='white'] {
+  background-color: #ffffff;
+  border-color: hsl(var(--border)) !important;
+}
+.kalifinder-widget-content button[data-color='gray'],
+.kalifinder-widget-content button[data-color='grey'] {
+  background-color: #6b7280;
+}
+.kalifinder-widget-content button[data-color='brown'] {
+  background-color: #92400e;
+}
+.kalifinder-widget-content button[data-color='beige'] {
+  background-color: #f5f5dc;
+}
+.kalifinder-widget-content button[data-color='navy'] {
+  background-color: #1e3a8a;
+}
+.kalifinder-widget-content button[data-color='teal'] {
+  background-color: #14b8a6;
+}
+.kalifinder-widget-content button[data-color='maroon'] {
+  background-color: #881337;
+}
+.kalifinder-widget-content button[data-color='olive'] {
+  background-color: #84cc16;
+}
+.kalifinder-widget-content button[data-color='silver'] {
+  background-color: #d1d5db;
+}
+.kalifinder-widget-content button[data-color='gold'] {
+  background-color: #fbbf24;
+}
+.kalifinder-widget-content button[data-color='cream'] {
+  background-color: #fffbeb;
+}
+
+/**
+ * Ensure proper text alignment and spacing in filter labels
+ */
+.kalifinder-widget-content .space-y-2 > * + * {
+  margin-top: 0.5rem;
+}
+
+.kalifinder-widget-content .space-y-\[8px\] > * + * {
+  margin-top: 8px !important;
+}
+
+.kalifinder-widget-content .gap-\[8px\] {
+  gap: 8px !important;
+}
+
+.kalifinder-widget-content .gap-\[10px\] {
+  gap: 10px !important;
+}
+
+.kalifinder-widget-content .gap-2 {
+  gap: 0.5rem !important;
+}
+
+.kalifinder-widget-content .gap-4 {
+  gap: 1rem !important;
+}
+
+/**
+ * Animations for accordion and other components
+ */
+@keyframes accordion-down {
+  from {
+    height: 0;
+    opacity: 0;
+  }
+  to {
+    height: var(--radix-accordion-content-height);
+    opacity: 1;
+  }
+}
+
+@keyframes accordion-up {
+  from {
+    height: var(--radix-accordion-content-height);
+    opacity: 1;
+  }
+  to {
+    height: 0;
+    opacity: 0;
+  }
+}
+
+/**
+ * Filter counts styling
+ */
+.kalifinder-widget-content .text-muted-foreground {
+  color: hsl(var(--muted-foreground));
+}
+
+.kalifinder-widget-content .text-foreground {
+  color: hsl(var(--foreground));
+}
+
+/**
+ * Ensure text sizes work in shadow DOM
+ */
+.kalifinder-widget-content .text-\[14px\] {
+  font-size: 14px;
+}
+
+.kalifinder-widget-content .text-\[16px\] {
+  font-size: 16px;
+}
+
+.kalifinder-widget-content .text-\[18px\] {
+  font-size: 18px;
+}
+
+.kalifinder-widget-content .text-\[12px\] {
+  font-size: 12px;
+}
+
+/**
+ * "Clear All Filters" button styling
+ */
+.kalifinder-widget-content aside button[class*='border-search-highlight'] {
+  width: 100%;
+  margin-top: 1rem;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  font-weight: 700;
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  border: 2px solid hsl(var(--primary));
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.kalifinder-widget-content aside button[class*='border-search-highlight']:hover {
+  background: hsl(var(--primary-hover));
+}
+
+/**
+ * Skeleton loader styling in shadow DOM
+ */
+.kalifinder-widget-content [class*='Skeleton'],
+.kalifinder-widget-content .skeleton {
+  background: hsl(var(--muted));
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  border-radius: 0.25rem;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/**
+ * Common Tailwind utility classes - explicit definitions for shadow DOM
+ */
+.kalifinder-widget-content .w-full {
+  width: 100% !important;
+}
+
+.kalifinder-widget-content .w-70 {
+  width: 320px !important;
+}
+
+.kalifinder-widget-content .flex {
+  display: flex !important;
+}
+
+.kalifinder-widget-content .flex-1 {
+  flex: 1 1 0% !important;
+}
+
+.kalifinder-widget-content .flex-shrink-0 {
+  flex-shrink: 0 !important;
+}
+
+.kalifinder-widget-content .hidden {
+  display: none !important;
+}
+
+@media (min-width: 1024px) {
+  .kalifinder-widget-content .lg\:block {
+    display: block !important;
+  }
+}
+
+.kalifinder-widget-content .sticky {
+  position: sticky !important;
+}
+
+.kalifinder-widget-content .top-24 {
+  top: 6rem !important;
+}
+
+.kalifinder-widget-content .bg-background {
+  background-color: hsl(var(--background)) !important;
+}
+
+.kalifinder-widget-content .border-border {
+  border-color: hsl(var(--border)) !important;
+}
+
+.kalifinder-widget-content .border {
+  border-width: 1px !important;
+  border-style: solid !important;
+}
+
+.kalifinder-widget-content .p-4 {
+  padding: 1rem !important;
+}
+
+.kalifinder-widget-content .shadow-sm {
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05) !important;
+}
+
+.kalifinder-widget-content .rounded {
+  border-radius: 0.25rem;
+}
+
+.kalifinder-widget-content .rounded-lg {
+  border-radius: 0.5rem;
+}
+
+.kalifinder-widget-content .rounded-full {
+  border-radius: 9999px;
+}
+
+/**
+ * Grid layout fixes for size filters
+ */
+.kalifinder-widget-content .grid-cols-4 {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.kalifinder-widget-content .gap-2 {
+  gap: 0.5rem;
 }
 
 /**
@@ -556,6 +1165,122 @@
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
   border-width: 0;
+}
+
+/* ============================================================
+   RADIX PORTAL AND POPPER OVERRIDES
+   ============================================================ */
+
+/**
+ * CRITICAL: Radix UI Portal/Popper content wrapper
+ * This fixes missing background for dropdowns, tooltips, and popovers
+ * The user specifically reported: "data-radix-popper-content-wrapper does not show background color"
+ */
+.kalifinder-widget-content [data-radix-popper-content-wrapper] {
+  z-index: 2147483647 !important;
+  position: relative !important;
+  background: hsl(var(--popover)) !important;
+  border-radius: 0.5rem !important;
+  box-shadow:
+    0 10px 15px -3px rgba(0, 0, 0, 0.1),
+    0 4px 6px -4px rgba(0, 0, 0, 0.1) !important;
+}
+
+/**
+ * Portal container - ensure it's in the shadow root
+ */
+.kalifinder-widget-content [data-radix-portal] {
+  z-index: 2147483647 !important;
+}
+
+/**
+ * Dropdown menu and select content styling
+ */
+.kalifinder-widget-content [data-radix-dropdown-menu-content],
+.kalifinder-widget-content [data-radix-select-content] {
+  background: hsl(var(--popover)) !important;
+  color: hsl(var(--popover-foreground)) !important;
+  border: 1px solid hsl(var(--border)) !important;
+  border-radius: 0.375rem !important;
+  min-width: 8rem !important;
+  padding: 0.25rem !important;
+  z-index: 2147483647 !important;
+  box-shadow:
+    0 10px 15px -3px rgba(0, 0, 0, 0.1),
+    0 4px 6px -4px rgba(0, 0, 0, 0.1) !important;
+}
+
+/**
+ * Dropdown menu items and select items
+ */
+.kalifinder-widget-content [data-radix-dropdown-menu-item],
+.kalifinder-widget-content [data-radix-select-item] {
+  cursor: pointer !important;
+  color: hsl(var(--foreground)) !important;
+  border-radius: 0.25rem !important;
+  padding: 0.375rem 0.5rem !important;
+  transition: background-color 0.15s !important;
+}
+
+.kalifinder-widget-content [data-radix-dropdown-menu-item]:hover,
+.kalifinder-widget-content [data-radix-select-item]:hover {
+  background: hsl(var(--accent)) !important;
+  color: hsl(var(--accent-foreground)) !important;
+}
+
+/**
+ * Dropdown menu labels
+ */
+.kalifinder-widget-content [data-radix-dropdown-menu-label] {
+  color: hsl(var(--foreground)) !important;
+  padding: 0.375rem 0.5rem !important;
+  font-size: 0.875rem !important;
+  font-weight: 600 !important;
+}
+
+/**
+ * Dropdown menu separators
+ */
+.kalifinder-widget-content [data-radix-dropdown-menu-separator] {
+  background: hsl(var(--border)) !important;
+  height: 1px !important;
+  margin: 0.25rem 0 !important;
+}
+
+/**
+ * Tooltip content styling
+ */
+.kalifinder-widget-content [data-radix-tooltip-content] {
+  background: hsl(var(--popover)) !important;
+  color: hsl(var(--popover-foreground)) !important;
+  border: 1px solid hsl(var(--border)) !important;
+  border-radius: 0.375rem !important;
+  padding: 0.5rem 0.75rem !important;
+  font-size: 0.875rem !important;
+  z-index: 2147483647 !important;
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -2px rgba(0, 0, 0, 0.1) !important;
+}
+
+/**
+ * Dialog content styling (if used)
+ */
+.kalifinder-widget-content [data-radix-dialog-overlay] {
+  background: rgba(0, 0, 0, 0.5) !important;
+  z-index: 2147483646 !important;
+}
+
+.kalifinder-widget-content [data-radix-dialog-content] {
+  background: hsl(var(--card)) !important;
+  color: hsl(var(--card-foreground)) !important;
+  border: 1px solid hsl(var(--border)) !important;
+  border-radius: 0.5rem !important;
+  padding: 1.5rem !important;
+  z-index: 2147483647 !important;
+  box-shadow:
+    0 20px 25px -5px rgba(0, 0, 0, 0.1),
+    0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
 }
 
 /* ============================================================

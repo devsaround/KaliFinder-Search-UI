@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KaliFinder Search Integration Test</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+
+        .header {
+            background: white;
+            padding: 20px;
+            margin-bottom: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: #7c3aed;
+        }
+
+        .search-form {
+            display: flex;
+            gap: 10px;
+            flex: 1;
+            max-width: 500px;
+            margin: 0 20px;
+        }
+
+        .search-input {
+            flex: 1;
+            padding: 10px 15px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .search-button {
+            padding: 10px 20px;
+            background: #7c3aed;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .search-button:hover {
+            background: #6d28d9;
+        }
+
+        .search-icon-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 8px;
+            font-size: 20px;
+        }
+
+        .content {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            color: #1f2937;
+            margin-top: 0;
+        }
+
+        .test-section {
+            margin: 30px 0;
+            padding: 20px;
+            background: #f9fafb;
+            border-radius: 8px;
+            border-left: 4px solid #7c3aed;
+        }
+
+        .test-section h2 {
+            margin-top: 0;
+            color: #7c3aed;
+        }
+
+        .search-variants {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .variant {
+            padding: 15px;
+            background: white;
+            border-radius: 6px;
+            border: 1px solid #e5e7eb;
+        }
+
+        .variant h3 {
+            margin: 0 0 10px 0;
+            font-size: 14px;
+            color: #6b7280;
+        }
+
+        code {
+            background: #f3f4f6;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+
+        .console-output {
+            background: #1f2937;
+            color: #10b981;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 20px;
+        }
+
+        .manual-trigger {
+            margin-top: 20px;
+            padding: 15px;
+            background: #fef3c7;
+            border-radius: 6px;
+            border: 1px solid #fbbf24;
+        }
+
+        .manual-trigger button {
+            margin: 5px;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Simulated WordPress/Shopify Header -->
+    <header class="header">
+        <div class="logo">My Store</div>
+
+        <!-- Standard search form (WordPress style) -->
+        <form role="search" class="search-form" action="/search" method="get">
+            <input type="search" name="s" placeholder="Search products..." class="search-input" aria-label="Search">
+            <button type="submit" class="search-button" aria-label="Search">
+                Search
+            </button>
+        </form>
+
+        <!-- Icon-only search button (Shopify style) -->
+        <button class="search-icon-btn" aria-label="Search">
+            🔍
+        </button>
+    </header>
+
+    <div class="content">
+        <h1>KaliFinder Search Integration Test Page</h1>
+
+        <p>This page simulates various search implementations found in WordPress and Shopify themes. The KaliFinder
+            widget should automatically intercept all search interactions below.</p>
+
+        <!-- Test Section 1: Standard Search Forms -->
+        <div class="test-section">
+            <h2>Test 1: Standard Search Forms</h2>
+            <p>Click the search button in the header above. The KaliFinder widget should open instead of submitting the
+                form.</p>
+
+            <div class="search-variants">
+                <div class="variant">
+                    <h3>WordPress Style</h3>
+                    <form role="search" action="/search">
+                        <input type="search" name="s" placeholder="Search...">
+                        <button type="submit">Go</button>
+                    </form>
+                </div>
+
+                <div class="variant">
+                    <h3>WooCommerce Style</h3>
+                    <form class="woocommerce-product-search">
+                        <input type="search" name="q" placeholder="Search products...">
+                        <button type="submit" class="search-submit">Search</button>
+                    </form>
+                </div>
+
+                <div class="variant">
+                    <h3>Generic Search</h3>
+                    <form action="/search" class="search">
+                        <input type="text" name="search" placeholder="Search...">
+                        <button class="search-button">🔍</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Test Section 2: Search Buttons -->
+        <div class="test-section">
+            <h2>Test 2: Search Buttons & Links</h2>
+            <p>Click any of these buttons. The KaliFinder widget should open.</p>
+
+            <div class="search-variants">
+                <div class="variant">
+                    <h3>Button with class</h3>
+                    <button class="search-toggle">Open Search</button>
+                </div>
+
+                <div class="variant">
+                    <h3>Button with aria-label</h3>
+                    <button aria-label="Search products">🔍 Search</button>
+                </div>
+
+                <div class="variant">
+                    <h3>Link with class</h3>
+                    <a href="#search" class="search-icon">🔍 Search</a>
+                </div>
+
+                <div class="variant">
+                    <h3>Shopify Details/Summary</h3>
+                    <details class="search-modal">
+                        <summary>Search</summary>
+                        <input type="search" placeholder="Search...">
+                    </details>
+                </div>
+            </div>
+        </div>
+
+        <!-- Test Section 3: Input Focus -->
+        <div class="test-section">
+            <h2>Test 3: Input Focus</h2>
+            <p>Click inside any search input below. The KaliFinder widget should open immediately.</p>
+
+            <div class="search-variants">
+                <div class="variant">
+                    <h3>Search Input</h3>
+                    <input type="search" placeholder="Click me..." style="width: 100%; padding: 8px;">
+                </div>
+
+                <div class="variant">
+                    <h3>Text Input with name="q"</h3>
+                    <input type="text" name="q" placeholder="Click me..." style="width: 100%; padding: 8px;">
+                </div>
+            </div>
+        </div>
+
+        <!-- Test Section 4: Custom Selectors -->
+        <div class="test-section">
+            <h2>Test 4: Data Attributes</h2>
+            <p>These use data attributes for detection.</p>
+
+            <div class="search-variants">
+                <div class="variant">
+                    <h3>data-search</h3>
+                    <button data-search style="padding: 10px 20px; cursor: pointer;">
+                        Search with Data Attribute
+                    </button>
+                </div>
+
+                <div class="variant">
+                    <h3>data-toggle="search"</h3>
+                    <button data-toggle="search" style="padding: 10px 20px; cursor: pointer;">
+                        Toggle Search
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Manual Triggers -->
+        <div class="manual-trigger">
+            <h2>Manual Testing (JavaScript API)</h2>
+            <p>Use these buttons to manually trigger the widget via JavaScript:</p>
+            <button onclick="window.KalifinderController?.open()">
+                Open Widget (Empty)
+            </button>
+            <button onclick="window.KalifinderController?.open('leather jacket')">
+                Open Widget (With Query)
+            </button>
+            <button onclick="window.dispatchEvent(new CustomEvent('kalifinder:open', {detail: {query: 'sneakers'}}))">
+                Dispatch Event
+            </button>
+            <button onclick="showDetectedElements()">
+                Show Detected Elements
+            </button>
+            <button onclick="clearConsole()">
+                Clear Console Output
+            </button>
+        </div>
+
+        <!-- Console Output -->
+        <div class="test-section">
+            <h2>Console Output</h2>
+            <div id="console-output" class="console-output">
+                Console messages will appear here...
+            </div>
+        </div>
+    </div>
+
+    <!-- Load KaliFinder Widget with Debug Mode -->
+    <script>
+        // Intercept console.log to display in page
+        const consoleOutput = document.getElementById('console-output');
+        const originalLog = console.log;
+        const originalWarn = console.warn;
+        const originalError = console.error;
+
+        function addToConsole(type, ...args) {
+            const msg = args.map(arg =>
+                typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
+            ).join(' ');
+
+            const line = document.createElement('div');
+            line.textContent = `[${type.toUpperCase()}] ${msg}`;
+            line.style.color = type === 'error' ? '#ef4444' : type === 'warn' ? '#f59e0b' : '#10b981';
+            consoleOutput.appendChild(line);
+            consoleOutput.scrollTop = consoleOutput.scrollHeight;
+        }
+
+        console.log = function (...args) {
+            if (args[0]?.includes?.('Kalifinder') || args[0]?.includes?.('kalifinder')) {
+                addToConsole('log', ...args);
+            }
+            originalLog.apply(console, args);
+        };
+
+        console.warn = function (...args) {
+            if (args[0]?.includes?.('Kalifinder') || args[0]?.includes?.('kalifinder')) {
+                addToConsole('warn', ...args);
+            }
+            originalWarn.apply(console, args);
+        };
+
+        console.error = function (...args) {
+            if (args[0]?.includes?.('Kalifinder') || args[0]?.includes?.('kalifinder')) {
+                addToConsole('error', ...args);
+            }
+            originalError.apply(console, args);
+        };
+
+        function showDetectedElements() {
+            const elements = document.querySelectorAll('[data-kalifinder-bound]');
+            console.log(`Found ${elements.length} bound elements:`);
+            elements.forEach((el, i) => {
+                console.log(`${i + 1}. ${el.tagName} ${el.className || el.id}`, el);
+            });
+        }
+
+        function clearConsole() {
+            consoleOutput.innerHTML = 'Console cleared...';
+        }
+
+        // Log page load
+        console.log('Test page loaded. Waiting for KaliFinder widget...');
+    </script>
+
+    <!-- 
+    REPLACE THIS WITH YOUR WIDGET SCRIPT 
+    For local testing, use: http://localhost:8080/kalifind-search.js
+    For production: https://cdn.kalifinder.com/kalifind-search.js
+  -->
+    <script src="http://localhost:8080/kalifind-search.js?storeUrl=https://your-store.com&debug=true" defer></script>
+
+    <script>
+        // Check if widget loaded
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                if (window.Kalifinder) {
+                    console.log('✅ KaliFinder SDK loaded successfully');
+                } else {
+                    console.error('❌ KaliFinder SDK not loaded. Check the script URL.');
+                }
+
+                if (window.KalifinderController) {
+                    console.log('✅ KaliFinder Controller initialized');
+                } else {
+                    console.warn('⚠️ KaliFinder Controller not found. Widget may not be initialized.');
+                }
+            }, 2000);
+        });
+    </script>
+</body>
+
+</html>
