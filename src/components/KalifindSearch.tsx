@@ -2,7 +2,7 @@ import { ChevronDown, Filter, Search, X } from '@/components/icons';
 import React, { useCallback, useEffect, useMemo, useRef, useState, useTransition } from 'react';
 
 import { getUBIClient } from '@/analytics/ubiClient';
-import { apiService } from '@/services/api.service';
+import { searchService } from '@/services/search.service';
 
 import {
   Accordion,
@@ -211,7 +211,7 @@ const KalifindSearch: React.FC<{
   }, [recentSearches]);
 
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
-  const debouncedPriceRange = useDebounce(filters.priceRange, 500);
+  const debouncedPriceRange = useDebounce<[number, number]>(filters.priceRange, 500);
   const debouncedFilters = useDebounce(filters, 500);
 
   // Fuzzy matching function for better autocomplete
@@ -276,7 +276,7 @@ const KalifindSearch: React.FC<{
     if (!storeUrl) return;
 
     try {
-      const result = await apiService.fetchFacetConfiguration(storeUrl);
+      const result = await searchService.getFacetConfiguration(storeUrl);
       console.log('🔧 Fetched facet configuration:', result);
 
       // If no configuration is returned, keep all filters visible (default true)
@@ -340,27 +340,18 @@ const KalifindSearch: React.FC<{
     if (!storeUrl || globalFacetsFetched) return;
 
     try {
-      const params = new URLSearchParams();
-      params.append('storeUrl', storeUrl);
-      params.append('page', '1');
-      params.append('limit', '1'); // Minimal products, we mainly need facets
+      // Use the search service to fetch facets with minimal product data
+      const result = await searchService.searchProducts({
+        q: '',
+        storeUrl,
+        page: 1,
+        limit: 1, // Minimal products, we mainly need facets
+      });
 
-      if (!import.meta.env.VITE_BACKEND_URL) {
-        console.error('VITE_BACKEND_URL environment variable is required');
-        return;
-      }
-      const backendUrl = import.meta.env.VITE_BACKEND_URL;
-      const response = await fetch(`${backendUrl}/api/v1/search/search?${params.toString()}`);
+      setGlobalFacetsFetched(true);
 
-      if (!response.ok) {
-        console.error('Failed to fetch global facets');
-        return;
-      }
-
-      const result = await response.json();
-
-      // Process facet data from API response (same logic as search, but only once)
-      if (result.facets) {
+      // Process facet data from API response
+      if (result && result.facets) {
         // Process stock status facets
         if (result.facets.instock && Array.isArray(result.facets.instock.buckets)) {
           const stockStatusCounts: { [key: string]: number } = {};
@@ -775,85 +766,67 @@ const KalifindSearch: React.FC<{
           }
 
           try {
-            const params = new URLSearchParams();
-            if (query) {
-              params.append('q', query);
-            }
-            if (storeUrl) {
-              params.append('storeUrl', storeUrl);
-            }
-
-            if (debouncedFilters.categories.length > 0) {
-              params.append('categories', debouncedFilters.categories.join(','));
-            }
-            if (debouncedFilters.colors.length > 0) {
-              params.append('colors', debouncedFilters.colors.join(','));
-            }
-            if (debouncedFilters.sizes.length > 0) {
-              params.append('sizes', debouncedFilters.sizes.join(','));
-            }
-            if (debouncedFilters.brands.length > 0) {
-              params.append('brands', debouncedFilters.brands.join(','));
-            }
-            if (debouncedFilters.tags.length > 0) {
-              params.append('tags', debouncedFilters.tags.join(','));
-            }
-            // Mandatory facets
-            if (debouncedFilters.stockStatus.length > 0) {
-              params.append('stockStatus', debouncedFilters.stockStatus.join(','));
-            }
-            // Handle featured products filter
+            // Determine featured filter value
+            let featured: string | undefined;
             if (debouncedFilters.featuredProducts.length > 0) {
               if (
                 debouncedFilters.featuredProducts.includes('Featured') &&
                 !debouncedFilters.featuredProducts.includes('Not Featured')
               ) {
-                params.append('featured', 'true');
+                featured = 'true';
               } else if (
                 debouncedFilters.featuredProducts.includes('Not Featured') &&
                 !debouncedFilters.featuredProducts.includes('Featured')
               ) {
-                params.append('featured', 'false');
+                featured = 'false';
               }
-              // If both are selected, don't add any featured filter (show all)
             }
 
-            // Handle sale status filter
+            // Determine sale status filter value
+            let inSale: string | undefined;
             if (debouncedFilters.saleStatus.length > 0) {
               if (
                 debouncedFilters.saleStatus.includes('On Sale') &&
                 !debouncedFilters.saleStatus.includes('Not On Sale')
               ) {
-                params.append('insale', 'true');
+                inSale = 'true';
               } else if (
                 debouncedFilters.saleStatus.includes('Not On Sale') &&
                 !debouncedFilters.saleStatus.includes('On Sale')
               ) {
-                params.append('insale', 'false');
+                inSale = 'false';
               }
-              // If both are selected, don't add any sale filter (show all)
             }
-            params.append('minPrice', debouncedPriceRange[0].toString());
-            params.append('maxPrice', debouncedPriceRange[1].toString());
-            params.append('page', '1');
-            params.append('limit', isMobile ? '8' : '9');
 
-            if (!import.meta.env.VITE_BACKEND_URL) {
-              console.error('VITE_BACKEND_URL environment variable is required');
+            // Use the new search service with structured parameters
+            const searchParams = {
+              q: query || '',
+              storeUrl,
+              page: 1,
+              limit: isMobile ? 8 : 9,
+              categories:
+                debouncedFilters.categories.length > 0 ? debouncedFilters.categories : undefined,
+              colors: debouncedFilters.colors.length > 0 ? debouncedFilters.colors : undefined,
+              sizes: debouncedFilters.sizes.length > 0 ? debouncedFilters.sizes : undefined,
+              brands: debouncedFilters.brands.length > 0 ? debouncedFilters.brands : undefined,
+              tags: debouncedFilters.tags.length > 0 ? debouncedFilters.tags : undefined,
+              stockStatus:
+                debouncedFilters.stockStatus.length > 0 ? debouncedFilters.stockStatus : undefined,
+              priceRange: debouncedPriceRange,
+            };
+
+            // Add featured and sale parameters to URL params for compatibility
+            const params = new URLSearchParams();
+            if (featured) params.append('featured', featured);
+            if (inSale) params.append('insale', inSale);
+
+            const result = await searchService.searchProducts(searchParams);
+
+            // If the request was superseded by a newer one, discard the results
+            if (currentRequestId !== searchRequestIdRef.current) {
+              console.log('Discarding outdated search results');
               return;
             }
-            const backendUrl = import.meta.env.VITE_BACKEND_URL;
-            const response = await fetch(
-              `${backendUrl}/api/v1/search/search?${params.toString()}`,
-              {
-                signal: newAbortController.signal,
-              }
-            );
-
-            if (!response.ok) {
-              throw new Error('bad response');
-            }
-            const result = (await response.json()) as unknown;
 
             // Handle paginated response format
             let products: Product[];
@@ -891,23 +864,6 @@ const KalifindSearch: React.FC<{
                   // Add some buffer (e.g., round up to nearest 10 or 50)
                   const roundedMaxPrice = Math.ceil(calculatedMaxPrice / 50) * 50;
                   setMaxPrice(roundedMaxPrice);
-                }
-              }
-            } else if (Array.isArray(result)) {
-              products = result;
-              total = result.length;
-              hasMore = false;
-
-              // Detect store type from first product if available
-              if (products.length > 0) {
-                const firstProductStoreType = products[0]?.storeType;
-                if (
-                  firstProductStoreType &&
-                  (firstProductStoreType === 'shopify' ||
-                    firstProductStoreType === 'woocommerce') &&
-                  firstProductStoreType !== storeType
-                ) {
-                  setStoreType(firstProductStoreType);
                 }
               }
             } else {
