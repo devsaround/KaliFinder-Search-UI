@@ -3,6 +3,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState, useTransition
 
 import { getUBIClient } from '@/analytics/ubiClient';
 import { searchService } from '@/services/search.service';
+import { normalizeStoreUrl } from '@/lib/normalize';
 
 import {
   Accordion,
@@ -481,8 +482,9 @@ const KalifindSearch: React.FC<{
         return;
       }
       const backendUrl = import.meta.env.VITE_BACKEND_URL;
+      const normalizedStoreUrl = normalizeStoreUrl(storeUrl as string)!;
       const configResponse = await fetch(
-        `${backendUrl}/api/v1/search/recommendations-config?storeUrl=${storeUrl}`,
+        `${backendUrl}/api/v1/search/recommendations-config?storeUrl=${encodeURIComponent(normalizedStoreUrl)}`,
         {}
       );
       if (!configResponse.ok) {
@@ -499,9 +501,9 @@ const KalifindSearch: React.FC<{
         return;
       }
 
-      // Fetch only vendor-configured recommendations
+      // Fetch vendor-configured recommendations
       const response = await fetch(
-        `${backendUrl}/api/v1/search/recommended?storeUrl=${storeUrl}&type=vendor-configured`,
+        `${backendUrl}/api/v1/search/recommended?storeUrl=${encodeURIComponent(normalizedStoreUrl)}`,
         {}
       );
 

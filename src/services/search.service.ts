@@ -4,6 +4,7 @@
  */
 
 import type { AutocompleteResponse, SearchResponse } from '@/types/api.types';
+import { normalizeStoreUrl } from '@/lib/normalize';
 import { HttpClient } from './http-client';
 import { ResponseCache, buildCacheKey } from './response-cache';
 
@@ -77,7 +78,7 @@ class SearchService {
     }
 
     if (params.storeUrl) {
-      urlParams.append('storeUrl', params.storeUrl);
+      urlParams.append('storeUrl', normalizeStoreUrl(params.storeUrl)!);
     }
 
     if (params.page) {
@@ -179,7 +180,7 @@ class SearchService {
     }
 
     const url = `${this.config.baseUrl}/api/v1/search/autocomplete?q=${encodeURIComponent(query)}${
-      storeUrl ? `&storeUrl=${encodeURIComponent(storeUrl)}` : ''
+      storeUrl ? `&storeUrl=${encodeURIComponent(normalizeStoreUrl(storeUrl)!)}` : ''
     }`;
 
     try {
@@ -201,7 +202,8 @@ class SearchService {
    * Get popular searches
    */
   async getPopularSearches(storeUrl?: string): Promise<string[]> {
-    const cacheKey = buildCacheKey('/popular-searches', { storeUrl });
+    const normalizedStoreUrl = storeUrl ? normalizeStoreUrl(storeUrl) : undefined;
+    const cacheKey = buildCacheKey('/popular-searches', { storeUrl: normalizedStoreUrl });
 
     // Check cache first
     if (this.config.cache.enabled) {
@@ -212,7 +214,7 @@ class SearchService {
     }
 
     const url = `${this.config.baseUrl}/api/v1/search/popular${
-      storeUrl ? `?storeUrl=${encodeURIComponent(storeUrl)}` : ''
+      normalizedStoreUrl ? `?storeUrl=${encodeURIComponent(normalizedStoreUrl)}` : ''
     }`;
 
     try {
@@ -245,7 +247,9 @@ class SearchService {
       }
     }
 
-    const url = `${this.config.baseUrl}/api/v1/facets/configured?storeUrl=${encodeURIComponent(storeUrl)}`;
+    const url = `${this.config.baseUrl}/api/v1/facets/configured?storeUrl=${encodeURIComponent(
+      normalizeStoreUrl(storeUrl)!
+    )}`;
 
     try {
       const response = await this.httpClient.get<any[]>(url);
