@@ -9,7 +9,7 @@ import { ResponseCache, buildCacheKey } from './response-cache';
 
 // Default configuration - compatible with WidgetConfig
 const DEFAULT_CONFIG = {
-  baseUrl: import.meta.env.VITE_BACKEND_URL || '',
+  baseUrl: import.meta.env.VITE_BACKEND_URL || 'https://api.kalifinder.com',
   cache: {
     enabled: true,
     ttl: {
