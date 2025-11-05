@@ -182,7 +182,7 @@ class UBIClient {
       return;
     }
     const backendUrl = import.meta.env.VITE_BACKEND_URL;
-    const collectUrl = `${backendUrl}/v1/analytics/ubi/collect`;
+    const collectUrl = `${backendUrl}/api/v1/analytics/ubi/collect`;
 
     console.log('UBI Client: Flushing events to backend:', {
       count: eventsToSend.length,
