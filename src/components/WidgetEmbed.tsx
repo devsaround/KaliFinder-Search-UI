@@ -160,7 +160,8 @@ export default function WidgetEmbed({ storeUrl }: WidgetEmbedProps) {
       if (isInsideWidget(e.target)) return;
       const form = e.target as HTMLFormElement;
       const roleSearch = form?.getAttribute('role')?.toLowerCase() === 'search';
-      const actionLooksSearch = typeof form?.action === 'string' && /search|query|q=/.test(form.action);
+      const actionLooksSearch =
+        typeof form?.action === 'string' && /search|query|q=/.test(form.action);
       if (roleSearch || actionLooksSearch) {
         e.preventDefault();
         e.stopPropagation();

@@ -185,7 +185,8 @@ class ApiServiceImpl implements ApiService {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       const json = await response.json();
-      const result = (json && json.success && Array.isArray(json.data?.searches)) ? json.data.searches : [];
+      const result =
+        json && json.success && Array.isArray(json.data?.searches) ? json.data.searches : [];
       this.setCache(cacheKey, result, this.CACHE_TTL.popularSearches);
       return result;
     } catch (error) {
@@ -209,7 +210,8 @@ class ApiServiceImpl implements ApiService {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       const json = await response.json();
-      const result = (json && json.success && json.data?.facets) ? (json.data.facets as FacetConfig[]) : [];
+      const result =
+        json && json.success && json.data?.facets ? (json.data.facets as FacetConfig[]) : [];
       this.setCache(cacheKey, result, this.CACHE_TTL.facetConfig);
       return result;
     } catch (error) {

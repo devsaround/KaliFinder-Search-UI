@@ -494,7 +494,9 @@ const KalifindSearch: React.FC<{
       }
 
       const configWrapped = await configResponse.json();
-      const config = (configWrapped && configWrapped.success ? configWrapped.data : configWrapped) as { enabled?: boolean };
+      const config = (
+        configWrapped && configWrapped.success ? configWrapped.data : configWrapped
+      ) as { enabled?: boolean };
 
       // Only fetch recommendations if vendor has enabled them
       if (!config.enabled) {
