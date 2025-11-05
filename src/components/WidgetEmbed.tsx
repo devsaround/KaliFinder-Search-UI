@@ -26,6 +26,9 @@ export default function WidgetEmbed({ storeUrl }: WidgetEmbedProps) {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [hasSearched, setHasSearched] = useState<boolean>(false);
   const [isReady, setIsReady] = useState<boolean | null>(null);
+  // Some WordPress themes bump the root font-size which inflates rem-based Tailwind styles.
+  // Detect documentElement font-size and scale the widget back to a 16px baseline.
+  const [uiScale, setUiScale] = useState<number>(1);
   const containerRef = useRef<HTMLDivElement>(null);
 
   /**
@@ -192,6 +195,36 @@ export default function WidgetEmbed({ storeUrl }: WidgetEmbedProps) {
   }, []);
 
   /**
+   * Normalize UI scale for hosts that modify root font-size (e.g., some WordPress themes).
+   * We measure the root font-size and scale the modal content to map back to 16px = 1rem.
+   */
+  useEffect(() => {
+    const recomputeScale = () => {
+      try {
+        const rootFontSize = parseFloat(
+          getComputedStyle(document.documentElement).fontSize || '16'
+        );
+        if (!Number.isNaN(rootFontSize) && rootFontSize > 0) {
+          const scale = Math.min(1.2, Math.max(0.8, 16 / rootFontSize));
+          setUiScale(scale);
+        }
+      } catch {
+        setUiScale(1);
+      }
+    };
+
+    // compute immediately and when widget opens
+    recomputeScale();
+    if (isOpen) {
+      recomputeScale();
+    }
+
+    // recompute on resize
+    window.addEventListener('resize', recomputeScale);
+    return () => window.removeEventListener('resize', recomputeScale);
+  }, [isOpen]);
+
+  /**
    * Close widget when clicking outside
    */
   const handleBackdropClick = () => {
@@ -206,6 +239,10 @@ export default function WidgetEmbed({ storeUrl }: WidgetEmbedProps) {
           <div
             className="kalifinder-widget-modal-content"
             onClick={(e) => e.stopPropagation()} // Prevent modal close on content click
+            style={{
+              transform: uiScale !== 1 ? `scale(${uiScale})` : undefined,
+              transformOrigin: 'top center',
+            }}
           >
             {isReady === false && (
               <div className="kalifinder-widget-banner" role="status" aria-live="polite">
