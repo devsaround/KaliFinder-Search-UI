@@ -19,6 +19,21 @@ export interface DOMElements {
 // ------------------------------------------------------------
 // Diagnostics (helps identify host-page scaling issues)
 // ------------------------------------------------------------
+function diagEnabled(): boolean {
+  try {
+    const url = new URL(window.location.href);
+    if (url.searchParams.get('kfdiag') === '1') return true;
+    if (localStorage.getItem('KF_DEBUG') === '1') return true;
+    const g: unknown = window as unknown as { __KF_DEBUG__?: boolean };
+    if (typeof g === 'object' && g && (g as { __KF_DEBUG__?: boolean }).__KF_DEBUG__ === true)
+      return true;
+  } catch (e) {
+    // ignore parse/storage errors in diagnostics detection
+    void e;
+  }
+  return true; // keep enabled while investigating
+}
+
 function parseScaleFromTransform(transform: string | null): { x: number; y: number } | null {
   if (!transform || transform === 'none') return null;
   const m = transform.match(/matrix\(([^)]+)\)/);
@@ -35,6 +50,7 @@ function parseScaleFromTransform(transform: string | null): { x: number; y: numb
 }
 
 function logEnvironmentDiagnostics(container: HTMLDivElement): void {
+  if (!diagEnabled()) return;
   if ((window as any).__KF_DIAG_LOGGED__) return;
   (window as any).__KF_DIAG_LOGGED__ = true;
 
@@ -65,7 +81,6 @@ function logEnvironmentDiagnostics(container: HTMLDivElement): void {
       clientWidth: html.clientWidth,
     };
 
-    // 100vw risk: presence of vertical scrollbar reduces clientWidth vs innerWidth
     const hasScrollbar = window.innerWidth > html.clientWidth;
 
     console.groupCollapsed('[Kalifinder][diag] Host-page environment');
@@ -98,6 +113,75 @@ function logEnvironmentDiagnostics(container: HTMLDivElement): void {
     console.groupEnd();
   } catch (_e) {
     // no-op
+  }
+}
+
+function startLiveMetrics(
+  container: HTMLDivElement,
+  shadowRoot: ShadowRoot,
+  rootEl: HTMLDivElement,
+  portal: HTMLDivElement
+): void {
+  if (!diagEnabled()) return;
+  let raf = 0;
+  const log = () => {
+    raf = 0;
+    try {
+      const vv = (window as any).visualViewport as VisualViewport | undefined;
+      const html = document.documentElement;
+      const body = document.body;
+      const cr = container.getBoundingClientRect();
+      const rr = rootEl.getBoundingClientRect();
+      const pr = portal.getBoundingClientRect();
+      const metrics = [
+        { key: 'inner (w×h)', value: `${window.innerWidth}×${window.innerHeight}` },
+        { key: 'client (w×h)', value: `${html.clientWidth}×${html.clientHeight}` },
+        { key: 'body.clientHeight', value: body.clientHeight },
+        {
+          key: 'visualViewport (w×h×scale)',
+          value: vv ? `${Math.round(vv.width)}×${Math.round(vv.height)}×${vv.scale}` : 'n/a',
+        },
+        {
+          key: 'container rect',
+          value: `${Math.round(cr.width)}×${Math.round(cr.height)} @ ${Math.round(cr.left)},${Math.round(cr.top)}`,
+        },
+        { key: 'root rect', value: `${Math.round(rr.width)}×${Math.round(rr.height)}` },
+        { key: 'portal rect', value: `${Math.round(pr.width)}×${Math.round(pr.height)}` },
+      ];
+      console.groupCollapsed('[Kalifinder][diag] Live metrics');
+      console.table(metrics);
+      console.groupEnd();
+    } catch (e) {
+      // ignore logging errors
+      void e;
+    }
+  };
+  const schedule = () => {
+    if (!raf) raf = requestAnimationFrame(log);
+  };
+  window.addEventListener('resize', schedule, { passive: true });
+  window.addEventListener('orientationchange', schedule, { passive: true });
+  // Initial
+  schedule();
+
+  // Observe modal within shadow for size
+  try {
+    const obs = new MutationObserver(() => {
+      const modal = shadowRoot.querySelector(
+        '.kalifinder-widget-modal-content'
+      ) as HTMLElement | null;
+      if (modal) {
+        const r = modal.getBoundingClientRect();
+        console.log(
+          '[Kalifinder][diag] Modal rect',
+          `${Math.round(r.width)}×${Math.round(r.height)}`
+        );
+      }
+    });
+    obs.observe(shadowRoot, { childList: true, subtree: true });
+  } catch (e) {
+    // ignore observer errors
+    void e;
   }
 }
 
@@ -150,6 +234,9 @@ export function setupDOM(): DOMElements {
   const rootEl = createReactRoot(shadowRoot);
   const portalContainer = createPortalContainer(shadowRoot);
   const root = ReactDOM.createRoot(rootEl);
+
+  // Start live metrics logging
+  startLiveMetrics(container, shadowRoot, rootEl, portalContainer);
 
   return {
     container,
