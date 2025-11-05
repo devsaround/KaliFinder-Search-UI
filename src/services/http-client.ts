@@ -27,7 +27,7 @@ interface RequestOptions {
  * HTTP Client with retry and timeout support
  */
 export class HttpClient {
-  constructor(private config: WidgetConfig) {}
+  constructor(private config: WidgetConfig) { }
 
   /**
    * Perform HTTP request with retry logic
@@ -107,7 +107,14 @@ export class HttpClient {
         throw error;
       }
 
-      return await response.json();
+      const json = await response.json();
+
+      // Unwrap {success: true, data: {...}} response format
+      if (json && typeof json === 'object' && 'success' in json && 'data' in json) {
+        return json.data as T;
+      }
+
+      return json as T;
     } catch (error) {
       clearTimeout(timeoutId);
 
