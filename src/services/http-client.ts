@@ -27,7 +27,7 @@ interface RequestOptions {
  * HTTP Client with retry and timeout support
  */
 export class HttpClient {
-  constructor(private config: WidgetConfig) { }
+  constructor(private config: WidgetConfig) {}
 
   /**
    * Perform HTTP request with retry logic
