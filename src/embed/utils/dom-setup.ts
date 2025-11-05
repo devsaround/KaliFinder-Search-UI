@@ -16,6 +16,91 @@ export interface DOMElements {
   root: ReactDOM.Root;
 }
 
+// ------------------------------------------------------------
+// Diagnostics (helps identify host-page scaling issues)
+// ------------------------------------------------------------
+function parseScaleFromTransform(transform: string | null): { x: number; y: number } | null {
+  if (!transform || transform === 'none') return null;
+  const m = transform.match(/matrix\(([^)]+)\)/);
+  if (!m || !m[1]) return null;
+  const parts = m[1]
+    .split(',')
+    .map((v) => Number(String(v).trim()))
+    .filter((n) => Number.isFinite(n));
+  if (parts.length < 4) return null;
+  const sx = parts[0];
+  const sy = parts[3];
+  if (!Number.isFinite(sx) || !Number.isFinite(sy)) return null;
+  return { x: sx as number, y: sy as number };
+}
+
+function logEnvironmentDiagnostics(container: HTMLDivElement): void {
+  if ((window as any).__KF_DIAG_LOGGED__) return;
+  (window as any).__KF_DIAG_LOGGED__ = true;
+
+  try {
+    const html = document.documentElement;
+    const body = document.body;
+
+    const htmlCS = getComputedStyle(html);
+    const bodyCS = getComputedStyle(body);
+
+    const htmlTransform = htmlCS.transform;
+    const bodyTransform = bodyCS.transform;
+    const htmlZoom = (htmlCS as unknown as { zoom?: string }).zoom || 'normal';
+    const bodyZoom = (bodyCS as unknown as { zoom?: string }).zoom || 'normal';
+
+    const htmlScale = parseScaleFromTransform(htmlTransform);
+    const bodyScale = parseScaleFromTransform(bodyTransform);
+
+    const vv = (window as any).visualViewport as VisualViewport | undefined;
+    const viewportMeta =
+      (document.querySelector('meta[name="viewport"]') as HTMLMetaElement | null)?.content || '';
+
+    const rect = container.getBoundingClientRect();
+    const widthMismatch = {
+      devicePixelRatio: window.devicePixelRatio,
+      visualViewportWidth: vv?.width ?? null,
+      innerWidth: window.innerWidth,
+      clientWidth: html.clientWidth,
+    };
+
+    // 100vw risk: presence of vertical scrollbar reduces clientWidth vs innerWidth
+    const hasScrollbar = window.innerWidth > html.clientWidth;
+
+    console.groupCollapsed('[Kalifinder][diag] Host-page environment');
+    console.table([
+      { key: 'viewportMeta', value: viewportMeta },
+      {
+        key: 'html.transform',
+        value: htmlTransform,
+        scale: htmlScale ? `${htmlScale.x.toFixed(3)} x ${htmlScale.y.toFixed(3)}` : '',
+      },
+      { key: 'html.zoom', value: htmlZoom },
+      {
+        key: 'body.transform',
+        value: bodyTransform,
+        scale: bodyScale ? `${bodyScale.x.toFixed(3)} x ${bodyScale.y.toFixed(3)}` : '',
+      },
+      { key: 'body.zoom', value: bodyZoom },
+      { key: 'devicePixelRatio', value: window.devicePixelRatio },
+      { key: 'visualViewport.scale', value: vv?.scale ?? '' },
+      {
+        key: 'container.rect',
+        value: `${Math.round(rect.width)}x${Math.round(rect.height)} @ (${Math.round(rect.left)},${Math.round(rect.top)})`,
+      },
+      { key: 'hasScrollbar(inner>client)', value: String(hasScrollbar) },
+      {
+        key: 'innerWidth vs clientWidth',
+        value: `${widthMismatch.innerWidth} vs ${widthMismatch.clientWidth}`,
+      },
+    ]);
+    console.groupEnd();
+  } catch (_e) {
+    // no-op
+  }
+}
+
 /**
  * Create Shadow DOM container and attach it to document body
  */
@@ -26,6 +111,9 @@ function createContainer(): { container: HTMLDivElement; shadowRoot: ShadowRoot 
   document.body.appendChild(container);
 
   const shadowRoot = container.attachShadow({ mode: 'open' });
+
+  // Log diagnostics once for this page load
+  logEnvironmentDiagnostics(container);
 
   return { container, shadowRoot };
 }
@@ -48,7 +136,7 @@ function createPortalContainer(shadowRoot: ShadowRoot): HTMLDivElement {
   const portalContainer = document.createElement('div');
   portalContainer.id = 'kalifinder-portal-container';
   portalContainer.style.cssText =
-    'position: absolute; inset: 0; z-index: 2147483647; pointer-events: none;';
+    'position: fixed; inset: 0; z-index: 2147483647; pointer-events: none;';
   shadowRoot.appendChild(portalContainer);
   return portalContainer;
 }
