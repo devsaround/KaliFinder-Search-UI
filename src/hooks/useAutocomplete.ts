@@ -88,20 +88,23 @@ export function useAutocomplete(options: UseAutocompleteOptions): UseAutocomplet
           throw new Error('Autocomplete request failed');
         }
 
-        const result = await response.json();
+        const json = await response.json();
 
-        // Handle different response formats
+        // Unwrap new API success wrapper
+        const payload = json && json.success ? json.data : json;
+
+        // Handle different response formats safely
         let rawSuggestions: string[] = [];
-        if (Array.isArray(result)) {
-          rawSuggestions = result
+        if (payload && Array.isArray(payload.suggestions)) {
+          rawSuggestions = payload.suggestions.map((s: string) => String(s));
+        } else if (payload && Array.isArray(payload.products)) {
+          rawSuggestions = payload.products
             .map((r: { title?: string; name?: string }) => r.title || r.name || String(r))
             .filter(Boolean);
-        } else if (result && Array.isArray(result.suggestions)) {
-          rawSuggestions = result.suggestions.map((s: string) => String(s));
-        } else if (result && Array.isArray(result.products)) {
-          rawSuggestions = result.products
-            .map((r: { title?: string; name?: string }) => r.title || r.name || String(r))
-            .filter(Boolean);
+        } else if (Array.isArray(payload)) {
+          rawSuggestions = (payload as Array<{ title?: string; name?: string }>)
+            .map((r) => r.title || r.name || '')
+            .filter(Boolean) as string[];
         }
 
         // Apply fuzzy matching and scoring

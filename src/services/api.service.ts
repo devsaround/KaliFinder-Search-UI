@@ -146,9 +146,9 @@ class ApiServiceImpl implements ApiService {
 
   async searchProducts(params: URLSearchParams): Promise<SearchResponse> {
     const url = `${this.baseUrl}/api/v1/search/search?${params.toString()}`;
-    const result = await this.fetchWithRateLimitHandling<SearchResponse>(url);
+    const json = await this.fetchWithRateLimitHandling<any>(url);
 
-    if (!result) {
+    if (!json || json.success !== true || !json.data) {
       // Return empty results when rate limited
       return {
         products: [],
@@ -156,18 +156,18 @@ class ApiServiceImpl implements ApiService {
       };
     }
 
-    return result;
+    return json.data as SearchResponse;
   }
 
   async fetchAutocomplete(query: string, storeUrl: string): Promise<AutocompleteResponse> {
     const url = `${this.baseUrl}/api/v1/search/autocomplete?q=${encodeURIComponent(query)}&storeUrl=${encodeURIComponent(storeUrl)}`;
-    const result = await this.fetchWithRateLimitHandling<AutocompleteResponse>(url);
+    const json = await this.fetchWithRateLimitHandling<any>(url);
 
-    if (!result) {
+    if (!json || json.success !== true || !json.data) {
       return { suggestions: [] };
     }
 
-    return result;
+    return json.data as AutocompleteResponse;
   }
 
   async fetchPopularSearches(storeUrl: string): Promise<string[]> {
@@ -184,8 +184,8 @@ class ApiServiceImpl implements ApiService {
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      const data = await response.json();
-      const result = data.searches || [];
+      const json = await response.json();
+      const result = (json && json.success && Array.isArray(json.data?.searches)) ? json.data.searches : [];
       this.setCache(cacheKey, result, this.CACHE_TTL.popularSearches);
       return result;
     } catch (error) {
@@ -208,8 +208,8 @@ class ApiServiceImpl implements ApiService {
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      const data = await response.json();
-      const result = data || [];
+      const json = await response.json();
+      const result = (json && json.success && json.data?.facets) ? (json.data.facets as FacetConfig[]) : [];
       this.setCache(cacheKey, result, this.CACHE_TTL.facetConfig);
       return result;
     } catch (error) {

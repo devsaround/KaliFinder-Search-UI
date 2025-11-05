@@ -493,7 +493,8 @@ const KalifindSearch: React.FC<{
         return;
       }
 
-      const config = (await configResponse.json()) as { enabled?: boolean };
+      const configWrapped = await configResponse.json();
+      const config = (configWrapped && configWrapped.success ? configWrapped.data : configWrapped) as { enabled?: boolean };
 
       // Only fetch recommendations if vendor has enabled them
       if (!config.enabled) {
@@ -513,7 +514,8 @@ const KalifindSearch: React.FC<{
         return;
       }
 
-      const result = (await response.json()) as unknown;
+      const wrapped = await response.json();
+      const result = wrapped && wrapped.success ? wrapped.data : wrapped;
 
       // Handle response format with type safety
       let products: Product[];
