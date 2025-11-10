@@ -9,15 +9,15 @@
 import '../index.css';
 // shadowCssPlugin will inject: var __INLINED_WIDGET_CSS__ = "..."
 
-import { setDebugMode, log } from './utils/logger';
 import { createStyles } from './utils/css-injection';
-import { setupDOM, renderWidget } from './utils/dom-setup';
-import { bindSearchTriggers, setupSearchObserver } from './utils/search-binding';
+import { renderWidget, setupDOM } from './utils/dom-setup';
 import { createFallbackTrigger, removeFallbackTrigger } from './utils/fallback-trigger';
 import {
   replaceHeaderSearchElements,
   setupHeaderReplacementObserver,
 } from './utils/header-replacement';
+import { log, setDebugMode } from './utils/logger';
+import { bindSearchTriggers, setupSearchObserver } from './utils/search-binding';
 
 export type InitOptions = {
   storeUrl: string;
@@ -123,6 +123,10 @@ declare global {
   interface Window {
     Kalifinder?: { init: (opts: InitOptions) => Controller };
     KalifinderController?: Controller;
+    KALIFIND_VENDOR_ID?: string;
+    KALIFIND_STORE_ID?: string;
+    KALIFIND_STORE_TYPE?: string;
+    KALIFIND_STORE_URL?: string;
   }
 }
 
@@ -147,14 +151,35 @@ declare global {
     if (widgetScript && widgetScript.src) {
       const url = new URL(widgetScript.src);
       const storeUrl = url.searchParams.get('storeUrl');
+      const vendorId = url.searchParams.get('vendorId');
+      const storeId = url.searchParams.get('storeId');
+      const storeType = url.searchParams.get('storeType');
       const debug = url.searchParams.get('debug') === 'true';
 
+      // Set global variables for analytics and API client
+      if (vendorId) {
+        (window as Window).KALIFIND_VENDOR_ID = vendorId;
+        console.log('[Kalifinder] Vendor ID set:', vendorId);
+      }
+      if (storeId) {
+        (window as Window).KALIFIND_STORE_ID = storeId;
+        console.log('[Kalifinder] Store ID set:', storeId);
+      }
+      if (storeType) {
+        (window as Window).KALIFIND_STORE_TYPE = storeType;
+        console.log('[Kalifinder] Store Type set:', storeType);
+      }
       if (storeUrl) {
+        (window as Window).KALIFIND_STORE_URL = storeUrl;
+        console.log('[Kalifinder] Store URL set:', storeUrl);
+
         const controller = init({ storeUrl, debug });
         (window as unknown as Window).KalifinderController = controller;
+      } else {
+        console.warn('[Kalifinder] No storeUrl found in script parameters');
       }
     }
-  } catch {
-    // no-op
+  } catch (error) {
+    console.error('[Kalifinder] Failed to initialize:', error);
   }
 })();
