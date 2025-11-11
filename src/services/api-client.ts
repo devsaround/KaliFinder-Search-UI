@@ -87,7 +87,7 @@ export class ApiClient {
    */
   async getAutocomplete(query: string, storeUrl?: string): Promise<AutocompleteResponse> {
     if (!query || query.trim().length < this.config.behavior.minCharsForSearch) {
-      return { suggestions: [] };
+      return [];
     }
 
     const cacheKey = buildCacheKey('/autocomplete', { q: query });

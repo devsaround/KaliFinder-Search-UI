@@ -95,16 +95,18 @@ export function useAutocomplete(options: UseAutocompleteOptions): UseAutocomplet
 
         // Handle different response formats safely
         let rawSuggestions: string[] = [];
-        if (payload && Array.isArray(payload.suggestions)) {
+
+        // Backend returns array of {title, id} objects directly in data
+        if (Array.isArray(payload)) {
+          rawSuggestions = payload
+            .map((item: { title?: string; name?: string }) => item.title || item.name || '')
+            .filter(Boolean) as string[];
+        } else if (payload && Array.isArray(payload.suggestions)) {
           rawSuggestions = payload.suggestions.map((s: string) => String(s));
         } else if (payload && Array.isArray(payload.products)) {
           rawSuggestions = payload.products
             .map((r: { title?: string; name?: string }) => r.title || r.name || String(r))
             .filter(Boolean);
-        } else if (Array.isArray(payload)) {
-          rawSuggestions = (payload as Array<{ title?: string; name?: string }>)
-            .map((r) => r.title || r.name || '')
-            .filter(Boolean) as string[];
         }
 
         // Apply fuzzy matching and scoring

@@ -3,8 +3,8 @@
  * Centralized service for all search-related API calls with improved error handling and caching
  */
 
-import type { AutocompleteResponse, SearchResponse } from '@/types/api.types';
 import { normalizeStoreUrl } from '@/lib/normalize';
+import type { AutocompleteResponse, SearchResponse } from '@/types/api.types';
 import { HttpClient } from './http-client';
 import { ResponseCache, buildCacheKey } from './response-cache';
 
@@ -166,7 +166,7 @@ class SearchService {
    */
   async getAutocomplete(query: string, storeUrl?: string): Promise<AutocompleteResponse> {
     if (!query || query.trim().length < this.config.behavior.minCharsForSearch) {
-      return { suggestions: [] };
+      return [];
     }
 
     const cacheKey = buildCacheKey('/autocomplete', { q: query, storeUrl });
@@ -194,7 +194,7 @@ class SearchService {
       return response;
     } catch (error) {
       console.error('Autocomplete failed:', error);
-      return { suggestions: [] };
+      return [];
     }
   }
 

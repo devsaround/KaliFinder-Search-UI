@@ -56,9 +56,14 @@ export interface SearchResponse {
   hasMore?: boolean;
 }
 
-export interface AutocompleteResponse {
-  suggestions: string[];
+export interface AutocompleteSuggestion {
+  title: string;
+  id: string;
 }
+
+// Backend returns {success: true, data: AutocompleteSuggestion[]}
+// HttpClient unwraps to just AutocompleteSuggestion[]
+export type AutocompleteResponse = AutocompleteSuggestion[];
 
 // Type guards
 export function isSearchResponse(response: unknown): response is SearchResponse {
@@ -74,11 +79,5 @@ export function isSearchResponse(response: unknown): response is SearchResponse 
 }
 
 export function isAutocompleteResponse(response: unknown): response is AutocompleteResponse {
-  return (
-    response !== null &&
-    response !== undefined &&
-    typeof response === 'object' &&
-    'suggestions' in response &&
-    Array.isArray(response.suggestions)
-  );
+  return Array.isArray(response);
 }

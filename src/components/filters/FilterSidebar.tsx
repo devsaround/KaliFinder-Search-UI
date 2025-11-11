@@ -4,12 +4,12 @@
  * Aggregates CheckboxFilter, PriceFilter, SizeFilter, ColorFilter, ToggleFilter
  */
 
-import React from 'react';
 import { Accordion } from '@/components/ui/accordion';
+import React from 'react';
 import { CheckboxFilter } from './CheckboxFilter';
+import { ColorFilter } from './ColorFilter';
 import { PriceFilter } from './PriceFilter';
 import { SizeFilter } from './SizeFilter';
-import { ColorFilter } from './ColorFilter';
 import { ToggleFilter } from './ToggleFilter';
 
 export interface FilterState {
@@ -186,7 +186,7 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
         ]}
       >
         {/* Category Filter */}
-        {showFilters.categories && (
+        {showFilters.categories && availableFilters.categories.length > 0 && (
           <CheckboxFilter
             id="category"
             title="Category"
@@ -201,7 +201,7 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
         )}
 
         {/* Brand Filter */}
-        {showFilters.brands && (
+        {showFilters.brands && availableFilters.brands.length > 0 && (
           <CheckboxFilter
             id="brand"
             title="Brand"
@@ -227,7 +227,7 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
         )}
 
         {/* Size Filter */}
-        {showFilters.sizes && (
+        {showFilters.sizes && availableFilters.sizes.length > 0 && (
           <SizeFilter
             sizes={availableFilters.sizes}
             selectedSizes={filters.sizes}
@@ -239,7 +239,7 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
         )}
 
         {/* Color Filter */}
-        {showFilters.colors && (
+        {showFilters.colors && availableFilters.colors.length > 0 && (
           <ColorFilter
             colors={availableFilters.colors}
             selectedColors={filters.colors}
@@ -251,7 +251,7 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
         )}
 
         {/* Tags Filter */}
-        {showFilters.tags && (
+        {showFilters.tags && availableFilters.tags.length > 0 && (
           <CheckboxFilter
             id="tags"
             title="Tags"

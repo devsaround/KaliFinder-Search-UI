@@ -164,7 +164,7 @@ class ApiServiceImpl implements ApiService {
     const json = await this.fetchWithRateLimitHandling<any>(url);
 
     if (!json || json.success !== true || !json.data) {
-      return { suggestions: [] };
+      return [];
     }
 
     return json.data as AutocompleteResponse;

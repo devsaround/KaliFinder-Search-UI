@@ -3,7 +3,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState, useTransition
 
 import { getUBIClient } from '@/analytics/ubiClient';
 import { normalizeStoreUrl } from '@/lib/normalize';
-import { searchService } from '@/services/search.service';
+import { searchService, type SearchParams } from '@/services/search.service';
 
 import {
   Accordion,
@@ -29,7 +29,6 @@ import { useFilters } from '@/hooks/useFilters';
 
 import type { Product } from '../types';
 import {
-  isAutocompleteResponse,
   isSearchResponse,
   type BooleanFacetBucket,
   type StringFacetBucket,
@@ -691,47 +690,18 @@ const KalifindSearch: React.FC<{
         setIsAutocompleteLoading(true);
         void (async () => {
           try {
-            const params = new URLSearchParams();
-            params.append('q', debouncedSearchQuery.trim());
-            params.append('storeUrl', storeUrl);
-
-            if (!import.meta.env.VITE_BACKEND_URL) {
-              console.error('VITE_BACKEND_URL environment variable is required');
-              return;
-            }
-            const backendUrl = import.meta.env.VITE_BACKEND_URL;
-            const url = `${backendUrl}/api/v1/autocomplete?${params.toString()}`;
-            // Autocomplete API call
-
-            const response = await fetch(url, {});
-
-            if (!response.ok) {
-              console.error('Autocomplete API error:', response.status, response.statusText);
-              throw new Error('bad response');
-            }
-
-            const result = (await response.json()) as unknown;
+            // Use searchService.getAutocomplete which handles API response format properly
+            const result = await searchService.getAutocomplete(
+              debouncedSearchQuery.trim(),
+              storeUrl
+            );
 
             // Check if component is still mounted and not cancelled
             if (isCancelled) return;
 
-            // Autocomplete API result processed
-
-            // Better handling of different response formats with type safety
-            let rawSuggestions: string[] = [];
-            if (Array.isArray(result)) {
-              rawSuggestions = (result as Product[])
-                .map((r: Product) => {
-                  // Handle different possible field names with nullish coalescing
-                  return r.title || (r.name ?? 'Unknown Product');
-                })
-                .filter(Boolean);
-            } else if (isAutocompleteResponse(result)) {
-              const { suggestions } = result;
-              if (suggestions.length > 0) {
-                rawSuggestions = suggestions.map((s: string) => String(s));
-              }
-            }
+            // Backend returns AutocompleteResponse which is AutocompleteSuggestion[]
+            // Extract titles from the suggestion objects
+            const rawSuggestions: string[] = result.map((item) => item.title).filter(Boolean);
 
             // Apply fuzzy matching and scoring to improve suggestions
             const query = debouncedSearchQuery.trim();
@@ -1217,107 +1187,39 @@ const KalifindSearch: React.FC<{
     toggleFilterItem('saleStatus', status);
   };
 
-  // Load more products function
+  // Load more products function (uses centralized searchService to keep normalization and pagination consistent)
   const loadMoreProducts = useCallback(async () => {
     if (isLoadingMore || !hasMoreProducts) return;
 
     setIsLoadingMore(true);
     try {
-      const params = new URLSearchParams();
-      if (debouncedSearchQuery) {
-        params.append('q', debouncedSearchQuery);
-      }
-      if (storeUrl) {
-        params.append('storeUrl', storeUrl);
-      }
+      // Build structured params for the search service (it normalizes storeUrl internally)
+      const searchParams: SearchParams = {
+        q: debouncedSearchQuery || '',
+        storeUrl,
+        page: currentPage + 1,
+        limit: isMobile ? 8 : 9,
+        ...(debouncedFilters.categories.length > 0 && { categories: debouncedFilters.categories }),
+        ...(debouncedFilters.colors.length > 0 && { colors: debouncedFilters.colors }),
+        ...(debouncedFilters.sizes.length > 0 && { sizes: debouncedFilters.sizes }),
+        ...(debouncedFilters.brands.length > 0 && { brands: debouncedFilters.brands }),
+        ...(debouncedFilters.tags.length > 0 && { tags: debouncedFilters.tags }),
+        ...(debouncedFilters.stockStatus.length > 0 && {
+          stockStatus: debouncedFilters.stockStatus,
+        }),
+        ...(debouncedPriceRange && { priceRange: debouncedPriceRange }),
+      };
 
-      // Add all current filters
-      if (debouncedFilters.categories.length > 0) {
-        params.append('categories', debouncedFilters.categories.join(','));
-      }
-      if (debouncedFilters.colors.length > 0) {
-        params.append('colors', debouncedFilters.colors.join(','));
-      }
-      if (debouncedFilters.sizes.length > 0) {
-        params.append('sizes', debouncedFilters.sizes.join(','));
-      }
-      if (debouncedFilters.brands.length > 0) {
-        params.append('brands', debouncedFilters.brands.join(','));
-      }
-      if (debouncedFilters.tags.length > 0) {
-        params.append('tags', debouncedFilters.tags.join(','));
-      }
-      if (debouncedFilters.stockStatus.length > 0) {
-        // Map frontend stock status values to backend boolean values
-        const stockStatusValues = debouncedFilters.stockStatus.map((status) => {
-          if (status === 'In Stock') return 'true';
-          if (status === 'Out of Stock') return 'false';
-          if (status === 'On Backorder') return 'false';
-          return 'true'; // default to true for other values
-        });
-        params.append('instock', stockStatusValues.join(','));
-      }
-      // Handle featured products filter
-      if (debouncedFilters.featuredProducts.length > 0) {
-        if (
-          debouncedFilters.featuredProducts.includes('Featured') &&
-          !debouncedFilters.featuredProducts.includes('Not Featured')
-        ) {
-          params.append('featured', 'true');
-        } else if (
-          debouncedFilters.featuredProducts.includes('Not Featured') &&
-          !debouncedFilters.featuredProducts.includes('Featured')
-        ) {
-          params.append('featured', 'false');
-        }
-        // If both are selected, don't add any featured filter (show all)
-      }
+      const result = await searchService.searchProducts(searchParams);
 
-      // Handle sale status filter
-      if (debouncedFilters.saleStatus.length > 0) {
-        if (
-          debouncedFilters.saleStatus.includes('On Sale') &&
-          !debouncedFilters.saleStatus.includes('Not On Sale')
-        ) {
-          params.append('insale', 'true');
-        } else if (
-          debouncedFilters.saleStatus.includes('Not On Sale') &&
-          !debouncedFilters.saleStatus.includes('On Sale')
-        ) {
-          params.append('insale', 'false');
-        }
-        // If both are selected, don't add any sale filter (show all)
-      }
-      params.append('minPrice', debouncedPriceRange[0].toString());
-      params.append('maxPrice', debouncedPriceRange[1].toString());
-
-      params.append('page', (currentPage + 1).toString());
-      params.append('limit', isMobile ? '8' : '9');
-
-      if (!import.meta.env.VITE_BACKEND_URL) {
-        console.error('VITE_BACKEND_URL environment variable is required');
-        return;
-      }
-      const backendUrl = import.meta.env.VITE_BACKEND_URL;
-      const response = await fetch(`${backendUrl}/api/v1/search/search?${params.toString()}`, {});
-
-      if (!response.ok) {
-        throw new Error('Failed to load more products');
-      }
-
-      const result = (await response.json()) as unknown;
-      let products: Product[];
+      let products: Product[] = [];
       let hasMore = false;
 
       if (isSearchResponse(result)) {
-        const { products: responseProducts, hasMore: responseHasMore } = result;
-        products = responseProducts;
-        hasMore = responseHasMore ?? false;
+        products = result.products || [];
+        hasMore = result.hasMore || false;
       } else if (Array.isArray(result)) {
         products = result as Product[];
-        hasMore = false;
-      } else {
-        products = [];
         hasMore = false;
       }
 
