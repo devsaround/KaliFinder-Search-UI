@@ -86,7 +86,7 @@ export const DEFAULT_WIDGET_CONFIG: WidgetConfig = {
 
   behavior: {
     debounceDelay: 300, // milliseconds
-    minCharsForSearch: 2,
+    minCharsForSearch: 1, // Allow single character searches
     maxResults: 50,
     autocompleteSuggestions: 8,
     enableVirtualScrolling: true,

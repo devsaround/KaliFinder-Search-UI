@@ -22,7 +22,7 @@ const DEFAULT_CONFIG = {
     maxSize: 100,
   },
   behavior: {
-    minCharsForSearch: 2,
+    minCharsForSearch: 1, // Allow single character searches
     maxResults: 50,
     debounceDelay: 300,
   },

@@ -137,10 +137,10 @@ const KalifindSearch: React.FC<{
 
   // State for optional filters - show all during loading, then update based on vendor config
   const [showOptionalFilters, setShowOptionalFilters] = useState({
-    brands: true, // Show by default, will be updated based on vendor config
-    colors: true,
-    sizes: true,
-    tags: true,
+    brands: false, // Hide by default for optional filters, shown only if configured
+    colors: false,
+    sizes: false,
+    tags: false,
   });
 
   // State for mandatory filters - show all during loading, then update based on vendor config
