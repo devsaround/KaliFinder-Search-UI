@@ -822,12 +822,9 @@ const KalifindSearch: React.FC<{
               stockStatus:
                 debouncedFilters.stockStatus.length > 0 ? debouncedFilters.stockStatus : undefined,
               priceRange: debouncedPriceRange,
+              insale: inSale, // ✅ Pass sale status filter to API
+              featured: featured, // ✅ Pass featured filter to API
             };
-
-            // Add featured and sale parameters to URL params for compatibility
-            const params = new URLSearchParams();
-            if (featured) params.append('featured', featured);
-            if (inSale) params.append('insale', inSale);
 
             const result = await searchService.searchProducts(searchParams);
 
@@ -846,6 +843,14 @@ const KalifindSearch: React.FC<{
               products = result.products;
               total = result.total || 0;
               hasMore = result.hasMore || false;
+
+              // Debug: Log the total to verify API response
+              console.log(
+                'KaliFinder Search: API returned total =',
+                total,
+                'products.length =',
+                products.length
+              );
 
               // NOTE: Facet processing removed - facets are now fetched once on mount
               // via fetchGlobalFacets() and remain static regardless of search query
@@ -892,6 +897,14 @@ const KalifindSearch: React.FC<{
             setTotalProducts(total);
             setDisplayedProducts(products.length);
             setHasMoreProducts(hasMore);
+
+            // Debug: Log the state updates
+            console.log(
+              'KaliFinder Search: Setting totalProducts =',
+              total,
+              'displayedProducts =',
+              products.length
+            );
           } catch (error) {
             if (error instanceof Error && error.name === 'AbortError') {
               return;

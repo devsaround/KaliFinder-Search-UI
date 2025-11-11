@@ -12,7 +12,7 @@ import { ResponseCache, buildCacheKey } from './response-cache';
 const DEFAULT_CONFIG = {
   baseUrl: import.meta.env.VITE_BACKEND_URL || 'https://api.kalifinder.com',
   cache: {
-    enabled: true,
+    enabled: false, // Temporarily disabled for debugging
     ttl: {
       search: 300000, // 5 minutes
       autocomplete: 180000, // 3 minutes
@@ -47,6 +47,8 @@ export interface SearchParams {
   stockStatus?: string[];
   priceRange?: [number, number];
   sort?: string;
+  insale?: string; // 'true' | 'false' for on sale filter
+  featured?: string; // 'true' | 'false' for featured filter
 }
 
 class SearchService {
@@ -123,6 +125,15 @@ class SearchService {
       urlParams.append('maxPrice', params.priceRange[1].toString());
     }
 
+    // Add sale and featured filters
+    if (params.insale !== undefined) {
+      urlParams.append('insale', params.insale);
+    }
+
+    if (params.featured !== undefined) {
+      urlParams.append('featured', params.featured);
+    }
+
     const url = `${this.config.baseUrl}/api/v1/search/search?${urlParams.toString()}`;
 
     // Generate cache key based on all search parameters
@@ -132,6 +143,7 @@ class SearchService {
     if (this.config.cache.enabled) {
       const cached = this.cache.get<SearchResponse>(cacheKey);
       if (cached) {
+        console.log('KaliFinder Search Service: Returning cached result, total =', cached.total);
         return cached;
       }
     }
@@ -139,6 +151,13 @@ class SearchService {
     try {
       // Determine dynamic TTL based on result size
       const response = await this.httpClient.get<SearchResponse>(url);
+
+      console.log(
+        'KaliFinder Search Service: Fresh API call, total =',
+        response.total,
+        'products =',
+        response.products?.length
+      );
 
       // Calculate dynamic TTL based on result size
       // Larger result sets get shorter TTL to manage memory better
