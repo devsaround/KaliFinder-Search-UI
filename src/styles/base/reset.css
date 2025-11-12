@@ -41,35 +41,48 @@
 
 /* Root-level font size reset to 16px base */
 :host {
+  /* CRITICAL: Override WordPress font-size inheritance */
   font-size: 16px !important;
   line-height: 1.5 !important;
+
+  /* Force all children to use 16px as base for rem calculations */
+  -webkit-text-size-adjust: 100% !important;
+  text-size-adjust: 100% !important;
+}
+
+/* Force 16px base for ALL elements inside shadow root */
+:host *,
+.kalifinder-widget-root,
+.kalifinder-widget-root * {
+  /* Reset font-size inheritance from external page */
+  font-size: 1rem; /* Now 1rem = 16px, not 18px */
 }
 
 /* Shadow DOM Font */
 #my-ui :where(*) {
-  font-family: var(--kf-font-family);
+  font-family: var(--font-family);
 }
 
 /* Base Layer */
 @layer base {
   * {
-    border-color: var(--kf-border);
+    border-color: var(--border);
   }
 
   body {
-    background: var(--kf-background);
-    color: var(--kf-foreground);
-    font-family: var(--kf-font-family);
+    background: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-family);
   }
 
   /* Shadow DOM specific */
   #my-ui * {
-    border-color: var(--kf-border);
+    border-color: var(--border);
   }
 
   #my-ui body {
-    background: var(--kf-background);
-    color: var(--kf-foreground);
+    background: var(--background);
+    color: var(--foreground);
   }
 }
 
@@ -79,11 +92,11 @@
 }
 
 .my-border {
-  border: 1px solid var(--kf-border);
+  border: 1px solid var(--border);
 }
 
 .w-70 {
-  width: var(--kf-sidebar-width);
+  width: var(--sidebar-width);
 }
 
 /* Results column */

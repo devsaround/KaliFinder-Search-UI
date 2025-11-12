@@ -174,11 +174,11 @@
 }
 
 .kf-animate-slide-up {
-  animation: kf-slide-up 300ms var(--kf-easing-out);
+  animation: kf-slide-up 300ms var(--easing-out);
 }
 
 .kf-animate-slide-down {
-  animation: kf-slide-down 400ms var(--kf-easing-out);
+  animation: kf-slide-down 400ms var(--easing-out);
 }
 
 .kf-animate-shimmer {
@@ -198,11 +198,11 @@
 }
 
 .kf-animate-zoom-in {
-  animation: kf-zoom-in 200ms var(--kf-easing-out);
+  animation: kf-zoom-in 200ms var(--easing-out);
 }
 
 .kf-animate-zoom-out {
-  animation: kf-zoom-out 200ms var(--kf-easing-in);
+  animation: kf-zoom-out 200ms var(--easing-in);
 }
 
 /* ========================================
@@ -210,28 +210,28 @@
    ======================================== */
 
 .kf-transition-fast {
-  transition: all var(--kf-transition-fast);
+  transition: all var(--transition-fast);
 }
 
 .kf-transition-base {
-  transition: all var(--kf-transition-base);
+  transition: all var(--transition-base);
 }
 
 .kf-transition-slow {
-  transition: all var(--kf-transition-slow);
+  transition: all var(--transition-slow);
 }
 
 .kf-transition-colors {
   transition:
-    color var(--kf-transition-base),
-    background-color var(--kf-transition-base),
-    border-color var(--kf-transition-base);
+    color var(--transition-base),
+    background-color var(--transition-base),
+    border-color var(--transition-base);
 }
 
 .kf-transition-transform {
-  transition: transform var(--kf-transition-base);
+  transition: transform var(--transition-base);
 }
 
 .kf-transition-opacity {
-  transition: opacity var(--kf-transition-base);
+  transition: opacity var(--transition-base);
 }

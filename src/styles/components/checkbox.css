@@ -10,11 +10,11 @@ input[type='checkbox'] {
   -webkit-appearance: none;
   -moz-appearance: none;
   appearance: none;
-  width: var(--kf-checkbox-size);
-  height: var(--kf-checkbox-size);
-  border: 2px solid var(--kf-border);
-  border-radius: var(--kf-radius-sm);
-  background: var(--kf-background);
+  width: var(--checkbox-size);
+  height: var(--checkbox-size);
+  border: 2px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--background);
   cursor: pointer;
   position: relative;
   vertical-align: middle;
@@ -29,7 +29,7 @@ input[type='checkbox'] {
 .kalifinder-widget-content input[type='checkbox']:hover:not(:disabled),
 :host input[type='checkbox']:hover:not(:disabled),
 input[type='checkbox']:hover:not(:disabled) {
-  border-color: var(--kf-primary);
+  border-color: var(--primary);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   transform: translateY(-1px);
 }
@@ -38,8 +38,8 @@ input[type='checkbox']:hover:not(:disabled) {
 .kalifinder-widget-content input[type='checkbox']:checked,
 :host input[type='checkbox']:checked,
 input[type='checkbox']:checked {
-  background: var(--kf-primary);
-  border-color: var(--kf-primary);
+  background: var(--primary);
+  border-color: var(--primary);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
 }
 
@@ -56,7 +56,7 @@ input[type='checkbox']:checked::after {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--kf-primary-foreground);
+  color: var(--primary-foreground);
   font-size: 14px;
   font-weight: bold;
   line-height: 1;
@@ -75,7 +75,7 @@ input[type='checkbox']:disabled {
 .kalifinder-widget-content input[type='checkbox']:focus-visible,
 :host input[type='checkbox']:focus-visible,
 input[type='checkbox']:focus-visible {
-  outline: 2px solid var(--kf-ring);
+  outline: 2px solid var(--ring);
   outline-offset: 2px;
   box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1);
 }
@@ -90,7 +90,7 @@ label {
   justify-content: space-between;
   width: 100%;
   box-sizing: border-box;
-  transition: color var(--kf-transition-fast);
+  transition: color var(--transition-fast);
   -webkit-user-select: none;
   user-select: none;
 }
@@ -98,7 +98,7 @@ label {
 .kalifinder-widget-content label:hover,
 :host label:hover,
 label:hover {
-  color: var(--kf-foreground);
+  color: var(--foreground);
 }
 
 /* Active/pressed state */

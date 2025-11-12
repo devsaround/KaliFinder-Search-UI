@@ -17,14 +17,14 @@
    ======================================== */
 
 .kalifinder-filter-sidebar {
-  width: var(--kf-sidebar-width);
-  min-width: var(--kf-sidebar-width);
-  max-width: var(--kf-sidebar-width);
+  width: var(--sidebar-width);
+  min-width: var(--sidebar-width);
+  max-width: var(--sidebar-width);
   flex-shrink: 0;
   box-sizing: border-box;
   overflow-y: auto;
   overflow-x: hidden;
-  padding-right: var(--kf-space-2);
+  padding-right: var(--space-2);
   max-height: calc(100vh - 200px);
 }
 
@@ -34,17 +34,17 @@
 }
 
 .kalifinder-filter-sidebar::-webkit-scrollbar-track {
-  background: var(--kf-muted);
+  background: var(--muted);
   border-radius: 3px;
 }
 
 .kalifinder-filter-sidebar::-webkit-scrollbar-thumb {
-  background: var(--kf-muted-foreground);
+  background: var(--muted-foreground);
   border-radius: 3px;
 }
 
 .kalifinder-filter-sidebar::-webkit-scrollbar-thumb:hover {
-  background: var(--kf-primary);
+  background: var(--primary);
 }
 
 /* Mobile: Hide sidebar */
@@ -99,12 +99,12 @@
 }
 
 .filter-item:hover {
-  background-color: var(--kf-muted);
+  background-color: var(--muted);
 }
 
 .filter-item.active {
-  background-color: var(--kf-accent);
-  border-left: 3px solid var(--kf-primary);
+  background-color: var(--accent);
+  border-left: 3px solid var(--primary);
 }
 
 /* Mobile filter drawer improvements */
@@ -151,7 +151,7 @@
 }
 
 .kalifinder-widget-content [data-radix-accordion-item] {
-  border-bottom: var(--kf-border-width) solid var(--kf-border);
+  border-bottom: var(--border-width) solid var(--border);
   margin-bottom: 0;
   width: 100%;
   display: block;
@@ -175,29 +175,29 @@
   flex: 1 1 0%;
   align-items: center;
   justify-content: space-between;
-  padding: var(--kf-space-4) 0;
-  font-weight: var(--kf-font-weight-bold);
-  font-size: var(--kf-font-size-base);
+  padding: var(--space-4) 0;
+  font-weight: var(--font-weight-bold);
+  font-size: var(--font-size-base);
   cursor: pointer;
-  transition: all var(--kf-transition-base);
+  transition: all var(--transition-base);
   width: 100%;
   background: transparent;
   border: none;
   text-align: left;
-  color: var(--kf-foreground);
+  color: var(--foreground);
 }
 
 .kalifinder-widget-content [data-radix-accordion-trigger]:hover {
   text-decoration: underline;
-  color: var(--kf-primary);
+  color: var(--primary);
 }
 
 /* Accordion Icon */
 .kalifinder-widget-content [data-radix-accordion-trigger] svg {
   flex-shrink: 0;
-  width: var(--kf-icon-size-sm);
-  height: var(--kf-icon-size-sm);
-  transition: transform var(--kf-transition-base);
+  width: var(--icon-size-sm);
+  height: var(--icon-size-sm);
+  transition: transform var(--transition-base);
 }
 
 .kalifinder-widget-content [data-radix-accordion-trigger][data-state='open'] svg {
@@ -210,8 +210,8 @@
 
 .kalifinder-widget-content [data-radix-accordion-content] {
   overflow: hidden;
-  font-size: var(--kf-font-size-sm);
-  line-height: var(--kf-line-height-normal);
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-normal);
   display: block;
   width: 100%;
 }
@@ -226,7 +226,7 @@
 
 .kalifinder-widget-content [data-radix-accordion-content] > div {
   padding-top: 0;
-  padding-bottom: var(--kf-space-4);
+  padding-bottom: var(--space-4);
   width: 100%;
   box-sizing: border-box;
 }
@@ -237,7 +237,7 @@
 
 /* Filter Option List */
 .kalifinder-widget-content .space-y-2 > * + * {
-  margin-top: var(--kf-space-2);
+  margin-top: var(--space-2);
 }
 
 .kalifinder-widget-content .space-y-\[8px\] > * + * {
@@ -260,8 +260,8 @@
 
 /* Filter Count Badge */
 .kalifinder-widget-content .text-muted-foreground {
-  color: var(--kf-muted-foreground);
-  font-size: var(--kf-font-size-xs);
+  color: var(--muted-foreground);
+  font-size: var(--font-size-xs);
 }
 
 /* ========================================
@@ -270,19 +270,19 @@
 
 .kalifinder-widget-content aside button[class*='border-search-highlight'] {
   width: 100%;
-  margin-top: var(--kf-space-4);
-  padding: var(--kf-space-4);
-  border-radius: var(--kf-radius-lg);
-  font-weight: var(--kf-font-weight-bold);
-  background: var(--kf-primary);
-  color: var(--kf-primary-foreground);
-  border: var(--kf-border-width-thick) solid var(--kf-primary);
+  margin-top: var(--space-4);
+  padding: var(--space-4);
+  border-radius: var(--radius-lg);
+  font-weight: var(--font-weight-bold);
+  background: var(--primary);
+  color: var(--primary-foreground);
+  border: var(--border-width-thick) solid var(--primary);
   cursor: pointer;
-  transition: all var(--kf-transition-base);
+  transition: all var(--transition-base);
 }
 
 .kalifinder-widget-content aside button[class*='border-search-highlight']:hover {
-  background: var(--kf-primary-hover);
+  background: var(--primary-hover);
 }
 
 /* ========================================
@@ -293,23 +293,23 @@
 .kalifinder-widget-content .grid-cols-4 {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: var(--kf-space-2);
+  gap: var(--space-2);
 }
 
 /* Size/Style Buttons */
 .kalifinder-widget-content button.my-border {
-  border: var(--kf-border-width) solid var(--kf-border);
-  background: var(--kf-background);
-  color: var(--kf-foreground);
-  transition: all var(--kf-transition-base);
-  padding: var(--kf-space-2);
-  border-radius: var(--kf-radius-sm);
-  font-size: var(--kf-font-size-sm);
+  border: var(--border-width) solid var(--border);
+  background: var(--background);
+  color: var(--foreground);
+  transition: all var(--transition-base);
+  padding: var(--space-2);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-sm);
 }
 
 .kalifinder-widget-content button.my-border:hover:not(:disabled) {
-  background: var(--kf-muted);
-  border-color: var(--kf-primary);
+  background: var(--muted);
+  border-color: var(--primary);
 }
 
 .kalifinder-widget-content button:disabled {
@@ -319,22 +319,22 @@
 
 /* Color Filter Buttons */
 .kalifinder-widget-content button[data-color] {
-  border-radius: var(--kf-radius-full);
+  border-radius: var(--radius-full);
   padding: 0;
   width: 2rem;
   height: 2rem;
-  border: var(--kf-border-width-thick) solid transparent;
-  transition: all var(--kf-transition-base);
+  border: var(--border-width-thick) solid transparent;
+  transition: all var(--transition-base);
 }
 
 .kalifinder-widget-content button[data-color]:hover:not(:disabled) {
   transform: scale(1.1);
-  box-shadow: var(--kf-shadow-md);
+  box-shadow: var(--shadow-md);
 }
 
 .kalifinder-widget-content button[data-color][aria-pressed='true'] {
-  border-color: var(--kf-primary);
-  box-shadow: 0 0 0 2px var(--kf-accent);
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px var(--accent);
 }
 
 /* Color Mappings */
@@ -364,7 +364,7 @@
 }
 .kalifinder-widget-content button[data-color='white'] {
   background-color: #ffffff;
-  border-color: var(--kf-border);
+  border-color: var(--border);
 }
 .kalifinder-widget-content button[data-color='gray'],
 .kalifinder-widget-content button[data-color='grey'] {
@@ -419,13 +419,13 @@
 }
 
 .kalifinder-widget-content .gap-2 {
-  gap: var(--kf-space-2);
+  gap: var(--space-2);
 }
 
 .kalifinder-widget-content .gap-3 {
-  gap: var(--kf-space-3);
+  gap: var(--space-3);
 }
 
 .kalifinder-widget-content .gap-4 {
-  gap: var(--kf-space-4);
+  gap: var(--space-4);
 }

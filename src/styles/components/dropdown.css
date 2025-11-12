@@ -10,13 +10,13 @@
 :host [data-radix-portal],
 #kalifinder-portal-container [data-radix-portal],
 .kalifinder-widget-content [data-radix-portal] {
-  z-index: var(--kf-z-max) !important;
+  z-index: var(--z-max) !important;
 }
 
 :host [data-radix-popper-content-wrapper],
 #kalifinder-portal-container [data-radix-popper-content-wrapper],
 .kalifinder-widget-content [data-radix-popper-content-wrapper] {
-  z-index: var(--kf-z-max);
+  z-index: var(--z-max);
   width: fit-content;
   max-width: min-content;
   display: inline-block;
@@ -32,22 +32,22 @@
 #kalifinder-portal-container [data-radix-select-content],
 .kalifinder-widget-content [data-radix-dropdown-menu-content],
 .kalifinder-widget-content [data-radix-select-content] {
-  background: var(--kf-popover);
-  color: var(--kf-popover-foreground);
-  border: var(--kf-border-width) solid var(--kf-border);
-  border-radius: var(--kf-radius-md);
+  background: var(--popover);
+  color: var(--popover-foreground);
+  border: var(--border-width) solid var(--border);
+  border-radius: var(--radius-md);
   min-width: 10rem;
   max-width: 15rem;
   width: fit-content;
-  padding: var(--kf-space-1);
-  z-index: var(--kf-z-max);
+  padding: var(--space-1);
+  z-index: var(--z-max);
   box-shadow:
     0 4px 6px -1px rgba(0, 0, 0, 0.1),
     0 2px 4px -1px rgba(0, 0, 0, 0.06),
     0 10px 15px -3px rgba(0, 0, 0, 0.1);
-  font-family: var(--kf-font-family);
-  font-size: var(--kf-font-size-sm);
-  line-height: var(--kf-line-height-normal);
+  font-family: var(--font-family);
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-normal);
   display: block;
   overflow: hidden;
   animation: slideDownAndFade 0.2s ease-out;
@@ -80,14 +80,14 @@
   cursor: pointer;
   -webkit-user-select: none;
   user-select: none;
-  padding: var(--kf-space-2) var(--kf-space-2);
-  border-radius: var(--kf-radius-sm);
-  color: var(--kf-foreground);
-  font-size: var(--kf-font-size-sm);
-  line-height: var(--kf-line-height-normal);
+  padding: var(--space-2) var(--space-2);
+  border-radius: var(--radius-sm);
+  color: var(--foreground);
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-normal);
   transition:
-    background-color var(--kf-transition-fast),
-    color var(--kf-transition-fast);
+    background-color var(--transition-fast),
+    color var(--transition-fast);
   outline: none;
 }
 
@@ -110,8 +110,8 @@
 .kalifinder-widget-content [data-radix-select-item]:hover,
 .kalifinder-widget-content [data-radix-select-item]:focus,
 .kalifinder-widget-content [data-radix-select-item][data-highlighted] {
-  background: var(--kf-accent);
-  color: var(--kf-accent-foreground);
+  background: var(--accent);
+  color: var(--accent-foreground);
 }
 
 /* Disabled State */
@@ -132,10 +132,10 @@
 :host [data-radix-dropdown-menu-label],
 #kalifinder-portal-container [data-radix-dropdown-menu-label],
 .kalifinder-widget-content [data-radix-dropdown-menu-label] {
-  color: var(--kf-foreground);
-  padding: var(--kf-space-2) var(--kf-space-2);
-  font-size: var(--kf-font-size-sm);
-  font-weight: var(--kf-font-weight-semibold);
+  color: var(--foreground);
+  padding: var(--space-2) var(--space-2);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
   -webkit-user-select: none;
   user-select: none;
   display: block;
@@ -144,9 +144,9 @@
 :host [data-radix-dropdown-menu-separator],
 #kalifinder-portal-container [data-radix-dropdown-menu-separator],
 .kalifinder-widget-content [data-radix-dropdown-menu-separator] {
-  background: var(--kf-border);
+  background: var(--border);
   height: 1px;
-  margin: var(--kf-space-1) calc(-1 * var(--kf-space-1));
+  margin: var(--space-1) calc(-1 * var(--space-1));
   display: block;
 }
 
@@ -160,7 +160,7 @@
 #kalifinder-portal-container [data-radix-dropdown-menu-radio-item],
 .kalifinder-widget-content [data-radix-dropdown-menu-checkbox-item],
 .kalifinder-widget-content [data-radix-dropdown-menu-radio-item] {
-  padding-left: var(--kf-space-8);
+  padding-left: var(--space-8);
   position: relative;
 }
 
@@ -169,7 +169,7 @@
 #kalifinder-portal-container [data-radix-dropdown-menu-item-indicator],
 .kalifinder-widget-content [data-radix-dropdown-menu-item-indicator] {
   position: absolute;
-  left: var(--kf-space-2);
+  left: var(--space-2);
   display: inline-flex;
   align-items: center;
   justify-content: center;

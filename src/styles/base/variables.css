@@ -10,161 +10,163 @@
      ======================================== */
 
   /* Primary Brand Colors */
-  --kf-primary-h: 264;
-  --kf-primary-s: 83%;
-  --kf-primary-l: 58%;
-  --kf-primary: hsl(var(--kf-primary-h), var(--kf-primary-s), var(--kf-primary-l));
-  --kf-primary-hover: hsl(var(--kf-primary-h), var(--kf-primary-s), 52%);
-  --kf-primary-foreground: hsl(0, 0%, 100%);
+  --primary-h: 264;
+  --primary-s: 83%;
+  --primary-l: 58%;
+  --primary: hsl(var(--primary-h), var(--primary-s), var(--primary-l));
+  --primary-hover: hsl(var(--primary-h), var(--primary-s), 52%);
+  --primary-foreground: hsl(0, 0%, 100%);
 
   /* Neutral Colors */
-  --kf-background: hsl(0, 0%, 100%);
-  --kf-foreground: hsl(222.2, 84%, 4.9%);
-  --kf-border: hsl(220, 13%, 91%);
-  --kf-input: hsl(220, 13%, 91%);
-  --kf-ring: hsl(264, 83%, 58%);
+  --background: hsl(0, 0%, 100%);
+  --foreground: hsl(222.2, 84%, 4.9%);
+  --border: hsl(220, 13%, 91%);
+  --input: hsl(220, 13%, 91%);
+  --ring: hsl(264, 83%, 58%);
 
   /* Semantic Colors */
-  --kf-muted: hsl(250, 7%, 97%);
-  --kf-muted-foreground: hsl(215.4, 16.3%, 46.9%);
-  --kf-accent: hsl(264, 83%, 95%);
-  --kf-accent-foreground: hsl(264, 83%, 25%);
-  --kf-card: hsl(0, 0%, 100%);
-  --kf-card-foreground: hsl(222.2, 84%, 4.9%);
-  --kf-popover: hsl(0, 0%, 100%);
-  --kf-popover-foreground: hsl(222.2, 84%, 4.9%);
+  --muted: hsl(250, 7%, 97%);
+  --muted-foreground: hsl(215.4, 16.3%, 46.9%);
+  --accent: hsl(264, 83%, 95%);
+  --accent-foreground: hsl(264, 83%, 25%);
+  --card: hsl(0, 0%, 100%);
+  --card-foreground: hsl(222.2, 84%, 4.9%);
+  --popover: hsl(0, 0%, 100%);
+  --popover-foreground: hsl(222.2, 84%, 4.9%);
 
   /* Secondary Colors */
-  --kf-secondary: hsl(250, 7%, 97%);
-  --kf-secondary-foreground: hsl(222.2, 47.4%, 11.2%);
+  --secondary: hsl(250, 7%, 97%);
+  --secondary-foreground: hsl(222.2, 47.4%, 11.2%);
 
   /* Destructive/Error */
-  --kf-destructive: hsl(0, 84.2%, 60.2%);
-  --kf-destructive-foreground: hsl(210, 40%, 98%);
+  --destructive: hsl(0, 84.2%, 60.2%);
+  --destructive-foreground: hsl(210, 40%, 98%);
 
   /* Search-specific */
-  --kf-search-highlight: hsl(264, 83%, 58%);
-  --kf-search-bar: hsl(0, 0%, 98%);
-  --kf-filter-bg: hsl(0, 0%, 100%);
+  --search-highlight: hsl(264, 83%, 58%);
+  --search-bar: hsl(0, 0%, 98%);
+  --filter-bg: hsl(0, 0%, 100%);
 
   /* Loading States */
-  --kf-loading: hsl(220, 13%, 91%);
-  --kf-loading-shimmer: hsl(0, 0%, 98%);
+  --loading: hsl(220, 13%, 91%);
+  --loading-shimmer: hsl(0, 0%, 98%);
 
   /* ========================================
-     SPACING SYSTEM (8px base)
+     SPACING SYSTEM (8px base) - Using PX for consistent scaling
      ======================================== */
 
-  --kf-space-0: 0;
-  --kf-space-1: 0.25rem; /* 4px */
-  --kf-space-2: 0.5rem; /* 8px */
-  --kf-space-3: 0.75rem; /* 12px */
-  --kf-space-4: 1rem; /* 16px */
-  --kf-space-5: 1.25rem; /* 20px */
-  --kf-space-6: 1.5rem; /* 24px */
-  --kf-space-8: 2rem; /* 32px */
-  --kf-space-10: 2.5rem; /* 40px */
-  --kf-space-12: 3rem; /* 48px */
-  --kf-space-16: 4rem; /* 64px */
+  --space-0: 0;
+  --space-1: 4px; /* 4px */
+  --space-2: 8px; /* 8px */
+  --space-3: 12px; /* 12px */
+  --space-4: 16px; /* 16px */
+  --space-5: 20px; /* 20px */
+  --space-6: 24px; /* 24px */
+  --space-8: 32px; /* 32px */
+  --space-10: 40px; /* 40px */
+  --space-12: 48px; /* 48px */
+  --space-16: 64px; /* 64px */
+  --space-20: 80px; /* 80px */
+  --space-24: 96px; /* 96px */
 
   /* ========================================
      TYPOGRAPHY SYSTEM
      ======================================== */
 
   /* Font Family */
-  --kf-font-family:
+  --font-family:
     'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
     sans-serif;
 
-  /* Font Sizes */
-  --kf-font-size-xs: 0.75rem; /* 12px */
-  --kf-font-size-sm: 0.875rem; /* 14px */
-  --kf-font-size-base: 1rem; /* 16px */
-  --kf-font-size-lg: 1.125rem; /* 18px */
-  --kf-font-size-xl: 1.25rem; /* 20px */
-  --kf-font-size-2xl: 1.5rem; /* 24px */
+  /* Font Sizes - Using PX for consistent scaling across platforms */
+  --font-size-xs: 12px; /* 12px */
+  --font-size-sm: 14px; /* 14px */
+  --font-size-base: 16px; /* 16px */
+  --font-size-lg: 18px; /* 18px */
+  --font-size-xl: 20px; /* 20px */
+  --font-size-2xl: 24px; /* 24px */
 
   /* Line Heights */
-  --kf-line-height-tight: 1.25;
-  --kf-line-height-normal: 1.5;
-  --kf-line-height-relaxed: 1.75;
+  --line-height-tight: 1.25;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.75;
 
   /* Font Weights */
-  --kf-font-weight-normal: 400;
-  --kf-font-weight-medium: 500;
-  --kf-font-weight-semibold: 600;
-  --kf-font-weight-bold: 700;
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
 
   /* ========================================
-     BORDERS & RADIUS
+     BORDERS & RADIUS - Using PX for consistent scaling
      ======================================== */
 
-  --kf-radius-sm: 0.25rem; /* 4px */
-  --kf-radius-md: 0.375rem; /* 6px */
-  --kf-radius-lg: 0.5rem; /* 8px */
-  --kf-radius-xl: 1rem; /* 16px */
-  --kf-radius-full: 9999px;
+  --radius-sm: 4px; /* 4px */
+  --radius-md: 6px; /* 6px */
+  --radius-lg: 8px; /* 8px */
+  --radius-xl: 16px; /* 16px */
+  --radius-full: 9999px;
 
-  --kf-border-width: 1px;
-  --kf-border-width-thick: 2px;
+  --border-width: 1px;
+  --border-width-thick: 2px;
 
   /* ========================================
      SHADOWS
      ======================================== */
 
-  --kf-shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-  --kf-shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-  --kf-shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-  --kf-shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 10px 10px -5px rgb(0 0 0 / 0.04);
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 10px 10px -5px rgb(0 0 0 / 0.04);
 
   /* ========================================
      COMPONENT SIZES
      ======================================== */
 
-  --kf-sidebar-width: 320px;
-  --kf-header-height: 64px;
-  --kf-checkbox-size: 1.25rem; /* 20px */
-  --kf-icon-size-sm: 1rem; /* 16px */
-  --kf-icon-size-md: 1.5rem; /* 24px */
-  --kf-icon-size-lg: 2rem; /* 32px */
+  --sidebar-width: 320px;
+  --header-height: 64px;
+  --checkbox-size: 1.25rem; /* 20px */
+  --icon-size-sm: 1rem; /* 16px */
+  --icon-size-md: 1.5rem; /* 24px */
+  --icon-size-lg: 2rem; /* 32px */
 
   /* ========================================
      Z-INDEX SCALE
      ======================================== */
 
-  --kf-z-base: 0;
-  --kf-z-dropdown: 1000;
-  --kf-z-sticky: 1020;
-  --kf-z-fixed: 1030;
-  --kf-z-modal-backdrop: 1040;
-  --kf-z-modal: 9999;
-  --kf-z-popover: 10000;
-  --kf-z-tooltip: 10010;
-  --kf-z-max: 2147483647; /* For Shadow DOM portals */
+  --z-base: 0;
+  --z-dropdown: 1000;
+  --z-sticky: 1020;
+  --z-fixed: 1030;
+  --z-modal-backdrop: 1040;
+  --z-modal: 9999;
+  --z-popover: 10000;
+  --z-tooltip: 10010;
+  --z-max: 2147483647; /* For Shadow DOM portals */
 
   /* ========================================
      TRANSITIONS & ANIMATIONS
      ======================================== */
 
-  --kf-transition-fast: 150ms ease;
-  --kf-transition-base: 200ms ease;
-  --kf-transition-slow: 300ms ease;
-  --kf-transition-slowest: 500ms ease;
+  --transition-fast: 150ms ease;
+  --transition-base: 200ms ease;
+  --transition-slow: 300ms ease;
+  --transition-slowest: 500ms ease;
 
-  --kf-easing-linear: linear;
-  --kf-easing-in: cubic-bezier(0.4, 0, 1, 1);
-  --kf-easing-out: cubic-bezier(0, 0, 0.2, 1);
-  --kf-easing-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --easing-linear: linear;
+  --easing-in: cubic-bezier(0.4, 0, 1, 1);
+  --easing-out: cubic-bezier(0, 0, 0.2, 1);
+  --easing-in-out: cubic-bezier(0.4, 0, 0.2, 1);
 
   /* ========================================
      BREAKPOINTS (for reference in JS)
      ======================================== */
 
-  --kf-breakpoint-sm: 640px;
-  --kf-breakpoint-md: 768px;
-  --kf-breakpoint-lg: 1024px;
-  --kf-breakpoint-xl: 1280px;
-  --kf-breakpoint-2xl: 1536px;
+  --breakpoint-sm: 640px;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 1024px;
+  --breakpoint-xl: 1280px;
+  --breakpoint-2xl: 1536px;
 }
 
 /* ========================================
@@ -173,23 +175,23 @@
 
 .dark,
 [data-theme='dark'] {
-  --kf-background: hsl(222.2, 84%, 4.9%);
-  --kf-foreground: hsl(210, 40%, 98%);
-  --kf-card: hsl(222.2, 84%, 4.9%);
-  --kf-card-foreground: hsl(210, 40%, 98%);
-  --kf-popover: hsl(222.2, 84%, 4.9%);
-  --kf-popover-foreground: hsl(210, 40%, 98%);
-  --kf-primary: hsl(210, 40%, 98%);
-  --kf-primary-foreground: hsl(222.2, 47.4%, 11.2%);
-  --kf-secondary: hsl(217.2, 32.6%, 17.5%);
-  --kf-secondary-foreground: hsl(210, 40%, 98%);
-  --kf-muted: hsl(217.2, 32.6%, 17.5%);
-  --kf-muted-foreground: hsl(215, 20.2%, 65.1%);
-  --kf-accent: hsl(217.2, 32.6%, 17.5%);
-  --kf-accent-foreground: hsl(210, 40%, 98%);
-  --kf-destructive: hsl(0, 62.8%, 30.6%);
-  --kf-destructive-foreground: hsl(210, 40%, 98%);
-  --kf-border: hsl(217.2, 32.6%, 17.5%);
-  --kf-input: hsl(217.2, 32.6%, 17.5%);
-  --kf-ring: hsl(212.7, 26.8%, 83.9%);
+  --background: hsl(222.2, 84%, 4.9%);
+  --foreground: hsl(210, 40%, 98%);
+  --card: hsl(222.2, 84%, 4.9%);
+  --card-foreground: hsl(210, 40%, 98%);
+  --popover: hsl(222.2, 84%, 4.9%);
+  --popover-foreground: hsl(210, 40%, 98%);
+  --primary: hsl(210, 40%, 98%);
+  --primary-foreground: hsl(222.2, 47.4%, 11.2%);
+  --secondary: hsl(217.2, 32.6%, 17.5%);
+  --secondary-foreground: hsl(210, 40%, 98%);
+  --muted: hsl(217.2, 32.6%, 17.5%);
+  --muted-foreground: hsl(215, 20.2%, 65.1%);
+  --accent: hsl(217.2, 32.6%, 17.5%);
+  --accent-foreground: hsl(210, 40%, 98%);
+  --destructive: hsl(0, 62.8%, 30.6%);
+  --destructive-foreground: hsl(210, 40%, 98%);
+  --border: hsl(217.2, 32.6%, 17.5%);
+  --input: hsl(217.2, 32.6%, 17.5%);
+  --ring: hsl(212.7, 26.8%, 83.9%);
 }

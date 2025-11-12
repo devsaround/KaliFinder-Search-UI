@@ -57,88 +57,46 @@
 
 @theme {
   /* Radius tokens */
-  --radius: var(--kf-radius-lg);
-  --radius-lg: var(--kf-radius-lg);
-  --radius-md: var(--kf-radius-md);
-  --radius-sm: var(--kf-radius-sm);
+  --radius: var(--radius-lg);
+  --radius-lg: var(--radius-lg);
+  --radius-md: var(--radius-md);
+  --radius-sm: var(--radius-sm);
 
   /* Semantic colors for Tailwind utilities */
-  --color-border: var(--kf-border);
-  --color-input: var(--kf-input);
-  --color-ring: var(--kf-ring);
-  --color-background: var(--kf-background);
-  --color-foreground: var(--kf-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
 
-  --color-primary: var(--kf-primary);
-  --color-primary-foreground: var(--kf-primary-foreground);
-  --color-primary-hover: var(--kf-primary-hover);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary-hover: var(--primary-hover);
 
-  --color-secondary: var(--kf-secondary);
-  --color-secondary-foreground: var(--kf-secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
 
-  --color-destructive: var(--kf-destructive);
-  --color-destructive-foreground: var(--kf-destructive-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
 
-  --color-muted: var(--kf-muted);
-  --color-muted-foreground: var(--kf-muted-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
 
-  --color-accent: var(--kf-accent);
-  --color-accent-foreground: var(--kf-accent-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
 
-  --color-popover: var(--kf-popover);
-  --color-popover-foreground: var(--kf-popover-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
 
-  --color-card: var(--kf-card);
-  --color-card-foreground: var(--kf-card-foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
 
   /* Search-specific colors */
-  --color-search-highlight: var(--kf-search-highlight);
-  --color-search-bar: var(--kf-search-bar);
-  --color-filter-bg: var(--kf-filter-bg);
-  --color-loading: var(--kf-loading);
-  --color-loading-shimmer: var(--kf-loading-shimmer);
-}
-
-/* ========================================
-   LEGACY COMPATIBILITY
-   For backward compatibility with old class names
-   These can be removed once all components are updated
-   ======================================== */
-
-/* Design token fallbacks for Tailwind utilities */
-:root,
-:host {
-  --background: 0 0% 100%;
-  --foreground: 222.2 84% 4.9%;
-  --card: 0 0% 100%;
-  --card-foreground: 222.2 84% 4.9%;
-  --popover: 0 0% 100%;
-  --popover-foreground: 222.2 84% 4.9%;
-  --primary: 264 83% 58%;
-  --primary-foreground: 0 0% 100%;
-  --primary-hover: 264 83% 52%;
-  --secondary: 250 7% 97%;
-  --secondary-foreground: 222.2 47.4% 11.2%;
-  --muted: 250 7% 97%;
-  --muted-foreground: 215.4 16.3% 46.9%;
-  --accent: 264 83% 95%;
-  --accent-foreground: 264 83% 25%;
-  --destructive: 0 84.2% 60.2%;
-  --destructive-foreground: 210 40% 98%;
-  --border: 220 13% 91%;
-  --input: 220 13% 91%;
-  --ring: 264 83% 58%;
-  --radius: 0.5rem;
-
-  /* Sidebar */
-  --sidebar-background: 0 0% 98%;
-  --sidebar-foreground: 240 5.3% 26.1%;
-  --sidebar-primary: 240 5.9% 10%;
-  --sidebar-primary-foreground: 0 0% 98%;
-  --sidebar-accent: 240 4.8% 95.9%;
-  --sidebar-accent-foreground: 240 5.9% 10%;
-  --sidebar-border: 220 13% 91%;
-  --sidebar-ring: 217.2 91.2% 59.8%;
+  --color-search-highlight: var(--search-highlight);
+  --color-search-bar: var(--search-bar);
+  --color-filter-bg: var(--filter-bg);
+  --color-loading: var(--loading);
+  --color-loading-shimmer: var(--loading-shimmer);
 }
 
 /* ========================================

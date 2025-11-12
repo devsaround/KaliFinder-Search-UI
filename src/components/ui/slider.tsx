@@ -12,11 +12,11 @@ const Slider = React.forwardRef<
     className={cn('relative flex w-full touch-none items-center py-2 select-none', className)}
     {...props}
   >
-    <SliderPrimitive.Track className="relative h-2.5 w-full grow overflow-hidden rounded-full bg-gray-200">
-      <SliderPrimitive.Range className="absolute h-full" />
+    <SliderPrimitive.Track data-radix-slider-track>
+      <SliderPrimitive.Range data-radix-slider-range />
     </SliderPrimitive.Track>
     {props.value?.map((_, index) => (
-      <SliderPrimitive.Thumb key={index} />
+      <SliderPrimitive.Thumb key={index} data-radix-slider-thumb />
     ))}
   </SliderPrimitive.Root>
 ));
