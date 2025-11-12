@@ -9,7 +9,7 @@ const Slider = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <SliderPrimitive.Root
     ref={ref}
-    className={cn('relative flex w-full touch-none items-center select-none py-2', className)}
+    className={cn('relative flex w-full touch-none items-center py-2 select-none', className)}
     {...props}
   >
     <SliderPrimitive.Track className="relative h-2.5 w-full grow overflow-hidden rounded-full bg-gray-200">
