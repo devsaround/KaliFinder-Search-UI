@@ -949,7 +949,7 @@ const KalifindSearch: React.FC<{
           void fetchProducts();
         });
       },
-      [storeUrl, debouncedPriceRange, debouncedFilters, searchAbortController, isMobile, storeType]
+      [storeUrl, debouncedPriceRange, debouncedFilters, searchAbortController, storeType]
     );
 
     // search products
@@ -1489,8 +1489,8 @@ const KalifindSearch: React.FC<{
                                   key={index}
                                   data-suggestion-item="true"
                                   className={`flex cursor-pointer items-center gap-3 rounded-md p-2 transition-colors ${index === highlightedSuggestionIndex
-                                    ? 'bg-muted'
-                                    : 'hover:bg-muted/50'
+                                      ? 'bg-muted'
+                                      : 'hover:bg-muted/50'
                                     }`}
                                   onClick={(e) => {
                                     e.preventDefault();
@@ -1684,8 +1684,8 @@ const KalifindSearch: React.FC<{
                               key={color}
                               onClick={() => handleColorChange(color)}
                               className={`h-8 w-8 rounded-full border-4 transition-all sm:h-10 sm:w-10 ${filters.colors.includes(color)
-                                ? 'border-primary scale-110 shadow-lg'
-                                : 'border-border hover:border-muted-foreground'
+                                  ? 'border-primary scale-110 shadow-lg'
+                                  : 'border-border hover:border-muted-foreground'
                                 }`}
                               style={{
                                 backgroundColor: color.toLowerCase(),
@@ -2067,8 +2067,8 @@ const KalifindSearch: React.FC<{
                             }}
                             disabled={!hasSearched}
                             className={`h-6 w-6 rounded-full border-2 disabled:cursor-not-allowed disabled:opacity-50 lg:h-8 lg:w-8 ${filters.colors.includes(color)
-                              ? 'border-primary scale-110'
-                              : 'border-border'
+                                ? 'border-primary scale-110'
+                                : 'border-border'
                               }`}
                             data-color={color.toLowerCase()}
                             title={`Filter by ${color} color`}
