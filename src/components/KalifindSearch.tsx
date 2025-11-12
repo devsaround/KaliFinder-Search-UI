@@ -2721,17 +2721,17 @@ const KalifindSearch: React.FC<{
           )}
         </main>
 
-        {/* Framer-style Powered by KaliFinder watermark */}
+        {/* Framer-style Powered by KaliFinder watermark - Bottom Right */}
         {filteredProducts.length > 0 && (
-          <div className="mt-12 flex justify-center pb-8">
+          <div className="fixed right-6 bottom-6 z-40">
             <a
               href="https://kalifinder.com"
               target="_blank"
               rel="noopener noreferrer"
-              className="group inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2 shadow-sm transition-all hover:border-purple-300 hover:shadow-md"
+              className="group inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2 shadow-lg transition-all hover:border-purple-300 hover:shadow-xl"
               style={{
                 backdropFilter: 'blur(8px)',
-                backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                backgroundColor: 'rgba(255, 255, 255, 0.95)',
               }}
             >
               <span className="text-xs font-medium text-gray-500 transition-colors group-hover:text-gray-700">
