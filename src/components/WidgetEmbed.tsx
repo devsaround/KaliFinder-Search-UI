@@ -216,15 +216,6 @@ export default function WidgetEmbed({ storeUrl }: WidgetEmbedProps) {
                 Indexing in progress. Results may be limited.
               </div>
             )}
-            {/* Close button */}
-            <button
-              className="kalifinder-widget-modal-close"
-              onClick={() => setIsOpen(false)}
-              aria-label="Close search widget"
-              title="Close"
-            >
-              ✕
-            </button>
 
             {/* Search widget */}
             <div className="kalifinder-widget-content">
@@ -234,6 +225,7 @@ export default function WidgetEmbed({ storeUrl }: WidgetEmbedProps) {
                 hasSearched={hasSearched}
                 setHasSearched={setHasSearched}
                 storeUrl={storeUrl}
+                onClose={() => setIsOpen(false)}
               />
             </div>
 

@@ -20,19 +20,26 @@ const Recommendations: React.FC<RecommendationsProps> = ({
 }) => {
   if (recommendations.length === 0) {
     return (
-      <div className="mb-8">
-        <h3 className="text-foreground mb-4 text-[18px] font-bold lg:text-[20px]">
-          Recommendations
-        </h3>
-        <div className="grid w-full grid-cols-2 gap-[8px] sm:grid-cols-2 sm:gap-[16px] xl:grid-cols-3 2xl:grid-cols-4">
+      <div className="mb-12">
+        <div className="mb-6 flex items-center gap-3">
+          <Skeleton className="h-10 w-10 rounded-xl" />
+          <Skeleton className="h-8 w-64" />
+        </div>
+        <div className="grid w-full grid-cols-2 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
           {[...Array(4)].map((_, idx) => (
             <div
               key={idx}
-              className="bg-background border-border flex w-full flex-col rounded-lg border p-[8px] sm:p-[12px]"
+              className="flex w-full flex-col overflow-hidden rounded-xl border border-gray-200 bg-white"
             >
-              <Skeleton className="mb-[8px] h-[112px] w-full rounded-md sm:h-[144px]" />
-              <Skeleton className="mb-[4px] h-[20px] w-3/4 sm:mb-[8px]" />
-              <Skeleton className="h-[16px] w-1/2" />
+              <Skeleton className="aspect-square w-full" />
+              <div className="p-3 sm:p-4">
+                <Skeleton className="mb-2 h-5 w-full" />
+                <Skeleton className="mb-4 h-4 w-3/4" />
+                <div className="flex items-center justify-between">
+                  <Skeleton className="h-6 w-20" />
+                  <Skeleton className="h-10 w-10 rounded-full" />
+                </div>
+              </div>
             </div>
           ))}
         </div>
@@ -41,9 +48,26 @@ const Recommendations: React.FC<RecommendationsProps> = ({
   }
 
   return (
-    <div className="mb-8">
-      <h3 className="text-foreground mb-4 text-[18px] font-bold lg:text-[20px]">Recommendations</h3>
-      <div className="grid w-full grid-cols-2 gap-[8px] sm:grid-cols-2 sm:gap-[16px] xl:grid-cols-3 2xl:grid-cols-4">
+    <div className="mb-12">
+      <div className="mb-6 flex items-center gap-3">
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 shadow-lg">
+          <svg
+            className="h-5 w-5 text-white"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"
+            />
+          </svg>
+        </div>
+        <h3 className="text-2xl font-bold text-gray-900">Recommended for You</h3>
+      </div>
+      <div className="grid w-full grid-cols-2 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
         {recommendations.map((product) => (
           <ProductCard
             key={product.id}
