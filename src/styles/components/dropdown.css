@@ -41,12 +41,27 @@
   width: fit-content;
   padding: var(--kf-space-1);
   z-index: var(--kf-z-max);
-  box-shadow: var(--kf-shadow-lg);
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06),
+    0 10px 15px -3px rgba(0, 0, 0, 0.1);
   font-family: var(--kf-font-family);
   font-size: var(--kf-font-size-sm);
   line-height: var(--kf-line-height-normal);
   display: block;
   overflow: hidden;
+  animation: slideDownAndFade 0.2s ease-out;
+}
+
+@keyframes slideDownAndFade {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* ========================================
@@ -63,6 +78,7 @@
   display: flex;
   align-items: center;
   cursor: pointer;
+  -webkit-user-select: none;
   user-select: none;
   padding: var(--kf-space-2) var(--kf-space-2);
   border-radius: var(--kf-radius-sm);
@@ -120,6 +136,7 @@
   padding: var(--kf-space-2) var(--kf-space-2);
   font-size: var(--kf-font-size-sm);
   font-weight: var(--kf-font-weight-semibold);
+  -webkit-user-select: none;
   user-select: none;
   display: block;
 }

@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState, useTransition
 import { getUBIClient } from '@/analytics/ubiClient';
 import { normalizeStoreUrl } from '@/lib/normalize';
 import { searchService, type SearchParams } from '@/services/search.service';
+import { uiDebugger } from '@/utils/ui-debug';
 
 import {
   Accordion,
@@ -35,6 +36,7 @@ import {
 } from '../types/api.types';
 import { ProductCard } from './products/ProductCard';
 import Recommendations from './Recommendations';
+import ScrollToTop from './ScrollToTop';
 
 const KalifindSearch: React.FC<{
   storeUrl?: string | undefined;
@@ -53,6 +55,32 @@ const KalifindSearch: React.FC<{
   storeUrl, // Now required to be passed by parent - no hardcoded default
 }) => {
   const [storeType, setStoreType] = useState<'shopify' | 'woocommerce' | null>(null);
+
+  // Log component mount
+  useEffect(() => {
+    console.log('🎨 KalifindSearch component mounted');
+    console.log('📦 Store URL:', storeUrl);
+    console.log('🔍 Initial search query:', searchQuery);
+    console.log('📊 Has searched:', hasSearched);
+
+    // Log UI measurements after a short delay to ensure rendering
+    setTimeout(() => {
+      const widgetRoot = document.querySelector('.kalifinder-widget-root') as HTMLElement;
+      if (widgetRoot) {
+        uiDebugger.logWidgetMount(widgetRoot);
+      }
+
+      const sidebar = document.querySelector('aside') as HTMLElement;
+      if (sidebar) {
+        uiDebugger.logFilterSidebar(sidebar);
+      }
+
+      const productCard = document.querySelector('[class*="ProductCard"]') as HTMLElement;
+      if (productCard) {
+        uiDebugger.logProductCard(productCard);
+      }
+    }, 1000);
+  }, []);
 
   // Determine if this is a Shopify store
   const isShopifyStore =
@@ -265,6 +293,7 @@ const KalifindSearch: React.FC<{
   const inputRef = useRef<HTMLInputElement>(null);
   const loadMoreTriggerRef = useRef<HTMLDivElement>(null);
   const searchRequestIdRef = useRef(0);
+  const mainContentRef = useRef<HTMLDivElement>(null); // For ScrollToTop container
 
   // Check if any filter is active (including search query)
   const isAnyFilterActive = isFilterActive(debouncedSearchQuery || '', maxPrice);
@@ -2220,7 +2249,7 @@ const KalifindSearch: React.FC<{
           )}
         </aside>
 
-        <main className="kalifinder-results flex-1">
+        <main ref={mainContentRef} className="kalifinder-results flex-1">
           {recentSearches.length > 0 && (
             <div className="mb-6">
               <div className="mb-3 flex items-center justify-between">
@@ -2276,14 +2305,14 @@ const KalifindSearch: React.FC<{
               <div onClick={(e) => e.stopPropagation()}>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <button className="border-border text-foreground hover:bg-muted flex items-center gap-1 rounded-md border px-2 py-1 text-xs transition-colors md:px-3 md:py-2 lg:text-sm">
+                    <button className="border-border text-foreground hover:bg-muted flex items-center gap-1 rounded-md border bg-white px-2 py-1 text-xs shadow-sm transition-all hover:shadow-md md:px-3 md:py-2 lg:text-sm">
                       <span className="font-medium">{getSortLabel(sortOption)}</span>
                       <ChevronDown className="h-3 w-3 md:h-4 md:w-4" />
                     </button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent
                     align="end"
-                    className="bg-background border-border z-[2147483647] min-w-[180px]"
+                    className="bg-background border-border z-[2147483647] min-w-[180px] shadow-lg"
                   >
                     <DropdownMenuLabel className="text-foreground text-sm font-semibold">
                       Sort by
@@ -2468,6 +2497,9 @@ const KalifindSearch: React.FC<{
             </div>
           )}
         </main>
+
+        {/* Scroll to top button - shows after scrolling down 400px */}
+        <ScrollToTop containerRef={mainContentRef} showAfter={400} />
       </div>
     </div>
   );

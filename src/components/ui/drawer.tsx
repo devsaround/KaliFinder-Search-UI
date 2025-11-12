@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { Drawer as DrawerPrimitive } from 'vaul';
 
+import { useShadowRoot } from '@/contexts/ShadowRootContext';
 import { cn } from '@/lib/utils';
 
 const Drawer = ({
@@ -32,22 +33,27 @@ DrawerOverlay.displayName = DrawerPrimitive.Overlay.displayName;
 const DrawerContent = React.forwardRef<
   React.ElementRef<typeof DrawerPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof DrawerPrimitive.Content>
->(({ className, children, ...props }, ref) => (
-  <DrawerPortal>
-    <DrawerOverlay />
-    <DrawerPrimitive.Content
-      ref={ref}
-      className={cn(
-        'bg-background fixed inset-x-0 bottom-0 z-[100000] flex h-auto flex-col rounded-t-2xl border',
-        className
-      )}
-      {...props}
-    >
-      <div className="bg-muted mx-auto h-2 w-[100px]" />
-      {children}
-    </DrawerPrimitive.Content>
-  </DrawerPortal>
-));
+>(({ className, children, ...props }, ref) => {
+  // Use shadow root container for portal rendering to ensure styles apply
+  const { container } = useShadowRoot();
+
+  return (
+    <DrawerPortal container={container}>
+      <DrawerOverlay />
+      <DrawerPrimitive.Content
+        ref={ref}
+        className={cn(
+          'bg-background fixed inset-x-0 bottom-0 z-[100000] flex h-auto flex-col rounded-t-2xl border',
+          className
+        )}
+        {...props}
+      >
+        <div className="bg-muted mx-auto h-2 w-[100px]" />
+        {children}
+      </DrawerPrimitive.Content>
+    </DrawerPortal>
+  );
+});
 DrawerContent.displayName = DrawerPrimitive.Content.displayName;
 
 const DrawerHeader = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
@@ -86,13 +92,13 @@ DrawerDescription.displayName = DrawerPrimitive.Description.displayName;
 
 export {
   Drawer,
-  DrawerPortal,
-  DrawerOverlay,
-  DrawerTrigger,
   DrawerClose,
   DrawerContent,
-  DrawerHeader,
-  DrawerFooter,
-  DrawerTitle,
   DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerOverlay,
+  DrawerPortal,
+  DrawerTitle,
+  DrawerTrigger,
 };

@@ -7,18 +7,52 @@
    WIDGET ROOT
    ======================================== */
 
+/* ========================================
+   WIDGET ROOT
+   ======================================== */
+
 .kalifinder-widget-root {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-  font-family: var(--kf-font-family);
-  pointer-events: none;
+  /* CRITICAL: Reset all transforms and zoom to fix WordPress scaling issues */
+  /* These must come FIRST and with !important to override any external styles */
+  transform: none !important;
+  -webkit-transform: none !important;
+  -moz-transform: none !important;
+  -ms-transform: none !important;
+  zoom: 1 !important;
+  -webkit-zoom: 1 !important;
+
+  /* Reset text size adjust */
+  -webkit-text-size-adjust: 100% !important;
+  -moz-text-size-adjust: 100% !important;
+  -ms-text-size-adjust: 100% !important;
+  text-size-adjust: 100% !important;
+
+  /* Base typography */
+  font-size: 16px !important;
+  line-height: 1.5 !important;
+  font-family: var(--kf-font-family) !important;
+
+  /* Layout */
+  display: block !important;
+  position: relative !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  box-sizing: border-box !important;
+
+  /* Interaction */
+  pointer-events: none !important;
+
+  /* Prevent width/height inheritance issues */
+  width: auto;
+  height: auto;
 }
 
 .kalifinder-widget-root *,
 .kalifinder-widget-root *::before,
 .kalifinder-widget-root *::after {
-  box-sizing: border-box;
+  box-sizing: border-box !important;
+  transform: none !important;
+  zoom: 1 !important;
 }
 
 /* ========================================
@@ -75,6 +109,11 @@
   color: var(--kf-foreground);
   margin: 0;
   padding: 0;
+
+  /* Ensure no external transforms affect modal content */
+  transform: none !important;
+  zoom: 1 !important;
+  font-size: 16px;
 }
 
 @media (max-width: 768px) {

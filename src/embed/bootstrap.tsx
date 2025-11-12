@@ -9,6 +9,7 @@
 import '../index.css';
 // shadowCssPlugin will inject: var __INLINED_WIDGET_CSS__ = "..."
 
+import { uiDebugger } from '../utils/ui-debug';
 import { createStyles } from './utils/css-injection';
 import { renderWidget, setupDOM } from './utils/dom-setup';
 import { createFallbackTrigger, removeFallbackTrigger } from './utils/fallback-trigger';
@@ -46,8 +47,16 @@ export function init(options: InitOptions): Controller {
   setDebugMode(options.debug ?? false);
   log('Initializing widget with options:', options);
 
+  console.log('🚀 KaliFinder Search Widget - Initializing...');
+  console.log('📍 Platform detected:', uiDebugger.getPlatform());
+  console.log('🔧 Debug mode:', options.debug ? 'ENABLED' : 'DISABLED');
+
   // Setup DOM structure
   const { container, shadowRoot, portalContainer, root } = setupDOM();
+
+  // Log initialization with UI scaling debug info
+  uiDebugger.logInitialization(shadowRoot);
+  uiDebugger.logResponsiveBreakpoint();
 
   // Track fallback trigger
   let fallbackTrigger: HTMLButtonElement | null = null;
@@ -57,7 +66,13 @@ export function init(options: InitOptions): Controller {
   createStyles(shadowRoot)
     .then(() => {
       // Styles injected - render widget
+      console.log('✅ Styles injected successfully');
       renderWidget(root, portalContainer, options.storeUrl);
+
+      // Enable continuous monitoring in debug mode
+      if (options.debug) {
+        uiDebugger.enableContinuousMonitoring();
+      }
     })
     .catch((err) => {
       console.error('[Kalifinder] Failed to inject styles, rendering anyway', err);

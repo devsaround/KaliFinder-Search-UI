@@ -7,33 +7,137 @@
    FILTER SIDEBAR CONTAINER
    ======================================== */
 
-.kalifinder-widget-content aside {
-  flex-shrink: 0;
+/**
+ * Filter Sidebar Styles
+ * Improved with better mobile responsiveness and visual feedback
+ */
+
+/* ========================================
+   FILTER SIDEBAR
+   ======================================== */
+
+.kalifinder-filter-sidebar {
   width: var(--kf-sidebar-width);
   min-width: var(--kf-sidebar-width);
   max-width: var(--kf-sidebar-width);
-  height: fit-content;
-  position: sticky;
-  top: var(--kf-space-12);
-  background: var(--kf-background);
-  border: var(--kf-border-width) solid var(--kf-border);
-  border-radius: var(--kf-radius-lg);
-  padding: var(--kf-space-4);
-  box-shadow: var(--kf-shadow-sm);
+  flex-shrink: 0;
+  box-sizing: border-box;
   overflow-y: auto;
-  max-height: calc(100vh - 8rem);
+  overflow-x: hidden;
+  padding-right: var(--kf-space-2);
+  max-height: calc(100vh - 200px);
 }
 
-/* Responsive Visibility */
+/* Scrollbar styling for filter sidebar */
+.kalifinder-filter-sidebar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.kalifinder-filter-sidebar::-webkit-scrollbar-track {
+  background: var(--kf-muted);
+  border-radius: 3px;
+}
+
+.kalifinder-filter-sidebar::-webkit-scrollbar-thumb {
+  background: var(--kf-muted-foreground);
+  border-radius: 3px;
+}
+
+.kalifinder-filter-sidebar::-webkit-scrollbar-thumb:hover {
+  background: var(--kf-primary);
+}
+
+/* Mobile: Hide sidebar */
 @media (max-width: 1023px) {
-  .kalifinder-widget-content aside {
+  .kalifinder-filter-sidebar {
     display: none;
   }
 }
 
+/* Desktop: Show sidebar */
 @media (min-width: 1024px) {
-  .kalifinder-widget-content aside {
+  .kalifinder-filter-sidebar {
     display: block;
+  }
+}
+
+/* ========================================
+   FILTER LOADING STATE (Visual Feedback)
+   ======================================== */
+
+.filter-loading-overlay {
+  position: relative;
+}
+
+.filter-loading-overlay::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.7);
+  -webkit-backdrop-filter: blur(2px);
+  backdrop-filter: blur(2px);
+  z-index: 10;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+.filter-loading-overlay.loading::after {
+  opacity: 1;
+  pointer-events: all;
+}
+
+/* Filter item hover states */
+.filter-item {
+  transition: all 0.2s ease;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 6px;
+}
+
+.filter-item:hover {
+  background-color: var(--kf-muted);
+}
+
+.filter-item.active {
+  background-color: var(--kf-accent);
+  border-left: 3px solid var(--kf-primary);
+}
+
+/* Mobile filter drawer improvements */
+@media (max-width: 1023px) {
+  .mobile-filter-drawer {
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+
+  .mobile-filter-drawer input[type='checkbox'] {
+    width: 20px;
+    height: 20px;
+  }
+
+  .mobile-filter-drawer label {
+    font-size: 16px;
+    padding: 12px 8px;
+    touch-action: manipulation;
+  }
+}
+
+/* Touch-friendly improvements for mobile */
+@media (max-width: 640px) {
+  /* Increase tap targets on mobile */
+  input[type='checkbox'] {
+    min-width: 24px !important;
+    min-height: 24px !important;
+  }
+
+  /* Better spacing for filter items on mobile */
+  .filter-item {
+    padding: 12px 8px;
+    min-height: 48px;
   }
 }
 

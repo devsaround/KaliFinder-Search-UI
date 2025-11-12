@@ -11,6 +11,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import KalifindSearch from './KalifindSearch';
+import { Toaster } from './ui/sonner';
 
 interface WidgetEmbedProps {
   storeUrl: string;
@@ -200,6 +201,9 @@ export default function WidgetEmbed({ storeUrl }: WidgetEmbedProps) {
 
   return (
     <div ref={containerRef} className="kalifinder-widget-root" data-testid="widget-embed">
+      {/* Toast notifications */}
+      <Toaster position="top-center" closeButton richColors />
+
       {/* Full widget in modal - only visible when triggered by host page */}
       {isOpen && (
         <div className="kalifinder-widget-modal" onClick={handleBackdropClick}>

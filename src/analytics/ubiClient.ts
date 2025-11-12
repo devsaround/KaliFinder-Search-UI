@@ -306,21 +306,12 @@ class UBIClient {
 
   /**
    * Initialize purchase tracking with URL monitoring
+   * Note: URL monitoring service has been removed for cleaner architecture
    */
   private initializePurchaseTracking(): void {
-    try {
-      // Dynamically import and initialize URL monitoring service
-      import('./urlMonitoringService')
-        .then(({ urlMonitoringService }) => {
-          urlMonitoringService.initialize();
-          console.log('🛒 Purchase tracking initialized with URL monitoring');
-        })
-        .catch((error) => {
-          console.warn('Failed to initialize purchase tracking:', error);
-        });
-    } catch (error) {
-      console.warn('Purchase tracking initialization failed:', error);
-    }
+    // Purchase tracking can be re-enabled by implementing URL monitoring
+    // For now, we track add-to-cart events directly in the cart handlers
+    console.log('🛒 Purchase tracking ready (cart events tracked directly)');
   }
 }
 

@@ -47,10 +47,12 @@ export interface Product {
   featured?: boolean;
   storeUrl?: string;
   // Cart-specific fields
-  productType?: string; // "simple" or "variable"
+  productType?: string; // "simple", "variable", or "external"
   shopifyVariantId?: string; // Shopify variant ID
   wooProductId?: string; // WooCommerce product ID
+  wooVariationId?: string; // WooCommerce variation ID (for variable products)
   shopifyProductId?: string;
+  attributes?: Record<string, string | number | boolean>; // Product attributes for variations
 }
 
 export interface FilterState {

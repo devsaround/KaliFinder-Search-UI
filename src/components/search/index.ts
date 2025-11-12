@@ -3,6 +3,5 @@
  * Reusable search UI components
  */
 
-export { SearchBar, type SearchBarProps } from './SearchBar';
-export { SearchHeader, type SearchHeaderProps } from './SearchHeader';
-export { SortDropdown, type SortDropdownProps, type SortOption } from './SortDropdown';
+// Note: All search components are currently integrated inline in KalifindSearch.tsx
+// This file is kept for future modular components

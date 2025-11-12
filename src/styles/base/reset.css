@@ -1,7 +1,49 @@
 /**
  * Base Styles & Reset
- * Minimal reset for Shadow DOM context
+ * Comprehensive reset for Shadow DOM context to prevent external CSS interference
+ * Fixes: WordPress theme zoom/scale issues, font-size inheritance, transform issues
  */
+
+/* ========================================
+   CRITICAL: Prevent External CSS Interference
+   ======================================== */
+
+/* Reset ALL inherited transformations and scaling from WordPress/external themes */
+:host,
+:host(*),
+.kalifinder-widget-root,
+.kalifinder-widget-root *,
+#my-ui,
+#my-ui * {
+  /* Reset transforms (WordPress themes often apply scale/zoom) */
+  transform: none !important;
+  -webkit-transform: none !important;
+  -moz-transform: none !important;
+  -ms-transform: none !important;
+  -o-transform: none !important;
+
+  /* Reset zoom (some WordPress themes use zoom property) */
+  zoom: 1 !important;
+  -webkit-zoom: 1 !important;
+  -moz-zoom: 1 !important;
+
+  /* Reset text-size-adjust (prevents mobile browser auto-scaling) */
+  -webkit-text-size-adjust: 100% !important;
+  -moz-text-size-adjust: 100% !important;
+  -ms-text-size-adjust: 100% !important;
+  text-size-adjust: 100% !important;
+
+  /* Reset font-size to prevent inheritance from external themes */
+  /* Will be overridden by specific component styles */
+  font-size: inherit;
+  line-height: inherit;
+}
+
+/* Root-level font size reset to 16px base */
+:host {
+  font-size: 16px !important;
+  line-height: 1.5 !important;
+}
 
 /* Shadow DOM Font */
 #my-ui :where(*) {
