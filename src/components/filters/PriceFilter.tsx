@@ -31,7 +31,10 @@ export const PriceFilter: React.FC<PriceFilterProps> = ({
 }) => {
   const handleSliderChange = (value: number[]) => {
     if (disabled) return;
-    onPriceChange([priceRange[0], value[0] ?? maxPrice]);
+    // Handle dual range: [min, max]
+    const newMin = value[0] ?? 0;
+    const newMax = value[1] ?? maxPrice;
+    onPriceChange([newMin, newMax]);
   };
 
   const handleMinPriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -107,16 +110,15 @@ export const PriceFilter: React.FC<PriceFilterProps> = ({
         </div>
 
         {/* Slider */}
-        <div className="px-1">
+        <div className="px-1 py-2">
           <Slider
-            value={[priceRange[1]]}
+            value={[priceRange[0], priceRange[1]]}
             onValueChange={handleSliderChange}
             max={maxPrice}
             min={0}
             step={1}
             disabled={disabled}
             className="w-full"
-            style={{ opacity: disabled ? 0.6 : 1 }}
           />
         </div>
 

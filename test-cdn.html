@@ -74,8 +74,19 @@
 
     <!-- KaliFinder Widget - Simulates CDN embedding (same as production usage) -->
     <!-- Note: Change storeUrl to a store that has products in your backend -->
-    <!-- Cache busting: Add &v=timestamp to force reload after rebuild -->
-    <script src="./dist/kalifind-search.js?storeUrl=https://findifly.kalifinder.com" defer></script>
+    <script>
+        // Cache busting with timestamp
+        const timestamp = new Date().getTime();
+        const script = document.createElement('script');
+        script.src = `./dist/kalifind-search.js?v=${timestamp}`;
+        script.defer = true;
+        script.onload = function () {
+            if (window.Kalifinder) {
+                Kalifinder.init({ storeUrl: 'https://findifly.kalifinder.com' });
+            }
+        };
+        document.body.appendChild(script);
+    </script>
 </body>
 
 </html>

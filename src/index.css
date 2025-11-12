@@ -42,6 +42,7 @@
 @import './styles/components/filters.css';
 @import './styles/components/checkbox.css';
 @import './styles/components/dropdown.css';
+@import './styles/components/slider.css';
 
 /* ========================================
    UTILITIES
