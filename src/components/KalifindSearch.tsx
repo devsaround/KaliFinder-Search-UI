@@ -1561,10 +1561,10 @@ const KalifindSearch: React.FC<{
       >
         <Drawer>
           <DrawerTrigger asChild>
-            <button className="bg-primary text-primary-foreground hover:bg-primary-hover flex transform items-center gap-2 rounded-full px-4 py-3 font-medium shadow-lg transition-all duration-300 hover:scale-105">
-              <Filter className="h-4 w-4" />
+            <button className="bg-primary text-primary-foreground hover:bg-primary-hover flex transform items-center gap-1.5 rounded-full px-3 py-2 text-sm font-medium shadow-lg transition-all duration-300 hover:scale-105">
+              <Filter className="h-3.5 w-3.5" />
               Filters
-              <span className="bg-primary-foreground text-primary rounded-full px-2 py-1 text-xs font-bold">
+              <span className="bg-primary-foreground text-primary rounded-full px-1.5 py-0.5 text-[10px] font-bold">
                 {filters.categories.length +
                   filters.colors.length +
                   filters.sizes.length +
@@ -2734,7 +2734,7 @@ const KalifindSearch: React.FC<{
                 backgroundColor: 'rgba(255, 255, 255, 0.95)',
               }}
             >
-              <span className="text-xs font-medium text-gray-500 transition-colors group-hover:text-gray-700">
+              <span className="hidden text-xs font-medium text-gray-500 transition-colors group-hover:text-gray-700 sm:inline">
                 Powered by
               </span>
               <div className="flex items-center gap-1.5">
