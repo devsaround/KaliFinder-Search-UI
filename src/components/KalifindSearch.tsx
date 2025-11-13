@@ -12,7 +12,6 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
-import { CustomCheckbox } from '@/components/ui/custom-checkbox';
 import { Drawer, DrawerClose, DrawerContent, DrawerTrigger } from '@/components/ui/drawer';
 import {
   DropdownMenu,
@@ -2282,15 +2281,50 @@ const KalifindSearch: React.FC<{
                         ))}
                       </>
                     ) : availableCategories.length > 0 ? (
-                      availableCategories.map((category) => (
-                        <CustomCheckbox
-                          key={category}
-                          checked={filters.categories.includes(category)}
-                          onChange={() => handleCategoryChange(category)}
-                          label={category}
-                          count={categoryCounts[category] || 0}
-                        />
-                      ))
+                      availableCategories.map((category) => {
+                        const isActive = filters.categories.includes(category);
+                        return (
+                          <label
+                            key={category}
+                            className={`flex cursor-pointer items-center justify-between rounded-lg p-2 transition-all ${
+                              isActive
+                                ? 'bg-purple-50 ring-2 ring-purple-600 ring-inset'
+                                : 'hover:bg-gray-50'
+                            }`}
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className="relative flex items-center">
+                                <input
+                                  type="checkbox"
+                                  checked={isActive}
+                                  onChange={() => handleCategoryChange(category)}
+                                  className="peer h-5 w-5 cursor-pointer appearance-none rounded border-2 border-gray-300 bg-white transition-all checked:border-purple-600 checked:bg-purple-600 hover:border-purple-400 focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 focus:outline-none"
+                                />
+                                <svg
+                                  className="pointer-events-none absolute top-1/2 left-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 text-white opacity-0 transition-opacity peer-checked:opacity-100"
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="4"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                >
+                                  <polyline points="20 6 9 17 4 12"></polyline>
+                                </svg>
+                              </div>
+                              <span className={`text-sm font-medium select-none ${isActive ? 'text-purple-900' : 'text-gray-900'}`}>
+                                {category}
+                              </span>
+                            </div>
+                            <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                              isActive ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-600'
+                            }`}>
+                              {categoryCounts[category] || 0}
+                            </span>
+                          </label>
+                        );
+                      })
                     ) : (
                       <p className="p-2 text-sm text-gray-500">No categories available</p>
                     )}
@@ -2318,15 +2352,50 @@ const KalifindSearch: React.FC<{
                         ))}
                       </>
                     ) : availableBrands.length > 0 ? (
-                      availableBrands.map((brand) => (
-                        <CustomCheckbox
-                          key={brand}
-                          checked={filters.brands.includes(brand)}
-                          onChange={() => handleBrandChange(brand)}
-                          label={brand}
-                          count={brandCounts[brand] || 0}
-                        />
-                      ))
+                      availableBrands.map((brand) => {
+                        const isActive = filters.brands.includes(brand);
+                        return (
+                          <label
+                            key={brand}
+                            className={`flex cursor-pointer items-center justify-between rounded-lg p-2 transition-all ${
+                              isActive
+                                ? 'bg-purple-50 ring-2 ring-purple-600 ring-inset'
+                                : 'hover:bg-gray-50'
+                            }`}
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className="relative flex items-center">
+                                <input
+                                  type="checkbox"
+                                  checked={isActive}
+                                  onChange={() => handleBrandChange(brand)}
+                                  className="peer h-5 w-5 cursor-pointer appearance-none rounded border-2 border-gray-300 bg-white transition-all checked:border-purple-600 checked:bg-purple-600 hover:border-purple-400 focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 focus:outline-none"
+                                />
+                                <svg
+                                  className="pointer-events-none absolute top-1/2 left-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 text-white opacity-0 transition-opacity peer-checked:opacity-100"
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="4"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                >
+                                  <polyline points="20 6 9 17 4 12"></polyline>
+                                </svg>
+                              </div>
+                              <span className={`text-sm font-medium select-none ${isActive ? 'text-purple-900' : 'text-gray-900'}`}>
+                                {brand}
+                              </span>
+                            </div>
+                            <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                              isActive ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-600'
+                            }`}>
+                              {brandCounts[brand] || 0}
+                            </span>
+                          </label>
+                        );
+                      })
                     ) : (
                       <p className="p-2 text-sm text-gray-500">No brands available</p>
                     )}
@@ -2374,17 +2443,22 @@ const KalifindSearch: React.FC<{
                     </div>
                   ) : availableSizes.length > 0 ? (
                     <div className="grid grid-cols-4 gap-2">
-                      {availableSizes.map((size) => (
-                        <button
-                          key={size}
-                          onClick={() => handleSizeChange(size)}
-                          className={`my-border rounded py-2 text-xs font-medium lg:text-sm ${
-                            filters.sizes.includes(size) ? 'bg-primary text-primary-foreground' : ''
-                          }`}
-                        >
-                          {size}
-                        </button>
-                      ))}
+                      {availableSizes.map((size) => {
+                        const isActive = filters.sizes.includes(size);
+                        return (
+                          <button
+                            key={size}
+                            onClick={() => handleSizeChange(size)}
+                            className={`my-border rounded py-2 text-xs font-medium transition-all lg:text-sm ${
+                              isActive
+                                ? 'bg-purple-600 text-white ring-2 ring-purple-600 ring-offset-2 shadow-md'
+                                : 'bg-white text-gray-700 hover:bg-gray-50 hover:border-purple-400'
+                            }`}
+                          >
+                            {size}
+                          </button>
+                        );
+                      })}
                     </div>
                   ) : (
                     <p className="text-muted-foreground text-sm">No sizes available</p>
@@ -2406,20 +2480,23 @@ const KalifindSearch: React.FC<{
                     </div>
                   ) : availableColors.length > 0 ? (
                     <div className="flex gap-[8px]">
-                      {availableColors.map((color) => (
-                        <button
-                          key={color}
-                          onClick={() => handleColorChange(color)}
-                          className={`h-6 w-6 rounded-full border-2 lg:h-8 lg:w-8 ${
-                            filters.colors.includes(color)
-                              ? 'border-primary scale-110'
-                              : 'border-border'
-                          }`}
-                          data-color={color.toLowerCase()}
-                          title={`Filter by ${color} color`}
-                          aria-label={`Filter by ${color} color${filters.colors.includes(color) ? ' (selected)' : ''}`}
-                        />
-                      ))}
+                      {availableColors.map((color) => {
+                        const isActive = filters.colors.includes(color);
+                        return (
+                          <button
+                            key={color}
+                            onClick={() => handleColorChange(color)}
+                            className={`h-6 w-6 rounded-full border-2 transition-all lg:h-8 lg:w-8 ${
+                              isActive
+                                ? 'border-purple-600 scale-110 ring-2 ring-purple-600 ring-offset-2 shadow-lg'
+                                : 'border-gray-300 hover:border-purple-400 hover:scale-105'
+                            }`}
+                            data-color={color.toLowerCase()}
+                            title={`Filter by ${color} color`}
+                            aria-label={`Filter by ${color} color${isActive ? ' (selected)' : ''}`}
+                          />
+                        );
+                      })}
                     </div>
                   ) : (
                     <p className="text-muted-foreground text-sm">No colors available</p>
@@ -2447,41 +2524,50 @@ const KalifindSearch: React.FC<{
                         ))}
                       </>
                     ) : availableTags.length > 0 ? (
-                      availableTags.map((tag) => (
-                        <label
-                          key={tag}
-                          className="flex cursor-pointer items-center justify-between rounded-lg p-2 transition-colors hover:bg-gray-50"
-                        >
-                          <div className="flex items-center gap-3">
-                            <div className="relative flex items-center">
-                              <input
-                                type="checkbox"
-                                checked={filters.tags.includes(tag)}
-                                onChange={() => handleTagChange(tag)}
-                                className="peer h-5 w-5 cursor-pointer appearance-none rounded border-2 border-gray-300 bg-white transition-all checked:border-purple-600 checked:bg-purple-600 hover:border-purple-400 focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 focus:outline-none"
-                              />
-                              <svg
-                                className="pointer-events-none absolute top-1/2 left-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 text-white opacity-0 transition-opacity peer-checked:opacity-100"
-                                xmlns="http://www.w3.org/2000/svg"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="4"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                              >
-                                <polyline points="20 6 9 17 4 12"></polyline>
-                              </svg>
+                      availableTags.map((tag) => {
+                        const isActive = filters.tags.includes(tag);
+                        return (
+                          <label
+                            key={tag}
+                            className={`flex cursor-pointer items-center justify-between rounded-lg p-2 transition-all ${
+                              isActive
+                                ? 'bg-purple-50 ring-2 ring-purple-600 ring-inset'
+                                : 'hover:bg-gray-50'
+                            }`}
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className="relative flex items-center">
+                                <input
+                                  type="checkbox"
+                                  checked={isActive}
+                                  onChange={() => handleTagChange(tag)}
+                                  className="peer h-5 w-5 cursor-pointer appearance-none rounded border-2 border-gray-300 bg-white transition-all checked:border-purple-600 checked:bg-purple-600 hover:border-purple-400 focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 focus:outline-none"
+                                />
+                                <svg
+                                  className="pointer-events-none absolute top-1/2 left-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 text-white opacity-0 transition-opacity peer-checked:opacity-100"
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="4"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                >
+                                  <polyline points="20 6 9 17 4 12"></polyline>
+                                </svg>
+                              </div>
+                              <span className={`text-sm font-medium select-none ${isActive ? 'text-purple-900' : 'text-gray-900'}`}>
+                                {tag}
+                              </span>
                             </div>
-                            <span className="text-sm font-medium text-gray-900 select-none">
-                              {tag}
+                            <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                              isActive ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-600'
+                            }`}>
+                              {tagCounts[tag] || 0}
                             </span>
-                          </div>
-                          <span className="rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-600">
-                            {tagCounts[tag] || 0}
-                          </span>
-                        </label>
-                      ))
+                          </label>
+                        );
+                      })
                     ) : (
                       <p className="p-2 text-sm text-gray-500">No tags available</p>
                     )}
@@ -2497,41 +2583,50 @@ const KalifindSearch: React.FC<{
                 </AccordionTrigger>
                 <AccordionContent className="pt-3">
                   <div className="space-y-1">
-                    {['In Stock', 'Out of Stock', 'On Backorder'].map((status) => (
-                      <label
-                        key={status}
-                        className="flex cursor-pointer items-center justify-between rounded-lg p-2 transition-colors hover:bg-gray-50"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="relative flex items-center">
-                            <input
-                              type="checkbox"
-                              checked={filters.stockStatus.includes(status)}
-                              onChange={() => handleStockStatusChange(status)}
-                              className="peer h-5 w-5 cursor-pointer appearance-none rounded border-2 border-gray-300 bg-white transition-all checked:border-purple-600 checked:bg-purple-600 hover:border-purple-400 focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 focus:outline-none"
-                            />
-                            <svg
-                              className="pointer-events-none absolute top-1/2 left-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 text-white opacity-0 transition-opacity peer-checked:opacity-100"
-                              xmlns="http://www.w3.org/2000/svg"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="4"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            >
-                              <polyline points="20 6 9 17 4 12"></polyline>
-                            </svg>
+                    {['In Stock', 'Out of Stock', 'On Backorder'].map((status) => {
+                      const isActive = filters.stockStatus.includes(status);
+                      return (
+                        <label
+                          key={status}
+                          className={`flex cursor-pointer items-center justify-between rounded-lg p-2 transition-all ${
+                            isActive
+                              ? 'bg-purple-50 ring-2 ring-purple-600 ring-inset'
+                              : 'hover:bg-gray-50'
+                          }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="relative flex items-center">
+                              <input
+                                type="checkbox"
+                                checked={isActive}
+                                onChange={() => handleStockStatusChange(status)}
+                                className="peer h-5 w-5 cursor-pointer appearance-none rounded border-2 border-gray-300 bg-white transition-all checked:border-purple-600 checked:bg-purple-600 hover:border-purple-400 focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 focus:outline-none"
+                              />
+                              <svg
+                                className="pointer-events-none absolute top-1/2 left-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 text-white opacity-0 transition-opacity peer-checked:opacity-100"
+                                xmlns="http://www.w3.org/2000/svg"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="4"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              >
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                              </svg>
+                            </div>
+                            <span className={`text-sm font-medium select-none ${isActive ? 'text-purple-900' : 'text-gray-900'}`}>
+                              {status}
+                            </span>
                           </div>
-                          <span className="text-sm font-medium text-gray-900 select-none">
-                            {status}
+                          <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                            isActive ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-600'
+                          }`}>
+                            {stockStatusCounts[status] ?? 0}
                           </span>
-                        </div>
-                        <span className="rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-600">
-                          {stockStatusCounts[status] ?? 0}
-                        </span>
-                      </label>
-                    ))}
+                        </label>
+                      );
+                    })}
                   </div>
                 </AccordionContent>
               </AccordionItem>
@@ -2544,41 +2639,50 @@ const KalifindSearch: React.FC<{
                 </AccordionTrigger>
                 <AccordionContent className="pt-3">
                   <div className="space-y-1">
-                    {['Featured', 'Not Featured'].map((status) => (
-                      <label
-                        key={status}
-                        className="flex cursor-pointer items-center justify-between rounded-lg p-2 transition-colors hover:bg-gray-50"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="relative flex items-center">
-                            <input
-                              type="checkbox"
-                              checked={filters.featuredProducts.includes(status)}
-                              onChange={() => handleFeaturedProductsChange(status)}
-                              className="peer h-5 w-5 cursor-pointer appearance-none rounded border-2 border-gray-300 bg-white transition-all checked:border-purple-600 checked:bg-purple-600 hover:border-purple-400 focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 focus:outline-none"
-                            />
-                            <svg
-                              className="pointer-events-none absolute top-1/2 left-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 text-white opacity-0 transition-opacity peer-checked:opacity-100"
-                              xmlns="http://www.w3.org/2000/svg"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="4"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            >
-                              <polyline points="20 6 9 17 4 12"></polyline>
-                            </svg>
+                    {['Featured', 'Not Featured'].map((status) => {
+                      const isActive = filters.featuredProducts.includes(status);
+                      return (
+                        <label
+                          key={status}
+                          className={`flex cursor-pointer items-center justify-between rounded-lg p-2 transition-all ${
+                            isActive
+                              ? 'bg-purple-50 ring-2 ring-purple-600 ring-inset'
+                              : 'hover:bg-gray-50'
+                          }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="relative flex items-center">
+                              <input
+                                type="checkbox"
+                                checked={isActive}
+                                onChange={() => handleFeaturedProductsChange(status)}
+                                className="peer h-5 w-5 cursor-pointer appearance-none rounded border-2 border-gray-300 bg-white transition-all checked:border-purple-600 checked:bg-purple-600 hover:border-purple-400 focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 focus:outline-none"
+                              />
+                              <svg
+                                className="pointer-events-none absolute top-1/2 left-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 text-white opacity-0 transition-opacity peer-checked:opacity-100"
+                                xmlns="http://www.w3.org/2000/svg"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="4"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              >
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                              </svg>
+                            </div>
+                            <span className={`text-sm font-medium select-none ${isActive ? 'text-purple-900' : 'text-gray-900'}`}>
+                              {status}
+                            </span>
                           </div>
-                          <span className="text-sm font-medium text-gray-900 select-none">
-                            {status}
+                          <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                            isActive ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-600'
+                          }`}>
+                            {status === 'Featured' ? featuredCount : notFeaturedCount}
                           </span>
-                        </div>
-                        <span className="rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-600">
-                          {status === 'Featured' ? featuredCount : notFeaturedCount}
-                        </span>
-                      </label>
-                    ))}
+                        </label>
+                      );
+                    })}
                   </div>
                 </AccordionContent>
               </AccordionItem>
@@ -2591,41 +2695,50 @@ const KalifindSearch: React.FC<{
                 </AccordionTrigger>
                 <AccordionContent className="pt-3">
                   <div className="space-y-1">
-                    {['On Sale', 'Not On Sale'].map((status) => (
-                      <label
-                        key={status}
-                        className="flex cursor-pointer items-center justify-between rounded-lg p-2 transition-colors hover:bg-gray-50"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="relative flex items-center">
-                            <input
-                              type="checkbox"
-                              checked={filters.saleStatus.includes(status)}
-                              onChange={() => handleSaleStatusChange(status)}
-                              className="peer h-5 w-5 cursor-pointer appearance-none rounded border-2 border-gray-300 bg-white transition-all checked:border-purple-600 checked:bg-purple-600 hover:border-purple-400 focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 focus:outline-none"
-                            />
-                            <svg
-                              className="pointer-events-none absolute top-1/2 left-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 text-white opacity-0 transition-opacity peer-checked:opacity-100"
-                              xmlns="http://www.w3.org/2000/svg"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="4"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            >
-                              <polyline points="20 6 9 17 4 12"></polyline>
-                            </svg>
+                    {['On Sale', 'Not On Sale'].map((status) => {
+                      const isActive = filters.saleStatus.includes(status);
+                      return (
+                        <label
+                          key={status}
+                          className={`flex cursor-pointer items-center justify-between rounded-lg p-2 transition-all ${
+                            isActive
+                              ? 'bg-purple-50 ring-2 ring-purple-600 ring-inset'
+                              : 'hover:bg-gray-50'
+                          }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="relative flex items-center">
+                              <input
+                                type="checkbox"
+                                checked={isActive}
+                                onChange={() => handleSaleStatusChange(status)}
+                                className="peer h-5 w-5 cursor-pointer appearance-none rounded border-2 border-gray-300 bg-white transition-all checked:border-purple-600 checked:bg-purple-600 hover:border-purple-400 focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 focus:outline-none"
+                              />
+                              <svg
+                                className="pointer-events-none absolute top-1/2 left-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 text-white opacity-0 transition-opacity peer-checked:opacity-100"
+                                xmlns="http://www.w3.org/2000/svg"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="4"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              >
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                              </svg>
+                            </div>
+                            <span className={`text-sm font-medium select-none ${isActive ? 'text-purple-900' : 'text-gray-900'}`}>
+                              {status}
+                            </span>
                           </div>
-                          <span className="text-sm font-medium text-gray-900 select-none">
-                            {status}
+                          <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                            isActive ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-600'
+                          }`}>
+                            {status === 'On Sale' ? saleCount : notSaleCount}
                           </span>
-                        </div>
-                        <span className="rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-600">
-                          {status === 'On Sale' ? saleCount : notSaleCount}
-                        </span>
-                      </label>
-                    ))}
+                        </label>
+                      );
+                    })}
                   </div>
                 </AccordionContent>
               </AccordionItem>
