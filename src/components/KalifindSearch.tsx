@@ -1375,7 +1375,7 @@ const KalifindSearch: React.FC<{
   };
 
   const LoadingSkeleton = () => (
-    <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+    <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4">
       {Array.from({ length: 8 }).map((_, i) => (
         <div key={i} className="animate-pulse-slow bg-loading rounded-lg p-2 md:p-4">
           <div className="bg-loading-shimmer relative mb-3 h-32 overflow-hidden rounded-md md:mb-4 md:h-48">
@@ -1405,7 +1405,7 @@ const KalifindSearch: React.FC<{
             <div className="relative flex-1 md:px-0" ref={searchRef}>
               <div className="flex flex-col gap-2" ref={searchRef}>
                 <div className="flex w-full">
-                  <div className="flex w-full items-center gap-3 rounded-xl border-2 border-gray-200 bg-white px-4 shadow-sm transition-all hover:border-gray-300 focus-within:border-purple-500 focus-within:shadow-md">
+                  <div className="flex w-full items-center gap-3 rounded-xl border border-gray-200 bg-gray-100 px-4 shadow-sm transition-all hover:border-gray-300 hover:bg-gray-50 focus-within:border-purple-500 focus-within:bg-white focus-within:shadow-md">
                     <Search className="h-5 w-5 flex-shrink-0 text-gray-400" />
                     <input
                       ref={inputRef}
@@ -1890,7 +1890,7 @@ const KalifindSearch: React.FC<{
         </Drawer>
       </div>
 
-      <div className="flex w-full gap-6 px-4 py-6 lg:px-12">
+      <div className="flex w-full gap-6 px-1.5 py-6 lg:px-2">
         <aside className="sticky top-24 hidden w-72 flex-shrink-0 rounded-xl border border-gray-200 bg-white p-6 shadow-sm lg:block">
           <Accordion
             type="multiple"
@@ -2639,7 +2639,7 @@ const KalifindSearch: React.FC<{
             <LoadingSkeleton />
           ) : (
             <>
-              <div className="grid w-full grid-cols-2 gap-2 sm:grid-cols-2 sm:gap-4 lg:grid-cols-4 xl:grid-cols-4 2xl:grid-cols-4">
+              <div className="grid w-full grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4 xl:grid-cols-4 2xl:grid-cols-4">
                 {filteredProducts.map((product) => (
                   <ProductCard
                     key={product.id}

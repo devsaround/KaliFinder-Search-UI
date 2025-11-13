@@ -25,7 +25,7 @@ const Recommendations: React.FC<RecommendationsProps> = ({
           <Skeleton className="h-10 w-10 rounded-xl" />
           <Skeleton className="h-8 w-64" />
         </div>
-        <div className="grid w-full grid-cols-2 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+        <div className="grid w-full grid-cols-2 gap-2 sm:gap-3 md:grid-cols-3 lg:grid-cols-4">
           {[...Array(4)].map((_, idx) => (
             <div
               key={idx}
@@ -67,7 +67,7 @@ const Recommendations: React.FC<RecommendationsProps> = ({
         </div>
         <h3 className="text-2xl font-bold text-gray-900">Recommended for You</h3>
       </div>
-      <div className="grid w-full grid-cols-2 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+      <div className="grid w-full grid-cols-2 gap-2 sm:gap-3 md:grid-cols-3 lg:grid-cols-4">
         {recommendations.map((product) => (
           <ProductCard
             key={product.id}

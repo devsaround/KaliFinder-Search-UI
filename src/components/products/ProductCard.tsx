@@ -46,15 +46,15 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
         {/* Featured Badge */}
         {product.featured && (
-          <div className="absolute top-3 right-3 rounded-full bg-gradient-to-r from-blue-500 to-blue-600 px-3 py-1 text-xs font-bold text-white shadow-lg">
-            ⭐ Featured
+          <div className="absolute top-2 right-2 rounded-lg border border-white/30 bg-gradient-to-br from-blue-500/95 to-purple-600/95 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white shadow-[0_8px_16px_rgba(0,0,0,0.3)] backdrop-blur-md sm:px-3 sm:text-xs">
+            <span className="drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">⭐ Featured</span>
           </div>
         )}
 
         {/* Discount Badge */}
         {hasDiscount && (
-          <div className="absolute top-3 left-3 rounded-full bg-gradient-to-r from-red-500 to-pink-500 px-3 py-1 text-xs font-bold text-white shadow-lg">
-            {discountPercentage ? `-${discountPercentage}%` : 'Sale'}
+          <div className="absolute top-2 left-2 rounded-lg border border-white/30 bg-gradient-to-br from-red-500/95 to-pink-600/95 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white shadow-[0_8px_16px_rgba(0,0,0,0.3)] backdrop-blur-md sm:px-3 sm:text-xs">
+            <span className="drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">{discountPercentage ? `-${discountPercentage}%` : 'Sale'}</span>
           </div>
         )}
 
@@ -63,7 +63,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
       </div>
 
       {/* Product Info */}
-      <div className="flex flex-1 flex-col p-3 sm:p-4">
+      <div className="flex flex-1 flex-col p-2 sm:p-3">
         {/* Product Title */}
         <h3 className="mb-2 line-clamp-2 min-h-[2.5rem] text-sm font-semibold text-gray-900 sm:text-base">
           {product.title}
