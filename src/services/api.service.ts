@@ -97,7 +97,10 @@ class ApiServiceImpl implements ApiService {
     }
 
     try {
-      const response = await fetch(url, options);
+      const response = await fetch(url, {
+        ...options,
+        credentials: 'include', // Include cookies for authentication
+      });
 
       // Log rate limit headers
       const remaining = response.headers.get('ratelimit-remaining');
@@ -179,7 +182,8 @@ class ApiServiceImpl implements ApiService {
 
     try {
       const response = await fetch(
-        `${this.baseUrl}/api/v1/search/popular?storeUrl=${encodeURIComponent(storeUrl)}`
+        `${this.baseUrl}/api/v1/search/popular?storeUrl=${encodeURIComponent(storeUrl)}`,
+        { credentials: 'include' } // Include cookies for authentication
       );
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -204,7 +208,8 @@ class ApiServiceImpl implements ApiService {
 
     try {
       const response = await fetch(
-        `${this.baseUrl}/api/v1/facets/configured?storeUrl=${encodeURIComponent(storeUrl)}`
+        `${this.baseUrl}/api/v1/facets/configured?storeUrl=${encodeURIComponent(storeUrl)}`,
+        { credentials: 'include' } // Include cookies for authentication
       );
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);

@@ -2332,13 +2332,19 @@ const KalifindSearch: React.FC<{
                                   <polyline points="20 6 9 17 4 12"></polyline>
                                 </svg>
                               </div>
-                              <span className={`text-sm font-medium select-none ${isActive ? 'text-purple-900' : 'text-gray-900'}`}>
+                              <span
+                                className={`text-sm font-medium select-none ${isActive ? 'text-purple-900' : 'text-gray-900'}`}
+                              >
                                 {category}
                               </span>
                             </div>
-                            <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                              isActive ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-600'
-                            }`}>
+                            <span
+                              className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                                isActive
+                                  ? 'bg-purple-100 text-purple-700'
+                                  : 'bg-gray-100 text-gray-600'
+                              }`}
+                            >
                               {categoryCounts[category] || 0}
                             </span>
                           </label>
@@ -2403,13 +2409,19 @@ const KalifindSearch: React.FC<{
                                   <polyline points="20 6 9 17 4 12"></polyline>
                                 </svg>
                               </div>
-                              <span className={`text-sm font-medium select-none ${isActive ? 'text-purple-900' : 'text-gray-900'}`}>
+                              <span
+                                className={`text-sm font-medium select-none ${isActive ? 'text-purple-900' : 'text-gray-900'}`}
+                              >
                                 {brand}
                               </span>
                             </div>
-                            <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                              isActive ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-600'
-                            }`}>
+                            <span
+                              className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                                isActive
+                                  ? 'bg-purple-100 text-purple-700'
+                                  : 'bg-gray-100 text-gray-600'
+                              }`}
+                            >
                               {brandCounts[brand] || 0}
                             </span>
                           </label>
@@ -2470,8 +2482,8 @@ const KalifindSearch: React.FC<{
                             onClick={() => handleSizeChange(size)}
                             className={`my-border rounded py-2 text-xs font-medium transition-all lg:text-sm ${
                               isActive
-                                ? 'bg-purple-600 text-white ring-2 ring-purple-600 ring-offset-2 shadow-md'
-                                : 'bg-white text-gray-700 hover:bg-gray-50 hover:border-purple-400'
+                                ? 'bg-purple-600 text-white shadow-md ring-2 ring-purple-600 ring-offset-2'
+                                : 'bg-white text-gray-700 hover:border-purple-400 hover:bg-gray-50'
                             }`}
                           >
                             {size}
@@ -2507,8 +2519,8 @@ const KalifindSearch: React.FC<{
                             onClick={() => handleColorChange(color)}
                             className={`h-6 w-6 rounded-full border-2 transition-all lg:h-8 lg:w-8 ${
                               isActive
-                                ? 'border-purple-600 scale-110 ring-2 ring-purple-600 ring-offset-2 shadow-lg'
-                                : 'border-gray-300 hover:border-purple-400 hover:scale-105'
+                                ? 'scale-110 border-purple-600 shadow-lg ring-2 ring-purple-600 ring-offset-2'
+                                : 'border-gray-300 hover:scale-105 hover:border-purple-400'
                             }`}
                             data-color={color.toLowerCase()}
                             title={`Filter by ${color} color`}
@@ -2575,13 +2587,19 @@ const KalifindSearch: React.FC<{
                                   <polyline points="20 6 9 17 4 12"></polyline>
                                 </svg>
                               </div>
-                              <span className={`text-sm font-medium select-none ${isActive ? 'text-purple-900' : 'text-gray-900'}`}>
+                              <span
+                                className={`text-sm font-medium select-none ${isActive ? 'text-purple-900' : 'text-gray-900'}`}
+                              >
                                 {tag}
                               </span>
                             </div>
-                            <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                              isActive ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-600'
-                            }`}>
+                            <span
+                              className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                                isActive
+                                  ? 'bg-purple-100 text-purple-700'
+                                  : 'bg-gray-100 text-gray-600'
+                              }`}
+                            >
                               {tagCounts[tag] || 0}
                             </span>
                           </label>
@@ -2634,13 +2652,19 @@ const KalifindSearch: React.FC<{
                                 <polyline points="20 6 9 17 4 12"></polyline>
                               </svg>
                             </div>
-                            <span className={`text-sm font-medium select-none ${isActive ? 'text-purple-900' : 'text-gray-900'}`}>
+                            <span
+                              className={`text-sm font-medium select-none ${isActive ? 'text-purple-900' : 'text-gray-900'}`}
+                            >
                               {status}
                             </span>
                           </div>
-                          <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                            isActive ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-600'
-                          }`}>
+                          <span
+                            className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                              isActive
+                                ? 'bg-purple-100 text-purple-700'
+                                : 'bg-gray-100 text-gray-600'
+                            }`}
+                          >
                             {stockStatusCounts[status] ?? 0}
                           </span>
                         </label>
@@ -2690,13 +2714,19 @@ const KalifindSearch: React.FC<{
                                 <polyline points="20 6 9 17 4 12"></polyline>
                               </svg>
                             </div>
-                            <span className={`text-sm font-medium select-none ${isActive ? 'text-purple-900' : 'text-gray-900'}`}>
+                            <span
+                              className={`text-sm font-medium select-none ${isActive ? 'text-purple-900' : 'text-gray-900'}`}
+                            >
                               {status}
                             </span>
                           </div>
-                          <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                            isActive ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-600'
-                          }`}>
+                          <span
+                            className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                              isActive
+                                ? 'bg-purple-100 text-purple-700'
+                                : 'bg-gray-100 text-gray-600'
+                            }`}
+                          >
                             {status === 'Featured' ? featuredCount : notFeaturedCount}
                           </span>
                         </label>
@@ -2746,13 +2776,19 @@ const KalifindSearch: React.FC<{
                                 <polyline points="20 6 9 17 4 12"></polyline>
                               </svg>
                             </div>
-                            <span className={`text-sm font-medium select-none ${isActive ? 'text-purple-900' : 'text-gray-900'}`}>
+                            <span
+                              className={`text-sm font-medium select-none ${isActive ? 'text-purple-900' : 'text-gray-900'}`}
+                            >
                               {status}
                             </span>
                           </div>
-                          <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                            isActive ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-600'
-                          }`}>
+                          <span
+                            className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                              isActive
+                                ? 'bg-purple-100 text-purple-700'
+                                : 'bg-gray-100 text-gray-600'
+                            }`}
+                          >
                             {status === 'On Sale' ? saleCount : notSaleCount}
                           </span>
                         </label>
