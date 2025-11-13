@@ -46,15 +46,17 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
         {/* Featured Badge */}
         {product.featured && (
-          <div className="absolute top-2 right-2 rounded-lg border border-white/30 bg-gradient-to-br from-blue-500/95 to-purple-600/95 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white shadow-[0_8px_16px_rgba(0,0,0,0.3)] backdrop-blur-md sm:px-3 sm:text-xs">
+          <div className="absolute top-2 right-2 rounded-lg border border-white/30 bg-gradient-to-br from-blue-500/95 to-purple-600/95 px-2.5 py-1 text-[10px] font-bold tracking-wide text-white uppercase shadow-[0_8px_16px_rgba(0,0,0,0.3)] backdrop-blur-md sm:px-3 sm:text-xs">
             <span className="drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">⭐ Featured</span>
           </div>
         )}
 
         {/* Discount Badge */}
         {hasDiscount && (
-          <div className="absolute top-2 left-2 rounded-lg border border-white/30 bg-gradient-to-br from-red-500/95 to-pink-600/95 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white shadow-[0_8px_16px_rgba(0,0,0,0.3)] backdrop-blur-md sm:px-3 sm:text-xs">
-            <span className="drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">{discountPercentage ? `-${discountPercentage}%` : 'Sale'}</span>
+          <div className="absolute top-2 left-2 rounded-lg border border-white/30 bg-gradient-to-br from-red-500/95 to-pink-600/95 px-2.5 py-1 text-[10px] font-bold tracking-wide text-white uppercase shadow-[0_8px_16px_rgba(0,0,0,0.3)] backdrop-blur-md sm:px-3 sm:text-xs">
+            <span className="drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">
+              {discountPercentage ? `-${discountPercentage}%` : 'Sale'}
+            </span>
           </div>
         )}
 
@@ -78,9 +80,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                 <span className="text-base font-bold text-purple-600 sm:text-lg">
                   {product.salePrice}
                 </span>
-                <span className="text-xs text-gray-400 line-through">
-                  {product.regularPrice}
-                </span>
+                <span className="text-xs text-gray-400 line-through">{product.regularPrice}</span>
               </>
             ) : (
               <span className="text-base font-bold text-gray-900 sm:text-lg">{product.price}</span>

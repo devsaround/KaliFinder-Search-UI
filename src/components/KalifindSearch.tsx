@@ -1405,7 +1405,7 @@ const KalifindSearch: React.FC<{
             <div className="relative flex-1 md:px-0" ref={searchRef}>
               <div className="flex flex-col gap-2" ref={searchRef}>
                 <div className="flex w-full">
-                  <div className="flex w-full items-center gap-3 rounded-xl border border-gray-200 bg-gray-100 px-4 shadow-sm transition-all hover:border-gray-300 hover:bg-gray-50 focus-within:border-purple-500 focus-within:bg-white focus-within:shadow-md">
+                  <div className="flex w-full items-center gap-3 rounded-xl border border-gray-200 bg-gray-100 px-4 shadow-sm transition-all focus-within:border-purple-500 focus-within:bg-white focus-within:shadow-md hover:border-gray-300 hover:bg-gray-50">
                     <Search className="h-5 w-5 flex-shrink-0 text-gray-400" />
                     <input
                       ref={inputRef}
@@ -2103,10 +2103,10 @@ const KalifindSearch: React.FC<{
                                 type="checkbox"
                                 checked={filters.tags.includes(tag)}
                                 onChange={() => handleTagChange(tag)}
-                                className="peer h-5 w-5 cursor-pointer appearance-none rounded border-2 border-gray-300 bg-white transition-all checked:border-purple-600 checked:bg-purple-600 hover:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2"
+                                className="peer h-5 w-5 cursor-pointer appearance-none rounded border-2 border-gray-300 bg-white transition-all checked:border-purple-600 checked:bg-purple-600 hover:border-purple-400 focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 focus:outline-none"
                               />
                               <svg
-                                className="pointer-events-none absolute left-1/2 top-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 text-white opacity-0 transition-opacity peer-checked:opacity-100"
+                                className="pointer-events-none absolute top-1/2 left-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 text-white opacity-0 transition-opacity peer-checked:opacity-100"
                                 xmlns="http://www.w3.org/2000/svg"
                                 viewBox="0 0 24 24"
                                 fill="none"
@@ -2118,7 +2118,7 @@ const KalifindSearch: React.FC<{
                                 <polyline points="20 6 9 17 4 12"></polyline>
                               </svg>
                             </div>
-                            <span className="select-none text-sm font-medium text-gray-900">
+                            <span className="text-sm font-medium text-gray-900 select-none">
                               {tag}
                             </span>
                           </div>
@@ -2153,10 +2153,10 @@ const KalifindSearch: React.FC<{
                               type="checkbox"
                               checked={filters.stockStatus.includes(status)}
                               onChange={() => handleStockStatusChange(status)}
-                              className="peer h-5 w-5 cursor-pointer appearance-none rounded border-2 border-gray-300 bg-white transition-all checked:border-purple-600 checked:bg-purple-600 hover:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2"
+                              className="peer h-5 w-5 cursor-pointer appearance-none rounded border-2 border-gray-300 bg-white transition-all checked:border-purple-600 checked:bg-purple-600 hover:border-purple-400 focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 focus:outline-none"
                             />
                             <svg
-                              className="pointer-events-none absolute left-1/2 top-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 text-white opacity-0 transition-opacity peer-checked:opacity-100"
+                              className="pointer-events-none absolute top-1/2 left-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 text-white opacity-0 transition-opacity peer-checked:opacity-100"
                               xmlns="http://www.w3.org/2000/svg"
                               viewBox="0 0 24 24"
                               fill="none"
@@ -2168,7 +2168,7 @@ const KalifindSearch: React.FC<{
                               <polyline points="20 6 9 17 4 12"></polyline>
                             </svg>
                           </div>
-                          <span className="select-none text-sm font-medium text-gray-900">
+                          <span className="text-sm font-medium text-gray-900 select-none">
                             {status}
                           </span>
                         </div>
@@ -2200,10 +2200,10 @@ const KalifindSearch: React.FC<{
                               type="checkbox"
                               checked={filters.featuredProducts.includes(status)}
                               onChange={() => handleFeaturedProductsChange(status)}
-                              className="peer h-5 w-5 cursor-pointer appearance-none rounded border-2 border-gray-300 bg-white transition-all checked:border-purple-600 checked:bg-purple-600 hover:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2"
+                              className="peer h-5 w-5 cursor-pointer appearance-none rounded border-2 border-gray-300 bg-white transition-all checked:border-purple-600 checked:bg-purple-600 hover:border-purple-400 focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 focus:outline-none"
                             />
                             <svg
-                              className="pointer-events-none absolute left-1/2 top-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 text-white opacity-0 transition-opacity peer-checked:opacity-100"
+                              className="pointer-events-none absolute top-1/2 left-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 text-white opacity-0 transition-opacity peer-checked:opacity-100"
                               xmlns="http://www.w3.org/2000/svg"
                               viewBox="0 0 24 24"
                               fill="none"
@@ -2215,7 +2215,7 @@ const KalifindSearch: React.FC<{
                               <polyline points="20 6 9 17 4 12"></polyline>
                             </svg>
                           </div>
-                          <span className="select-none text-sm font-medium text-gray-900">
+                          <span className="text-sm font-medium text-gray-900 select-none">
                             {status}
                           </span>
                         </div>
@@ -2247,10 +2247,10 @@ const KalifindSearch: React.FC<{
                               type="checkbox"
                               checked={filters.saleStatus.includes(status)}
                               onChange={() => handleSaleStatusChange(status)}
-                              className="peer h-5 w-5 cursor-pointer appearance-none rounded border-2 border-gray-300 bg-white transition-all checked:border-purple-600 checked:bg-purple-600 hover:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2"
+                              className="peer h-5 w-5 cursor-pointer appearance-none rounded border-2 border-gray-300 bg-white transition-all checked:border-purple-600 checked:bg-purple-600 hover:border-purple-400 focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 focus:outline-none"
                             />
                             <svg
-                              className="pointer-events-none absolute left-1/2 top-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 text-white opacity-0 transition-opacity peer-checked:opacity-100"
+                              className="pointer-events-none absolute top-1/2 left-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 text-white opacity-0 transition-opacity peer-checked:opacity-100"
                               xmlns="http://www.w3.org/2000/svg"
                               viewBox="0 0 24 24"
                               fill="none"
@@ -2262,7 +2262,7 @@ const KalifindSearch: React.FC<{
                               <polyline points="20 6 9 17 4 12"></polyline>
                             </svg>
                           </div>
-                          <span className="select-none text-sm font-medium text-gray-900">
+                          <span className="text-sm font-medium text-gray-900 select-none">
                             {status}
                           </span>
                         </div>
@@ -2346,7 +2346,7 @@ const KalifindSearch: React.FC<{
                   <DropdownMenuTrigger asChild>
                     <button
                       data-sort-button
-                      className="group flex items-center gap-2 rounded-xl border-2 border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-900 shadow-sm transition-all hover:border-purple-400 hover:bg-purple-50 hover:shadow-md focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
+                      className="group flex items-center gap-2 rounded-xl border-2 border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-900 shadow-sm transition-all hover:border-purple-400 hover:bg-purple-50 hover:shadow-md focus:border-purple-500 focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:outline-none"
                     >
                       <svg
                         className="h-4 w-4 text-gray-500 transition-colors group-hover:text-purple-600"
@@ -2369,10 +2369,11 @@ const KalifindSearch: React.FC<{
                     align="end"
                     className="z-[2147483647] min-w-[240px] rounded-xl border border-gray-200 bg-white p-2 shadow-2xl"
                     style={{
-                      boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+                      boxShadow:
+                        '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
                     }}
                   >
-                    <DropdownMenuLabel className="px-3 py-2 text-xs font-bold uppercase tracking-wide text-gray-500">
+                    <DropdownMenuLabel className="px-3 py-2 text-xs font-bold tracking-wide text-gray-500 uppercase">
                       Sort by
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator className="my-1 bg-gray-100" />

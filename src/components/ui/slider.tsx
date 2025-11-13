@@ -10,7 +10,19 @@ interface SliderProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'onChan
 }
 
 const Slider = React.forwardRef<HTMLDivElement, SliderProps>(
-  ({ value = [0, 100], onValueChange, min = 0, max = 100, step = 1, disabled = false, style, ...props }, ref) => {
+  (
+    {
+      value = [0, 100],
+      onValueChange,
+      min = 0,
+      max = 100,
+      step = 1,
+      disabled = false,
+      style,
+      ...props
+    },
+    ref
+  ) => {
     const trackRef = React.useRef<HTMLDivElement>(null);
     const [isDragging, setIsDragging] = React.useState<number | null>(null);
     const [localValue, setLocalValue] = React.useState(value);
@@ -21,7 +33,7 @@ const Slider = React.forwardRef<HTMLDivElement, SliderProps>(
 
     const getValueFromPosition = (clientX: number): number => {
       if (!trackRef.current) return min;
-      
+
       const rect = trackRef.current.getBoundingClientRect();
       const percent = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
       const rawValue = min + percent * (max - min);
@@ -40,18 +52,18 @@ const Slider = React.forwardRef<HTMLDivElement, SliderProps>(
     const handlePointerMove = (e: React.PointerEvent) => {
       if (isDragging === null || disabled) return;
       e.preventDefault();
-      
+
       const newValue = getValueFromPosition(e.clientX);
       const newValues = [...localValue];
       newValues[isDragging] = newValue;
-      
+
       // Ensure min doesn't exceed max and vice versa
       if (isDragging === 0 && newValues[0]! > newValues[1]!) {
         newValues[0] = newValues[1]!;
       } else if (isDragging === 1 && newValues[1]! < newValues[0]!) {
         newValues[1] = newValues[0]!;
       }
-      
+
       setLocalValue(newValues);
       onValueChange?.(newValues);
     };
@@ -123,10 +135,11 @@ const Slider = React.forwardRef<HTMLDivElement, SliderProps>(
               borderRadius: '9999px',
               border: '2px solid #7c3aed',
               backgroundColor: '#ffffff',
-              boxShadow: isDragging === index 
-                ? '0 10px 15px -3px rgba(124, 58, 237, 0.3), 0 4px 6px -2px rgba(124, 58, 237, 0.2)'
-                : '0 4px 6px -1px rgba(124, 58, 237, 0.3), 0 2px 4px -1px rgba(124, 58, 237, 0.2)',
-              cursor: disabled ? 'not-allowed' : (isDragging === index ? 'grabbing' : 'grab'),
+              boxShadow:
+                isDragging === index
+                  ? '0 10px 15px -3px rgba(124, 58, 237, 0.3), 0 4px 6px -2px rgba(124, 58, 237, 0.2)'
+                  : '0 4px 6px -1px rgba(124, 58, 237, 0.3), 0 2px 4px -1px rgba(124, 58, 237, 0.2)',
+              cursor: disabled ? 'not-allowed' : isDragging === index ? 'grabbing' : 'grab',
               transform: isDragging === index ? 'scale(0.95)' : 'scale(1)',
               transition: 'all 150ms cubic-bezier(0.4, 0, 0.2, 1)',
               opacity: disabled ? 0.5 : 1,
