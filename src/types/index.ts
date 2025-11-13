@@ -26,6 +26,12 @@ export interface Product {
   originalPrice?: number;
   currentPrice?: number;
   price: string;
+  currency?: string;
+  currencyCode?: string;
+  currencySymbol?: string;
+  currency_symbol?: string;
+  priceCurrency?: string;
+  price_currency?: string;
   categories?: string[];
   brands?: string[];
   colors?: string[];
@@ -108,23 +114,6 @@ export interface IsOpenState {
 export interface KalifindWindow extends Window {
   kalifindInitialData?: InitialData;
   kalifindInitialized?: boolean;
-}
-
-// API Response types
-export interface SearchResponse {
-  products: Product[];
-  total: number;
-  facets?: {
-    categories: { [key: string]: number };
-    brands: { [key: string]: number };
-    colors: { [key: string]: number };
-    sizes: { [key: string]: number };
-    tags: { [key: string]: number };
-  };
-}
-
-export interface AutocompleteResponse {
-  suggestions: string[];
 }
 
 // Component Props types

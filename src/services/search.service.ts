@@ -36,9 +36,9 @@ const DEFAULT_CONFIG = {
 // Search parameters interface
 export interface SearchParams {
   q: string;
+  storeUrl: string;
   page?: number;
   limit?: number;
-  storeUrl?: string;
   categories?: string[];
   colors?: string[];
   sizes?: string[];
@@ -72,6 +72,11 @@ class SearchService {
       return { products: [], total: 0 };
     }
 
+    const normalizedStoreUrl = normalizeStoreUrl(params.storeUrl);
+    if (!normalizedStoreUrl) {
+      throw new Error('storeUrl is required for searchProducts');
+    }
+
     // Build URL with search parameters
     const urlParams = new URLSearchParams();
 
@@ -79,9 +84,7 @@ class SearchService {
       urlParams.append('q', params.q);
     }
 
-    if (params.storeUrl) {
-      urlParams.append('storeUrl', normalizeStoreUrl(params.storeUrl)!);
-    }
+    urlParams.append('storeUrl', normalizedStoreUrl);
 
     if (params.page) {
       urlParams.append('page', params.page.toString());
@@ -183,12 +186,17 @@ class SearchService {
   /**
    * Get autocomplete suggestions
    */
-  async getAutocomplete(query: string, storeUrl?: string): Promise<AutocompleteResponse> {
+  async getAutocomplete(query: string, storeUrl: string): Promise<AutocompleteResponse> {
     if (!query || query.trim().length < this.config.behavior.minCharsForSearch) {
       return [];
     }
 
-    const cacheKey = buildCacheKey('/autocomplete', { q: query, storeUrl });
+    const normalizedStoreUrl = normalizeStoreUrl(storeUrl);
+    if (!normalizedStoreUrl) {
+      throw new Error('storeUrl is required for getAutocomplete');
+    }
+
+    const cacheKey = buildCacheKey('/autocomplete', { q: query, storeUrl: normalizedStoreUrl });
 
     // Check cache first
     if (this.config.cache.enabled) {
@@ -198,9 +206,9 @@ class SearchService {
       }
     }
 
-    const url = `${this.config.baseUrl}/api/v1/search/autocomplete?q=${encodeURIComponent(query)}${
-      storeUrl ? `&storeUrl=${encodeURIComponent(normalizeStoreUrl(storeUrl)!)}` : ''
-    }`;
+    const url = `${this.config.baseUrl}/api/v1/search/autocomplete?q=${encodeURIComponent(
+      query
+    )}&storeUrl=${encodeURIComponent(normalizedStoreUrl)}`;
 
     try {
       const response = await this.httpClient.get<AutocompleteResponse>(url);
@@ -220,8 +228,11 @@ class SearchService {
   /**
    * Get popular searches
    */
-  async getPopularSearches(storeUrl?: string): Promise<string[]> {
-    const normalizedStoreUrl = storeUrl ? normalizeStoreUrl(storeUrl) : undefined;
+  async getPopularSearches(storeUrl: string): Promise<string[]> {
+    const normalizedStoreUrl = normalizeStoreUrl(storeUrl);
+    if (!normalizedStoreUrl) {
+      throw new Error('storeUrl is required for getPopularSearches');
+    }
     const cacheKey = buildCacheKey('/popular-searches', { storeUrl: normalizedStoreUrl });
 
     // Check cache first
@@ -232,9 +243,9 @@ class SearchService {
       }
     }
 
-    const url = `${this.config.baseUrl}/api/v1/search/popular${
-      normalizedStoreUrl ? `?storeUrl=${encodeURIComponent(normalizedStoreUrl)}` : ''
-    }`;
+    const url = `${this.config.baseUrl}/api/v1/search/popular?storeUrl=${encodeURIComponent(
+      normalizedStoreUrl
+    )}`;
 
     try {
       const response = await this.httpClient.get<{ searches: string[] }>(url);
@@ -271,14 +282,19 @@ class SearchService {
     )}`;
 
     try {
-      const response = await this.httpClient.get<any[]>(url);
+      const response = await this.httpClient.get<unknown>(url);
+      const facets = Array.isArray(response)
+        ? response
+        : Array.isArray((response as { facets?: unknown[] }).facets)
+          ? ((response as { facets?: unknown[] }).facets as unknown[])
+          : [];
 
       // Cache the response with longer TTL since facet config rarely changes
       if (this.config.cache.enabled) {
-        this.cache.set(cacheKey, response, this.config.cache.ttl.facets);
+        this.cache.set(cacheKey, facets, this.config.cache.ttl.facets);
       }
 
-      return response;
+      return facets;
     } catch (error) {
       console.error('Failed to fetch facet configuration:', error);
       return [];

@@ -2,12 +2,41 @@ import React from 'react';
 import { ShoppingCart } from '@/components/icons';
 import type { Product } from '../../types';
 
+const parsePriceToNumber = (value?: string | null): number | undefined => {
+  if (value === undefined || value === null) return undefined;
+  const trimmed = String(value).trim();
+  if (!trimmed) return undefined;
+
+  const sanitized = trimmed.replace(/[^0-9.,-]/g, '');
+  if (!sanitized) return undefined;
+
+  const commaCount = (sanitized.match(/,/g) || []).length;
+  const dotCount = (sanitized.match(/\./g) || []).length;
+  let normalized = sanitized;
+
+  if (commaCount > 0 && dotCount === 0) {
+    normalized = sanitized.replace(/,/g, '.');
+  } else if (commaCount > 0 && dotCount > 0) {
+    if (sanitized.lastIndexOf(',') > sanitized.lastIndexOf('.')) {
+      normalized = sanitized.replace(/\./g, '').replace(/,/g, '.');
+    } else {
+      normalized = sanitized.replace(/,/g, '');
+    }
+  } else {
+    normalized = sanitized.replace(/,/g, '');
+  }
+
+  const parsed = Number(normalized);
+  return Number.isFinite(parsed) ? parsed : undefined;
+};
+
 interface ProductCardProps {
   product: Product;
   onProductClick: (product: Product) => void;
   onAddToCart: (product: Product) => void;
   isAddingToCart: boolean;
   calculateDiscountPercentage?: (regularPrice: string, salePrice: string) => number | null;
+  formatPrice: (value?: string | null) => string;
 }
 
 export const ProductCard: React.FC<ProductCardProps> = ({
@@ -16,19 +45,37 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   onAddToCart,
   isAddingToCart,
   calculateDiscountPercentage,
+  formatPrice,
 }) => {
+  const regularNumeric = parsePriceToNumber(product.regularPrice ?? product.price);
+  const saleNumeric = parsePriceToNumber(product.salePrice);
   const hasDiscount =
-    product.salePrice &&
-    product.salePrice !== '' &&
-    product.salePrice !== '0' &&
-    product.salePrice !== '0.00' &&
-    product.regularPrice &&
-    parseFloat(product.salePrice) < parseFloat(product.regularPrice);
+    saleNumeric !== undefined && regularNumeric !== undefined && saleNumeric < regularNumeric;
 
   const discountPercentage =
     hasDiscount && calculateDiscountPercentage && product.regularPrice && product.salePrice
       ? calculateDiscountPercentage(product.regularPrice, product.salePrice)
       : null;
+
+  const formattedSalePrice = formatPrice(product.salePrice) || product.salePrice || '';
+  const formattedRegularPrice = formatPrice(product.regularPrice) || product.regularPrice || '';
+  const formattedBasePrice =
+    formatPrice(product.price) ||
+    product.price ||
+    formattedSalePrice ||
+    formattedRegularPrice ||
+    '';
+
+  const primaryPrice =
+    (hasDiscount && formattedSalePrice ? formattedSalePrice : formattedBasePrice) ||
+    formattedSalePrice ||
+    formattedRegularPrice ||
+    '—';
+
+  const secondaryPrice =
+    hasDiscount && formattedRegularPrice && formattedRegularPrice !== primaryPrice
+      ? formattedRegularPrice
+      : '';
 
   return (
     <div
@@ -75,15 +122,17 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         <div className="mt-auto flex items-center justify-between">
           {/* Price */}
           <div className="flex flex-col gap-0.5">
-            {hasDiscount ? (
+            {hasDiscount && primaryPrice ? (
               <>
                 <span className="text-base font-bold text-purple-600 sm:text-lg">
-                  {product.salePrice}
+                  {primaryPrice}
                 </span>
-                <span className="text-xs text-gray-400 line-through">{product.regularPrice}</span>
+                {secondaryPrice && (
+                  <span className="text-xs text-gray-400 line-through">{secondaryPrice}</span>
+                )}
               </>
             ) : (
-              <span className="text-base font-bold text-gray-900 sm:text-lg">{product.price}</span>
+              <span className="text-base font-bold text-gray-900 sm:text-lg">{primaryPrice}</span>
             )}
           </div>
 

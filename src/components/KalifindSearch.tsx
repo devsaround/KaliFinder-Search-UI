@@ -29,14 +29,182 @@ import { useCart } from '@/hooks/useCart';
 import { useFilters } from '@/hooks/useFilters';
 
 import type { Product } from '../types';
-import {
-  isSearchResponse,
-  type BooleanFacetBucket,
-  type StringFacetBucket,
-} from '../types/api.types';
+import { isSearchResponse, type FacetBucket } from '../types/api.types';
 import { ProductCard } from './products/ProductCard';
 import Recommendations from './Recommendations';
 import ScrollToTop from './ScrollToTop';
+
+const CURRENCY_SYMBOL_REGEX = /[\p{Sc}]/u;
+const ISO_CURRENCY_CODE_REGEX = /^[A-Z]{3}$/;
+
+type CurrencyInfo = {
+  code?: string;
+  symbol?: string;
+};
+
+function isIsoCurrencyCode(value?: string | null): string | undefined {
+  if (!value) return undefined;
+  const trimmed = value.trim().toUpperCase();
+  return ISO_CURRENCY_CODE_REGEX.test(trimmed) ? trimmed : undefined;
+}
+
+function extractCurrencyInfoFromPriceString(value?: string | null): CurrencyInfo {
+  if (!value) return {};
+  const trimmed = value.trim();
+  if (!trimmed) return {};
+
+  const symbolMatch = trimmed.match(CURRENCY_SYMBOL_REGEX);
+  const codeAtStart = trimmed.match(/^[A-Z]{3}\b/);
+  const codeAtEnd = trimmed.match(/\b[A-Z]{3}$/);
+
+  return {
+    symbol: symbolMatch ? symbolMatch[0] : undefined,
+    code: isIsoCurrencyCode(codeAtStart?.[0] || codeAtEnd?.[0]),
+  };
+}
+
+function extractCurrencyInfoFromProduct(product: Product): CurrencyInfo {
+  const candidateCodes = [
+    product.currency,
+    (product as unknown as { currencyCode?: string }).currencyCode,
+    (product as unknown as { currency_code?: string }).currency_code,
+    product.priceCurrency,
+    (product as unknown as { price_currency?: string }).price_currency,
+  ]
+    .map(isIsoCurrencyCode)
+    .filter((value): value is string => Boolean(value));
+
+  const candidateSymbols = [
+    product.currencySymbol,
+    (product as unknown as { currency_symbol?: string }).currency_symbol,
+  ].filter((value): value is string => Boolean(value));
+
+  const info: CurrencyInfo = {};
+  if (candidateCodes.length > 0) {
+    info.code = candidateCodes[0];
+  }
+  if (candidateSymbols.length > 0) {
+    info.symbol = candidateSymbols[0];
+  }
+
+  if (!info.code || !info.symbol) {
+    const priceStrings = [product.price, product.salePrice, product.regularPrice];
+    for (const priceString of priceStrings) {
+      const extracted = extractCurrencyInfoFromPriceString(priceString);
+      if (extracted.code && !info.code) {
+        info.code = extracted.code;
+      }
+      if (extracted.symbol && !info.symbol) {
+        info.symbol = extracted.symbol;
+      }
+      if (info.code && info.symbol) {
+        break;
+      }
+    }
+  }
+
+  return info;
+}
+
+function parsePriceToNumber(value?: string | null): number | undefined {
+  if (value === undefined || value === null) return undefined;
+  const trimmed = String(value).trim();
+  if (!trimmed) return undefined;
+
+  const sanitized = trimmed.replace(/[^0-9.,-]/g, '');
+  if (!sanitized) return undefined;
+
+  const commaCount = (sanitized.match(/,/g) || []).length;
+  const dotCount = (sanitized.match(/\./g) || []).length;
+  let normalized = sanitized;
+
+  if (commaCount > 0 && dotCount === 0) {
+    normalized = sanitized.replace(/,/g, '.');
+  } else if (commaCount > 0 && dotCount > 0) {
+    if (sanitized.lastIndexOf(',') > sanitized.lastIndexOf('.')) {
+      normalized = sanitized.replace(/\./g, '').replace(/,/g, '.');
+    } else {
+      normalized = sanitized.replace(/,/g, '');
+    }
+  } else {
+    normalized = sanitized.replace(/,/g, '');
+  }
+
+  const parsed = Number(normalized);
+  return Number.isFinite(parsed) ? parsed : undefined;
+}
+
+const extractFacetBuckets = (facet: unknown): FacetBucket[] => {
+  if (!facet || typeof facet !== 'object') {
+    return [];
+  }
+
+  const maybeBuckets = (facet as { buckets?: unknown }).buckets;
+  if (!Array.isArray(maybeBuckets)) {
+    return [];
+  }
+
+  const buckets: FacetBucket[] = [];
+
+  maybeBuckets.forEach((bucket) => {
+    if (!bucket || typeof bucket !== 'object') {
+      return;
+    }
+
+    const typed = bucket as Partial<FacetBucket> & { doc_count?: unknown };
+    const rawDocCount = typed.doc_count ?? (bucket as { doc_count?: unknown }).doc_count ?? 0;
+    const docCount = typeof rawDocCount === 'number' ? rawDocCount : Number(rawDocCount);
+
+    buckets.push({
+      key:
+        typed.key !== undefined ? typed.key : ((typed.key_as_string ?? '') as FacetBucket['key']),
+      key_as_string: typed.key_as_string,
+      doc_count: Number.isFinite(docCount) ? docCount : 0,
+      from: typed.from,
+      to: typed.to,
+    });
+  });
+
+  return buckets;
+};
+
+const getFacetBucketKey = (bucket: FacetBucket): string => {
+  if (typeof bucket.key === 'string') {
+    return bucket.key;
+  }
+  if (typeof bucket.key === 'number' || typeof bucket.key === 'boolean') {
+    if (bucket.key_as_string) {
+      return bucket.key_as_string;
+    }
+    return String(bucket.key);
+  }
+  return bucket.key_as_string ?? '';
+};
+
+const resolveBooleanFacetValue = (bucket: FacetBucket): boolean | null => {
+  if (typeof bucket.key === 'boolean') {
+    return bucket.key;
+  }
+
+  if (typeof bucket.key === 'number') {
+    if (bucket.key === 1) return true;
+    if (bucket.key === 0) return false;
+  }
+
+  if (typeof bucket.key === 'string') {
+    const normalized = bucket.key.toLowerCase();
+    if (normalized === '1' || normalized === 'true') return true;
+    if (normalized === '0' || normalized === 'false') return false;
+  }
+
+  if (bucket.key_as_string) {
+    const normalized = bucket.key_as_string.toLowerCase();
+    if (normalized === '1' || normalized === 'true') return true;
+    if (normalized === '0' || normalized === 'false') return false;
+  }
+
+  return null;
+};
 
 const KalifindSearch: React.FC<{
   storeUrl?: string | undefined;
@@ -56,6 +224,8 @@ const KalifindSearch: React.FC<{
   onClose,
 }) => {
   const [storeType, setStoreType] = useState<'shopify' | 'woocommerce' | null>(null);
+  const [storeCurrencyCode, setStoreCurrencyCode] = useState<string | undefined>();
+  const [storeCurrencySymbol, setStoreCurrencySymbol] = useState<string | undefined>();
 
   // Log component mount
   useEffect(() => {
@@ -365,6 +535,24 @@ const KalifindSearch: React.FC<{
     }
   }, [storeUrl]);
 
+  const updateCurrencyFromProducts = useCallback((products: Product[]) => {
+    if (!products || products.length === 0) return;
+
+    for (const product of products) {
+      const info = extractCurrencyInfoFromProduct(product);
+      if (!info.code && !info.symbol) {
+        continue;
+      }
+      if (info.code) {
+        setStoreCurrencyCode((previous) => (previous === info.code ? previous : info.code));
+      }
+      if (info.symbol) {
+        setStoreCurrencySymbol((previous) => (previous === info.symbol ? previous : info.symbol));
+      }
+      break;
+    }
+  }, []);
+
   // Fetch global facets once on mount (static counts that don't change with search query)
   const fetchGlobalFacets = useCallback(async () => {
     if (!storeUrl || globalFacetsFetched) return;
@@ -382,99 +570,112 @@ const KalifindSearch: React.FC<{
 
       // Process facet data from API response
       if (result && result.facets) {
-        // Process stock status facets
-        if (result.facets.instock && Array.isArray(result.facets.instock.buckets)) {
+        const facets = result.facets as Record<string, unknown>;
+
+        const stockBuckets = extractFacetBuckets(facets.instock);
+        if (stockBuckets.length > 0) {
           const stockStatusCounts: { [key: string]: number } = {};
-          result.facets.instock.buckets.forEach((bucket: StringFacetBucket) => {
-            const status = bucket.key;
+          stockBuckets.forEach((bucket) => {
+            const key = getFacetBucketKey(bucket);
+            const normalized = key.toLowerCase();
             const displayName =
-              status === 'instock'
+              normalized === 'instock'
                 ? 'In Stock'
-                : status === 'outofstock'
+                : normalized === 'outofstock'
                   ? 'Out of Stock'
-                  : status === 'onbackorder'
+                  : normalized === 'onbackorder'
                     ? 'On Backorder'
-                    : status;
+                    : key;
             stockStatusCounts[displayName] = bucket.doc_count;
           });
           setStockStatusCounts(stockStatusCounts);
         }
 
-        // Process featured facets
-        if (result.facets.featured && Array.isArray(result.facets.featured.buckets)) {
-          let featuredCount = 0;
-          let notFeaturedCount = 0;
-          result.facets.featured.buckets.forEach((bucket: BooleanFacetBucket) => {
-            // OpenSearch returns boolean fields as 1 (true) or 0 (false) in bucket.key
-            if (bucket.key === 1 || bucket.key === true) {
-              featuredCount = bucket.doc_count;
-            } else if (bucket.key === 0 || bucket.key === false) {
-              notFeaturedCount = bucket.doc_count;
+        const featuredBuckets = extractFacetBuckets(facets.featured);
+        if (featuredBuckets.length > 0) {
+          let featuredCountLocal = 0;
+          let notFeaturedCountLocal = 0;
+          featuredBuckets.forEach((bucket) => {
+            const value = resolveBooleanFacetValue(bucket);
+            if (value === true) {
+              featuredCountLocal = bucket.doc_count;
+            } else if (value === false) {
+              notFeaturedCountLocal = bucket.doc_count;
             }
           });
-          setFeaturedCount(featuredCount);
-          setNotFeaturedCount(notFeaturedCount);
+          setFeaturedCount(featuredCountLocal);
+          setNotFeaturedCount(notFeaturedCountLocal);
         }
 
-        // Process sale facets
-        if (result.facets.insale && Array.isArray(result.facets.insale.buckets)) {
-          let saleCount = 0;
-          let notSaleCount = 0;
-          result.facets.insale.buckets.forEach((bucket: BooleanFacetBucket) => {
-            // OpenSearch returns boolean fields as 1 (true) or 0 (false) in bucket.key
-            if (bucket.key === 1 || bucket.key === true) {
-              saleCount = bucket.doc_count;
-            } else if (bucket.key === 0 || bucket.key === false) {
-              notSaleCount = bucket.doc_count;
+        const saleBuckets = extractFacetBuckets(facets.insale);
+        if (saleBuckets.length > 0) {
+          let saleCountLocal = 0;
+          let notSaleCountLocal = 0;
+          saleBuckets.forEach((bucket) => {
+            const value = resolveBooleanFacetValue(bucket);
+            if (value === true) {
+              saleCountLocal = bucket.doc_count;
+            } else if (value === false) {
+              notSaleCountLocal = bucket.doc_count;
             }
           });
-          setSaleCount(saleCount);
-          setNotSaleCount(notSaleCount);
+          setSaleCount(saleCountLocal);
+          setNotSaleCount(notSaleCountLocal);
         }
 
-        // Process category facets
-        if (result.facets.category && Array.isArray(result.facets.category.buckets)) {
+        const categoryBuckets = extractFacetBuckets(facets.category);
+        if (categoryBuckets.length > 0) {
           const categoryCounts: { [key: string]: number } = {};
-          result.facets.category.buckets.forEach((bucket: StringFacetBucket) => {
-            categoryCounts[bucket.key] = bucket.doc_count;
+          categoryBuckets.forEach((bucket) => {
+            const key = getFacetBucketKey(bucket);
+            if (!key) return;
+            categoryCounts[key] = bucket.doc_count;
           });
           setCategoryCounts(categoryCounts);
           setAvailableCategories(Object.keys(categoryCounts));
         }
 
-        // Process brand facets
-        if (result.facets.brands && Array.isArray(result.facets.brands.buckets)) {
+        const brandBuckets = extractFacetBuckets(facets.brands);
+        if (brandBuckets.length > 0) {
           const brandCounts: { [key: string]: number } = {};
-          result.facets.brands.buckets.forEach((bucket: StringFacetBucket) => {
-            brandCounts[bucket.key] = bucket.doc_count;
+          brandBuckets.forEach((bucket) => {
+            const key = getFacetBucketKey(bucket);
+            if (!key) return;
+            brandCounts[key] = bucket.doc_count;
           });
           setBrandCounts(brandCounts);
           setAvailableBrands(Object.keys(brandCounts));
         }
 
-        // Process color facets
-        if (result.facets.colors && Array.isArray(result.facets.colors.buckets)) {
-          const colorCounts: { [key: string]: number } = {};
-          result.facets.colors.buckets.forEach((bucket: StringFacetBucket) => {
-            colorCounts[bucket.key] = bucket.doc_count;
+        const colorBuckets = extractFacetBuckets(facets.colors);
+        if (colorBuckets.length > 0) {
+          const colors: string[] = [];
+          colorBuckets.forEach((bucket) => {
+            const key = getFacetBucketKey(bucket);
+            if (!key) return;
+            colors.push(key);
           });
-          setAvailableColors(Object.keys(colorCounts));
+          setAvailableColors(colors);
         }
 
-        // Process size facets
-        if (result.facets.sizes && Array.isArray(result.facets.sizes.buckets)) {
-          const sizeCounts: { [key: string]: number } = {};
-          result.facets.sizes.buckets.forEach((bucket: StringFacetBucket) => {
-            sizeCounts[bucket.key] = bucket.doc_count;
+        const sizeBuckets = extractFacetBuckets(facets.sizes);
+        if (sizeBuckets.length > 0) {
+          const sizes: string[] = [];
+          sizeBuckets.forEach((bucket) => {
+            const key = getFacetBucketKey(bucket);
+            if (!key) return;
+            sizes.push(key);
           });
-          setAvailableSizes(Object.keys(sizeCounts));
+          setAvailableSizes(sizes);
         }
 
-        // Process tag facets
-        if (result.facets.tags && Array.isArray(result.facets.tags.buckets)) {
+        const tagBuckets = extractFacetBuckets(facets.tags);
+        if (tagBuckets.length > 0) {
           const tagCounts: { [key: string]: number } = {};
-          result.facets.tags.buckets.forEach((bucket: StringFacetBucket) => {
-            tagCounts[bucket.key] = bucket.doc_count;
+          tagBuckets.forEach((bucket) => {
+            const key = getFacetBucketKey(bucket);
+            if (!key) return;
+            tagCounts[key] = bucket.doc_count;
           });
           setTagCounts(tagCounts);
           setAvailableTags(Object.keys(tagCounts));
@@ -483,9 +684,15 @@ const KalifindSearch: React.FC<{
 
       // Extract max price from products in global facets
       if (result.products && Array.isArray(result.products) && result.products.length > 0) {
+        updateCurrencyFromProducts(result.products as Product[]);
         const prices = result.products
-          .map((p: Product) => parseFloat(p.price || p.regularPrice || '0'))
-          .filter((price: number) => !isNaN(price) && price > 0);
+          .map(
+            (p: Product) =>
+              parsePriceToNumber(p.price) ??
+              parsePriceToNumber(p.regularPrice) ??
+              parsePriceToNumber(p.salePrice)
+          )
+          .filter((price): price is number => price !== undefined && price > 0);
 
         if (prices.length > 0) {
           const calculatedMaxPrice = Math.ceil(Math.max(...prices));
@@ -499,7 +706,7 @@ const KalifindSearch: React.FC<{
     } catch (error) {
       console.error('Failed to fetch global facets:', error);
     }
-  }, [storeUrl, globalFacetsFetched]);
+  }, [storeUrl, globalFacetsFetched, updateCurrencyFromProducts]);
 
   // Fetch vendor-controlled recommendations
   const fetchRecommendations = useCallback(async () => {
@@ -601,12 +808,13 @@ const KalifindSearch: React.FC<{
       }
 
       setRecommendations(products); // Show all recommendations
+      updateCurrencyFromProducts(products);
       setRecommendationsFetched(true);
     } catch (error) {
       console.error('Failed to fetch recommendations:', error);
       setRecommendations([]);
     }
-  }, [storeUrl, recommendationsFetched]);
+  }, [storeUrl, recommendationsFetched, updateCurrencyFromProducts]);
 
   // Search behavior state management according to search.md requirements
   useEffect(() => {
@@ -900,8 +1108,13 @@ const KalifindSearch: React.FC<{
 
                 // Calculate max price from products
                 const prices = products
-                  .map((p) => parseFloat(p.price || p.regularPrice || '0'))
-                  .filter((price) => !isNaN(price) && price > 0);
+                  .map(
+                    (p) =>
+                      parsePriceToNumber(p.price) ??
+                      parsePriceToNumber(p.regularPrice) ??
+                      parsePriceToNumber(p.salePrice)
+                  )
+                  .filter((price): price is number => price !== undefined && price > 0);
 
                 if (prices.length > 0) {
                   const calculatedMaxPrice = Math.ceil(Math.max(...prices));
@@ -922,6 +1135,8 @@ const KalifindSearch: React.FC<{
               // This response is from an old request, ignore it
               return;
             }
+
+            updateCurrencyFromProducts(products);
 
             setFilteredProducts(products);
             setTotalProducts(total);
@@ -950,7 +1165,14 @@ const KalifindSearch: React.FC<{
         void fetchProducts();
       });
     },
-    [storeUrl, debouncedPriceRange, debouncedFilters, searchAbortController, storeType]
+    [
+      storeUrl,
+      debouncedPriceRange,
+      debouncedFilters,
+      searchAbortController,
+      storeType,
+      updateCurrencyFromProducts,
+    ]
   );
 
   // search products
@@ -1007,15 +1229,42 @@ const KalifindSearch: React.FC<{
     }
 
     const productsToSort = [...filteredProducts];
+
+    const getSortablePrice = (product: Product): number | undefined => {
+      return (
+        parsePriceToNumber(product.price) ??
+        parsePriceToNumber(product.salePrice) ??
+        parsePriceToNumber(product.regularPrice)
+      );
+    };
+
     switch (sortOption) {
       case 'a-z':
         return productsToSort.sort((a, b) => a.title.localeCompare(b.title));
       case 'z-a':
         return productsToSort.sort((a, b) => b.title.localeCompare(a.title));
       case 'price-asc':
-        return productsToSort.sort((a, b) => parseFloat(a.price) - parseFloat(b.price));
+        return productsToSort.sort((a, b) => {
+          const priceA = getSortablePrice(a);
+          const priceB = getSortablePrice(b);
+
+          if (priceA === undefined && priceB === undefined) return 0;
+          if (priceA === undefined) return 1;
+          if (priceB === undefined) return -1;
+
+          return priceA - priceB;
+        });
       case 'price-desc':
-        return productsToSort.sort((a, b) => parseFloat(b.price) - parseFloat(a.price));
+        return productsToSort.sort((a, b) => {
+          const priceA = getSortablePrice(a);
+          const priceB = getSortablePrice(b);
+
+          if (priceA === undefined && priceB === undefined) return 0;
+          if (priceA === undefined) return 1;
+          if (priceB === undefined) return -1;
+
+          return priceB - priceA;
+        });
       default:
         return productsToSort;
     }
@@ -1232,10 +1481,40 @@ const KalifindSearch: React.FC<{
 
   // Load more products function (uses centralized searchService to keep normalization and pagination consistent)
   const loadMoreProducts = useCallback(async () => {
-    if (isLoadingMore || !hasMoreProducts) return;
+    if (isLoadingMore || !hasMoreProducts || !storeUrl) return;
 
     setIsLoadingMore(true);
     try {
+      let featured: string | undefined;
+      if (debouncedFilters.featuredProducts.length > 0) {
+        if (
+          debouncedFilters.featuredProducts.includes('Featured') &&
+          !debouncedFilters.featuredProducts.includes('Not Featured')
+        ) {
+          featured = 'true';
+        } else if (
+          debouncedFilters.featuredProducts.includes('Not Featured') &&
+          !debouncedFilters.featuredProducts.includes('Featured')
+        ) {
+          featured = 'false';
+        }
+      }
+
+      let inSale: string | undefined;
+      if (debouncedFilters.saleStatus.length > 0) {
+        if (
+          debouncedFilters.saleStatus.includes('On Sale') &&
+          !debouncedFilters.saleStatus.includes('Not On Sale')
+        ) {
+          inSale = 'true';
+        } else if (
+          debouncedFilters.saleStatus.includes('Not On Sale') &&
+          !debouncedFilters.saleStatus.includes('On Sale')
+        ) {
+          inSale = 'false';
+        }
+      }
+
       // Build structured params for the search service (it normalizes storeUrl internally)
       const searchParams: SearchParams = {
         q: debouncedSearchQuery || '',
@@ -1251,6 +1530,8 @@ const KalifindSearch: React.FC<{
           stockStatus: debouncedFilters.stockStatus,
         }),
         ...(debouncedPriceRange && { priceRange: debouncedPriceRange }),
+        ...(typeof inSale !== 'undefined' && { insale: inSale }),
+        ...(typeof featured !== 'undefined' && { featured }),
       };
 
       const result = await searchService.searchProducts(searchParams);
@@ -1269,6 +1550,7 @@ const KalifindSearch: React.FC<{
       if (products.length === 0) {
         setHasMoreProducts(false);
       } else {
+        updateCurrencyFromProducts(products);
         setFilteredProducts((prev) => [...prev, ...products]);
         setDisplayedProducts((prev) => prev + products.length);
         setCurrentPage((prev) => prev + 1);
@@ -1287,6 +1569,7 @@ const KalifindSearch: React.FC<{
     currentPage,
     debouncedFilters,
     debouncedPriceRange,
+    updateCurrencyFromProducts,
   ]);
 
   // Infinite scroll observer for mobile
@@ -1326,19 +1609,21 @@ const KalifindSearch: React.FC<{
 
   // Function to calculate discount percentage
   const calculateDiscountPercentage = (regularPrice: string, salePrice: string): number | null => {
-    try {
-      const regular = parseFloat(regularPrice.replace(/[^\d.,]/g, '').replace(',', '.'));
-      const sale = parseFloat(salePrice.replace(/[^\d.,]/g, '').replace(',', '.'));
+    const regular = parsePriceToNumber(regularPrice);
+    const sale = parsePriceToNumber(salePrice);
 
-      if (isNaN(regular) || isNaN(sale) || regular <= 0 || sale <= 0 || sale >= regular) {
-        return null;
-      }
-
-      const discount = ((regular - sale) / regular) * 100;
-      return Math.round(discount);
-    } catch {
+    if (
+      regular === undefined ||
+      sale === undefined ||
+      regular <= 0 ||
+      sale <= 0 ||
+      sale >= regular
+    ) {
       return null;
     }
+
+    const discount = ((regular - sale) / regular) * 100;
+    return Math.round(discount);
   };
 
   // Product click handler
@@ -1387,6 +1672,76 @@ const KalifindSearch: React.FC<{
       ))}
     </div>
   );
+
+  useEffect(() => {
+    setStoreCurrencyCode(undefined);
+    setStoreCurrencySymbol(undefined);
+  }, [storeUrl]);
+
+  const formatPrice = useCallback(
+    (value?: string | null) => {
+      if (value === undefined || value === null) return '';
+      const trimmed = String(value).trim();
+      if (!trimmed) return '';
+
+      if (CURRENCY_SYMBOL_REGEX.test(trimmed)) {
+        return trimmed;
+      }
+
+      let workingString = trimmed;
+      let detectedCode: string | undefined;
+      const isoMatch = trimmed.match(/\b[A-Z]{3}\b/);
+      if (isoMatch) {
+        const code = isIsoCurrencyCode(isoMatch[0]);
+        if (code) {
+          detectedCode = code;
+          workingString = trimmed.replace(isoMatch[0], '').trim();
+        }
+      }
+
+      const amount = parsePriceToNumber(workingString);
+      if (amount === undefined) {
+        return trimmed;
+      }
+
+      const formatNumber = (code?: string) => {
+        if (!code) return undefined;
+        try {
+          return new Intl.NumberFormat(undefined, {
+            style: 'currency',
+            currency: code,
+          }).format(amount);
+        } catch {
+          return undefined;
+        }
+      };
+
+      const formattedWithDetectedCode = formatNumber(detectedCode);
+      if (formattedWithDetectedCode) {
+        return formattedWithDetectedCode;
+      }
+
+      const formattedWithStoreCode = formatNumber(storeCurrencyCode);
+      if (formattedWithStoreCode) {
+        return formattedWithStoreCode;
+      }
+
+      if (storeCurrencySymbol) {
+        const localizedAmount = amount.toLocaleString(undefined, {
+          minimumFractionDigits: amount % 1 === 0 ? 0 : 2,
+          maximumFractionDigits: 2,
+        });
+        return `${storeCurrencySymbol}${localizedAmount}`;
+      }
+
+      return amount.toLocaleString(undefined, {
+        minimumFractionDigits: amount % 1 === 0 ? 0 : 2,
+        maximumFractionDigits: 2,
+      });
+    },
+    [storeCurrencyCode, storeCurrencySymbol]
+  );
+
   return (
     <div className="bg-background box-border w-full overflow-y-auto font-sans antialiased">
       {!hideHeader && (
@@ -2612,6 +2967,7 @@ const KalifindSearch: React.FC<{
                     calculateDiscountPercentage={calculateDiscountPercentage}
                     addingToCart={addingToCart}
                     handleAddToCart={handleAddToCart}
+                    formatPrice={formatPrice}
                   />
                 ) : (
                   // Show skeleton loaders while recommendations are loading
@@ -2649,6 +3005,7 @@ const KalifindSearch: React.FC<{
                     onAddToCart={handleAddToCart}
                     isAddingToCart={addingToCart === product.id}
                     calculateDiscountPercentage={calculateDiscountPercentage}
+                    formatPrice={formatPrice}
                   />
                 ))}
               </div>

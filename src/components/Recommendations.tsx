@@ -9,6 +9,7 @@ interface RecommendationsProps {
   calculateDiscountPercentage: (regularPrice: string, salePrice: string) => number | null;
   addingToCart: string | null;
   handleAddToCart: (product: Product) => void;
+  formatPrice: (value?: string | null) => string;
 }
 
 const Recommendations: React.FC<RecommendationsProps> = ({
@@ -17,6 +18,7 @@ const Recommendations: React.FC<RecommendationsProps> = ({
   calculateDiscountPercentage,
   addingToCart,
   handleAddToCart,
+  formatPrice,
 }) => {
   if (recommendations.length === 0) {
     return (
@@ -76,6 +78,7 @@ const Recommendations: React.FC<RecommendationsProps> = ({
             onAddToCart={handleAddToCart}
             isAddingToCart={addingToCart === product.id}
             calculateDiscountPercentage={calculateDiscountPercentage}
+            formatPrice={formatPrice}
           />
         ))}
       </div>

@@ -21,39 +21,31 @@ export interface BooleanFacetBucket {
   doc_count: number;
 }
 
+export interface SearchSuggestion {
+  text: string;
+  score?: number;
+}
+
+export interface SearchFacets {
+  [key: string]: {
+    buckets?: FacetBucket[] | StringFacetBucket[] | BooleanFacetBucket[];
+    doc_count?: number;
+  };
+}
+
 export interface SearchResponse {
   products: Product[];
   total: number;
-  facets?: {
-    category?: {
-      buckets: StringFacetBucket[];
-    };
-    brands?: {
-      buckets: StringFacetBucket[];
-    };
-    colors?: {
-      buckets: StringFacetBucket[];
-    };
-    sizes?: {
-      buckets: StringFacetBucket[];
-    };
-    tags?: {
-      buckets: StringFacetBucket[];
-    };
-    price?: {
-      buckets: Array<{ key: string; from?: number; to?: number; doc_count: number }>;
-    };
-    instock?: {
-      buckets: StringFacetBucket[];
-    };
-    featured?: {
-      buckets: BooleanFacetBucket[];
-    };
-    insale?: {
-      buckets: BooleanFacetBucket[];
-    };
-  };
+  page?: number;
+  limit?: number;
   hasMore?: boolean;
+  facets?: SearchFacets;
+  correctedQuery?: string;
+  originalQuery?: string;
+  wasCorrected?: boolean;
+  suggestions?: SearchSuggestion[];
+  queryId?: string;
+  query_id?: string;
 }
 
 export interface AutocompleteSuggestion {
@@ -72,9 +64,9 @@ export function isSearchResponse(response: unknown): response is SearchResponse 
     response !== undefined &&
     typeof response === 'object' &&
     'products' in response &&
-    Array.isArray(response.products) &&
+    Array.isArray((response as { products: unknown }).products) &&
     'total' in response &&
-    typeof response.total === 'number'
+    typeof (response as { total: unknown }).total === 'number'
   );
 }
 

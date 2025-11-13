@@ -16,11 +16,23 @@ interface WidgetTriggerProps {
 }
 
 export default function WidgetTrigger({ onClick, storeUrl }: WidgetTriggerProps) {
+  let hostLabel = 'your store';
+  if (storeUrl) {
+    try {
+      hostLabel = new URL(storeUrl).hostname || hostLabel;
+    } catch {
+      const sanitized = storeUrl.replace(/^https?:\/\//i, '').trim();
+      if (sanitized) {
+        hostLabel = sanitized.split('/')[0] || hostLabel;
+      }
+    }
+  }
+
   return (
     <button
       className="kalifinder-trigger-button"
       onClick={onClick}
-      title={`Search products on ${new URL(storeUrl).hostname}`}
+      title={`Search products on ${hostLabel}`}
       aria-label="Open KaliFinder search"
       aria-expanded="false"
       type="button"
