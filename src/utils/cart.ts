@@ -76,6 +76,28 @@ const getErrorMessage = (error: unknown): string => {
  */
 export const addToCart = async (product: Product, storeUrl: string): Promise<CartResponse> => {
   try {
+    // Ensure storeUrl is provided
+    if (!storeUrl) {
+      throw new Error('Store URL is required for cart operations');
+    }
+
+    // Use product's storeUrl if available, fallback to provided storeUrl
+    const effectiveStoreUrl = product.storeUrl || storeUrl;
+
+    // Normalize storeUrl (remove trailing slash, ensure protocol)
+    const normalizedStoreUrl = effectiveStoreUrl.trim().replace(/\/$/, '');
+    const storeUrlWithProtocol = normalizedStoreUrl.startsWith('http')
+      ? normalizedStoreUrl
+      : `https://${normalizedStoreUrl}`;
+
+    console.log('🛒 Cart operation initiated:', {
+      product: product.title,
+      productId: product.id,
+      storeUrl: storeUrlWithProtocol,
+      productType: product.productType,
+      storeType: product.storeType,
+    });
+
     // Check if product is external (always redirect to product page)
     if (product.productType === 'external') {
       if (product.productUrl) {
@@ -125,11 +147,13 @@ export const addToCart = async (product: Product, storeUrl: string): Promise<Car
       product: product.title,
       productType: product.productType,
       platform,
-      storeUrl,
+      storeUrl: storeUrlWithProtocol,
+      wooProductId: product.wooProductId,
+      shopifyVariantId: product.shopifyVariantId,
     });
 
     // Create platform-specific cart instance
-    const cartInstance = createCartInstance(platform, storeUrl);
+    const cartInstance = createCartInstance(platform, storeUrlWithProtocol);
 
     // Show loading toast
     const loadingToast = toast.loading(`Adding ${product.title} to cart...`);
@@ -163,7 +187,7 @@ export const addToCart = async (product: Product, storeUrl: string): Promise<Car
       try {
         const cartProduct: CartProduct = {
           ...product,
-          storeUrl,
+          storeUrl: storeUrlWithProtocol,
           storeType: platform,
         };
         updateCartDataForTracking(cartProduct, parseFloat(product.price) || 0);

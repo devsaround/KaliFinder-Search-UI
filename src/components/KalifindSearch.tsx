@@ -43,13 +43,13 @@ type CurrencyInfo = {
 };
 
 function isIsoCurrencyCode(value?: string | null): string | undefined {
-  if (!value) return undefined;
+  if (!value || typeof value !== 'string') return undefined;
   const trimmed = value.trim().toUpperCase();
   return ISO_CURRENCY_CODE_REGEX.test(trimmed) ? trimmed : undefined;
 }
 
 function extractCurrencyInfoFromPriceString(value?: string | null): CurrencyInfo {
-  if (!value) return {};
+  if (!value || typeof value !== 'string') return {};
   const trimmed = value.trim();
   if (!trimmed) return {};
 
@@ -807,8 +807,14 @@ const KalifindSearch: React.FC<{
         products = [];
       }
 
-      setRecommendations(products); // Show all recommendations
-      updateCurrencyFromProducts(products);
+      // Ensure all recommendations have storeUrl for cart operations
+      const productsWithStoreUrl = products.map((product) => ({
+        ...product,
+        storeUrl: product.storeUrl || storeUrl, // Fallback to component storeUrl
+      }));
+
+      setRecommendations(productsWithStoreUrl); // Show all recommendations
+      updateCurrencyFromProducts(productsWithStoreUrl);
       setRecommendationsFetched(true);
     } catch (error) {
       console.error('Failed to fetch recommendations:', error);
@@ -1138,9 +1144,15 @@ const KalifindSearch: React.FC<{
 
             updateCurrencyFromProducts(products);
 
-            setFilteredProducts(products);
+            // Ensure all products have storeUrl for cart operations
+            const productsWithStoreUrl = products.map((product) => ({
+              ...product,
+              storeUrl: product.storeUrl || storeUrl, // Fallback to component storeUrl
+            }));
+
+            setFilteredProducts(productsWithStoreUrl);
             setTotalProducts(total);
-            setDisplayedProducts(products.length);
+            setDisplayedProducts(productsWithStoreUrl.length);
             setHasMoreProducts(hasMore);
 
             // Debug: Log the state updates
@@ -1551,8 +1563,15 @@ const KalifindSearch: React.FC<{
         setHasMoreProducts(false);
       } else {
         updateCurrencyFromProducts(products);
-        setFilteredProducts((prev) => [...prev, ...products]);
-        setDisplayedProducts((prev) => prev + products.length);
+
+        // Ensure all products have storeUrl for cart operations
+        const productsWithStoreUrl = products.map((product) => ({
+          ...product,
+          storeUrl: product.storeUrl || storeUrl, // Fallback to component storeUrl
+        }));
+
+        setFilteredProducts((prev) => [...prev, ...productsWithStoreUrl]);
+        setDisplayedProducts((prev) => prev + productsWithStoreUrl.length);
         setCurrentPage((prev) => prev + 1);
         setHasMoreProducts(hasMore);
       }
