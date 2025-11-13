@@ -12,10 +12,10 @@ import { ResponseCache, buildCacheKey } from './response-cache';
 const DEFAULT_CONFIG = {
   baseUrl: import.meta.env.VITE_BACKEND_URL || 'https://api.kalifinder.com',
   cache: {
-    enabled: false, // Temporarily disabled for debugging
+    enabled: true, // ✅ Re-enabled for production performance
     ttl: {
-      search: 300000, // 5 minutes
-      autocomplete: 180000, // 3 minutes
+      search: 180000, // 3 minutes (reduced from 5 for fresher results)
+      autocomplete: 60000, // 1 minute (reduced from 3)
       popularSearches: 600000, // 10 minutes
       facets: 1800000, // 30 minutes
     },
@@ -168,7 +168,7 @@ class SearchService {
       const dynamicTtl =
         resultSize > 50
           ? 180000 // 3 minutes for large result sets
-          : 600000; // 10 minutes for smaller result sets
+          : 300000; // 5 minutes for smaller result sets
 
       // Cache the response with dynamic TTL
       if (this.config.cache.enabled) {
@@ -178,8 +178,10 @@ class SearchService {
       return response;
     } catch (error) {
       console.error('Search failed:', error);
-      // Return empty results on error
-      return { products: [], total: 0 };
+      // Throw error instead of returning empty results for better error handling
+      throw new Error(
+        error instanceof Error ? `Search request failed: ${error.message}` : 'Search request failed'
+      );
     }
   }
 
