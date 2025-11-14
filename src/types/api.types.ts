@@ -46,6 +46,9 @@ export interface SearchResponse {
   suggestions?: SearchSuggestion[];
   queryId?: string;
   query_id?: string;
+  // ✅ NEW: Zero-results handling fields
+  message?: string; // User-friendly message (e.g., "No results found for 'pants'")
+  showingRecommended?: boolean; // Flag indicating recommended products are shown instead of search results
 }
 
 export interface AutocompleteSuggestion {

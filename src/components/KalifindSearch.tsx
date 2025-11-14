@@ -291,6 +291,8 @@ const KalifindSearch: React.FC<{
   const [recommendations, setRecommendations] = useState<Product[]>([]);
   const [recommendationsFetched, setRecommendationsFetched] = useState(false);
   const [isInitialState, setIsInitialState] = useState(true);
+  const [searchMessage, setSearchMessage] = useState<string | undefined>(undefined);
+  const [isShowingRecommended, setIsShowingRecommended] = useState(false);
   const [maxPrice, setMaxPrice] = useState<number>(10000); // Default max price
   const [availableCategories, setAvailableCategories] = useState<string[]>([]);
   const [availableBrands, setAvailableBrands] = useState<string[]>([]);
@@ -851,6 +853,30 @@ const KalifindSearch: React.FC<{
     }
   }, [searchQuery, storeUrl, setHasSearched, hasSearched]);
 
+  // ✅ FIX: Transition out of initial state when filters are applied
+  // This ensures filters work even without a search query
+  useEffect(() => {
+    // Check if any filter is actually applied
+    const hasActiveFilters =
+      filters.categories.length > 0 ||
+      filters.brands.length > 0 ||
+      filters.colors.length > 0 ||
+      filters.sizes.length > 0 ||
+      filters.tags.length > 0 ||
+      filters.stockStatus.length > 0 ||
+      filters.featuredProducts.length > 0 ||
+      filters.saleStatus.length > 0 ||
+      (filters.priceRange && (filters.priceRange[0] > 0 || filters.priceRange[1] < maxPrice));
+
+    // If filters are applied while in initial state, transition out
+    if (hasActiveFilters && isInitialState && !searchQuery) {
+      console.log('🔧 Filters applied without search query - transitioning out of initial state');
+      setShowRecommendations(false);
+      setIsInitialState(false);
+      setHasSearched(true); // Mark as searched so filters apply
+    }
+  }, [filters, isInitialState, searchQuery, maxPrice, setHasSearched]);
+
   // Consolidated initial data loading with Promise.all for better performance
   useEffect(() => {
     if (!storeUrl) return;
@@ -1081,11 +1107,15 @@ const KalifindSearch: React.FC<{
             let products: Product[];
             let total = 0;
             let hasMore = false;
+            let message: string | undefined;
+            let showingRecommended = false;
 
             if (isSearchResponse(result)) {
               products = result.products;
               total = result.total || 0;
               hasMore = result.hasMore || false;
+              message = result.message;
+              showingRecommended = result.showingRecommended || false;
 
               // Debug: Log the total to verify API response
               console.log(
@@ -1153,6 +1183,8 @@ const KalifindSearch: React.FC<{
             setTotalProducts(total);
             setDisplayedProducts(productsWithStoreUrl.length);
             setHasMoreProducts(hasMore);
+            setSearchMessage(message);
+            setIsShowingRecommended(showingRecommended);
 
             // Debug: Log the state updates
             console.log(
@@ -1427,6 +1459,16 @@ const KalifindSearch: React.FC<{
     setRecentSearches([]);
   };
 
+  const handleClearAll = () => {
+    // Clear search query
+    setSearchQuery('');
+    // Clear all filters
+    clearFilters();
+    // Reset to initial state
+    setShowRecommendations(true);
+    setHasSearched(false);
+  };
+
   const handleCategoryChange = (category: string) => {
     toggleFilterItem('categories', category);
 
@@ -1659,9 +1701,9 @@ const KalifindSearch: React.FC<{
     }
 
     if (product.productUrl) {
-      window.open(product.productUrl, '_blank');
+      window.open(product.productUrl, '_self');
     } else if (product.url) {
-      window.open(product.url, '_blank');
+      window.open(product.url, '_self');
     } else {
       console.warn('No product URL available for:', product.title);
     }
@@ -2242,7 +2284,7 @@ const KalifindSearch: React.FC<{
               <div className="border-border flex gap-2 border-t p-4">
                 {isAnyFilterActive && (
                   <button
-                    onClick={clearFilters}
+                    onClick={handleClearAll}
                     className="border-border text-foreground hover:bg-muted flex-1 rounded-lg border py-3 text-sm font-medium transition-colors"
                   >
                     Clear All
@@ -2801,7 +2843,7 @@ const KalifindSearch: React.FC<{
           </Accordion>
           {isAnyFilterActive && (
             <button
-              onClick={clearFilters}
+              onClick={handleClearAll}
               className="mt-6 w-full rounded-lg border-2 border-purple-600 bg-white px-4 py-3 text-sm font-semibold text-purple-600 transition-colors hover:bg-purple-50"
             >
               Clear All Filters
@@ -2860,8 +2902,21 @@ const KalifindSearch: React.FC<{
             <div className="text-muted-foreground mb-4 flex items-center justify-between text-sm">
               <div className="flex items-center gap-2">
                 <span className="text-foreground text-sm font-medium lg:text-base">
-                  <b className="text-foreground font-bold">{displayedProducts}</b> of{' '}
-                  <b className="text-foreground font-bold">{totalProducts}</b> products
+                  {isShowingRecommended ? (
+                    <>
+                      <b className="text-foreground font-bold">{displayedProducts}</b> recommended
+                      products
+                    </>
+                  ) : totalProducts > 0 ? (
+                    <>
+                      <b className="text-foreground font-bold">{displayedProducts}</b> of{' '}
+                      <b className="text-foreground font-bold">{totalProducts}</b> results
+                    </>
+                  ) : (
+                    <>
+                      <b className="text-foreground font-bold">{displayedProducts}</b> products
+                    </>
+                  )}
                 </span>
               </div>
               <div onClick={(e) => e.stopPropagation()}>
@@ -3164,8 +3219,24 @@ const KalifindSearch: React.FC<{
             <LoadingSkeleton />
           ) : (
             <>
+              {/* Show message banner when displaying recommended products */}
+              {isShowingRecommended && searchMessage && filteredProducts.length > 0 && (
+                <div className="bg-muted/50 animate-in fade-in mb-4 rounded-lg border border-gray-200 p-4 duration-300">
+                  <div className="flex items-start gap-3">
+                    <div className="bg-primary/10 text-primary mt-0.5 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full">
+                      <Search className="h-4 w-4" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-foreground text-sm font-medium">Showing Recommendations</p>
+                      <p className="text-muted-foreground mt-1 text-xs lg:text-sm">
+                        {searchMessage}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
               <div className="grid w-full grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4 xl:grid-cols-4 2xl:grid-cols-4">
-                {filteredProducts.map((product) => (
+                {sortedProducts.map((product) => (
                   <ProductCard
                     key={product.id}
                     product={product}
@@ -3179,39 +3250,48 @@ const KalifindSearch: React.FC<{
               </div>
 
               {/* Infinite scroll trigger for mobile */}
-              {isMobile && hasMoreProducts && displayedProducts > 0 && !isLoading && (
-                <div ref={loadMoreTriggerRef} id="load-more-trigger" className="my-4 h-16 w-full">
-                  {isLoadingMore && (
-                    <div className="flex items-center justify-center py-4">
-                      <div className="flex items-center gap-2">
-                        <div className="flex space-x-2">
-                          <div className="animate-bounce-delay-0 bg-primary h-2 w-2 animate-bounce rounded-full"></div>
-                          <div className="animate-bounce-delay-150 bg-primary h-2 w-2 animate-bounce rounded-full"></div>
-                          <div className="animate-bounce-delay-300 bg-primary h-2 w-2 animate-bounce rounded-full"></div>
+              {isMobile &&
+                hasMoreProducts &&
+                displayedProducts > 0 &&
+                !isLoading &&
+                !isShowingRecommended && (
+                  <div ref={loadMoreTriggerRef} id="load-more-trigger" className="my-4 h-16 w-full">
+                    {isLoadingMore && (
+                      <div className="flex items-center justify-center py-4">
+                        <div className="flex items-center gap-2">
+                          <div className="flex space-x-2">
+                            <div className="animate-bounce-delay-0 bg-primary h-2 w-2 animate-bounce rounded-full"></div>
+                            <div className="animate-bounce-delay-150 bg-primary h-2 w-2 animate-bounce rounded-full"></div>
+                            <div className="animate-bounce-delay-300 bg-primary h-2 w-2 animate-bounce rounded-full"></div>
+                          </div>
+                          <span className="text-muted-foreground text-sm">
+                            Loading {Math.min(12, Math.max(0, totalProducts - displayedProducts))}{' '}
+                            more products...
+                          </span>
                         </div>
-                        <span className="text-muted-foreground text-sm">
-                          Loading {Math.min(12, totalProducts - displayedProducts)} more products...
-                        </span>
                       </div>
-                    </div>
-                  )}
-                </div>
-              )}
+                    )}
+                  </div>
+                )}
 
               {/* Load More button for desktop */}
-              {!isMobile && hasMoreProducts && displayedProducts > 0 && !isLoading && (
-                <div className="mt-8 flex justify-center">
-                  <button
-                    onClick={() => void loadMoreProducts()}
-                    disabled={isLoadingMore}
-                    className="bg-primary text-primary-foreground hover:bg-primary-hover rounded-lg px-8 py-3 font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    {isLoadingMore
-                      ? 'Loading...'
-                      : `Load More (${Math.min(12, totalProducts - displayedProducts)} more)`}
-                  </button>
-                </div>
-              )}
+              {!isMobile &&
+                hasMoreProducts &&
+                displayedProducts > 0 &&
+                !isLoading &&
+                !isShowingRecommended && (
+                  <div className="mt-8 flex justify-center">
+                    <button
+                      onClick={() => void loadMoreProducts()}
+                      disabled={isLoadingMore}
+                      className="bg-primary text-primary-foreground hover:bg-primary-hover rounded-lg px-8 py-3 font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {isLoadingMore
+                        ? 'Loading...'
+                        : `Load More (${Math.min(12, Math.max(0, totalProducts - displayedProducts))} more)`}
+                    </button>
+                  </div>
+                )}
             </>
           )}
           {!isLoading &&
@@ -3225,13 +3305,26 @@ const KalifindSearch: React.FC<{
                     <Search className="text-muted-foreground h-8 w-8" />
                   </div>
                   <div className="animate-in slide-in-from-bottom-2 duration-500">
-                    <p className="text-foreground mb-2 text-lg font-semibold lg:text-xl">
-                      Search not found
-                    </p>
-                    <p className="text-muted-foreground text-sm lg:text-base">
-                      No products found matching your criteria. Try different keywords or browse our
-                      categories.
-                    </p>
+                    {searchMessage ? (
+                      <>
+                        <p className="text-foreground mb-2 text-lg font-semibold lg:text-xl">
+                          {isShowingRecommended ? 'Showing Recommendations' : 'Search not found'}
+                        </p>
+                        <p className="text-muted-foreground text-sm lg:text-base">
+                          {searchMessage}
+                        </p>
+                      </>
+                    ) : (
+                      <>
+                        <p className="text-foreground mb-2 text-lg font-semibold lg:text-xl">
+                          Search not found
+                        </p>
+                        <p className="text-muted-foreground text-sm lg:text-base">
+                          No products found matching your criteria. Try different keywords or browse
+                          our categories.
+                        </p>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>
