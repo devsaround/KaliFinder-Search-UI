@@ -50,7 +50,9 @@ export interface Product {
   salePrice?: string;
   sku?: string;
   status?: string;
-  featured?: boolean;
+  featured?: boolean | number | string;
+  onSale?: boolean | number | string;
+  stockStatus?: string;
   storeUrl?: string;
   // Cart-specific fields
   productType?: string; // "simple", "variable", or "external"

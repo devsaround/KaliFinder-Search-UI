@@ -77,6 +77,10 @@ export const ProductCard: React.FC<ProductCardProps> = ({
       ? formattedRegularPrice
       : '';
 
+  // Check stock status
+  const isOutOfStock = product.stockStatus?.toLowerCase() === 'outofstock';
+  const isOnBackorder = product.stockStatus?.toLowerCase() === 'onbackorder';
+
   return (
     <div className="group flex w-full flex-col overflow-hidden rounded-xl border border-gray-200 bg-white transition-all duration-300 hover:border-purple-300 hover:shadow-xl">
       {/* Product Image */}
@@ -111,6 +115,26 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             <span className="drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">
               {discountPercentage ? `-${discountPercentage}%` : 'Sale'}
             </span>
+          </div>
+        )}
+
+        {/* Out of Stock Badge */}
+        {isOutOfStock && (
+          <div
+            className="absolute right-2 bottom-2 left-2 rounded-lg border border-white/30 px-2.5 py-1.5 text-center text-xs font-bold tracking-wide text-white uppercase shadow-[0_8px_16px_rgba(0,0,0,0.3)] backdrop-blur-md sm:text-sm"
+            style={{ backgroundColor: 'rgba(220, 38, 38, 0.95)' }}
+          >
+            <span className="drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">Out of Stock</span>
+          </div>
+        )}
+
+        {/* On Backorder Badge */}
+        {isOnBackorder && (
+          <div
+            className="absolute right-2 bottom-2 left-2 rounded-lg border border-white/30 px-2.5 py-1.5 text-center text-xs font-bold tracking-wide text-white uppercase shadow-[0_8px_16px_rgba(0,0,0,0.3)] backdrop-blur-md sm:text-sm"
+            style={{ backgroundColor: 'rgba(251, 146, 60, 0.95)' }}
+          >
+            <span className="drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">On Backorder</span>
           </div>
         )}
 

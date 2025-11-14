@@ -1372,6 +1372,86 @@ const KalifindSearch: React.FC<{
             setSearchMessage(message);
             setIsShowingRecommended(showingRecommended);
 
+            // 🎯 REACTIVE FACETS: Calculate counts from filtered products (frontend-only)
+            // This ensures facets show only what's available in current filtered results OR search query
+            const hasActiveQuery = query && query.trim().length > 0;
+            const hasActiveFilters =
+              debouncedFilters.categories.length > 0 ||
+              debouncedFilters.stockStatus.length > 0 ||
+              debouncedFilters.featuredProducts.length > 0 ||
+              debouncedFilters.saleStatus.length > 0;
+
+            if (productsWithStoreUrl.length > 0 && (hasActiveQuery || hasActiveFilters)) {
+              // Calculate reactive stock status counts
+              const reactiveStockCounts: { [key: string]: number } = {};
+              productsWithStoreUrl.forEach((product) => {
+                const status = product.stockStatus?.toLowerCase();
+                const displayName =
+                  status === 'instock'
+                    ? 'In Stock'
+                    : status === 'outofstock'
+                      ? 'Out of Stock'
+                      : status === 'onbackorder'
+                        ? 'On Backorder'
+                        : null;
+                if (displayName) {
+                  reactiveStockCounts[displayName] = (reactiveStockCounts[displayName] || 0) + 1;
+                }
+              });
+              setStockStatusCounts(reactiveStockCounts); // Calculate reactive featured counts
+              let reactiveFeaturedCount = 0;
+              let reactiveNotFeaturedCount = 0;
+              productsWithStoreUrl.forEach((product) => {
+                if (
+                  product.featured === true ||
+                  product.featured === 1 ||
+                  product.featured === '1'
+                ) {
+                  reactiveFeaturedCount++;
+                } else {
+                  reactiveNotFeaturedCount++;
+                }
+              });
+              setFeaturedCount(reactiveFeaturedCount);
+              setNotFeaturedCount(reactiveNotFeaturedCount);
+
+              // Calculate reactive sale counts
+              let reactiveSaleCount = 0;
+              let reactiveNotSaleCount = 0;
+              productsWithStoreUrl.forEach((product) => {
+                if (product.onSale === true || product.onSale === 1 || product.onSale === '1') {
+                  reactiveSaleCount++;
+                } else {
+                  reactiveNotSaleCount++;
+                }
+              });
+              setSaleCount(reactiveSaleCount);
+              setNotSaleCount(reactiveNotSaleCount);
+
+              // Calculate reactive category counts
+              const reactiveCategoryCounts: { [key: string]: number } = {};
+              productsWithStoreUrl.forEach((product) => {
+                if (product.categories && Array.isArray(product.categories)) {
+                  product.categories.forEach((cat: string) => {
+                    reactiveCategoryCounts[cat] = (reactiveCategoryCounts[cat] || 0) + 1;
+                  });
+                }
+              });
+              setCategoryCounts(reactiveCategoryCounts);
+              setAvailableCategories(Object.keys(reactiveCategoryCounts));
+
+              console.log('✨ Reactive facets calculated from filtered products:', {
+                stockStatus: reactiveStockCounts,
+                featured: {
+                  Featured: reactiveFeaturedCount,
+                  'Not Featured': reactiveNotFeaturedCount,
+                },
+                sale: { 'On Sale': reactiveSaleCount, 'Not On Sale': reactiveNotSaleCount },
+                categories: reactiveCategoryCounts,
+                totalProducts: productsWithStoreUrl.length,
+              });
+            }
+
             // Debug: Log the state updates
             console.log(
               'KaliFinder Search: Setting totalProducts =',
