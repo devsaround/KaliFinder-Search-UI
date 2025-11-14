@@ -269,7 +269,16 @@ const CategoryTreeNode: React.FC<{
   onToggle: (fullPath: string) => void;
   onExpand: (name: string) => void;
   level: number;
-}> = ({ node, selectedCategories, expandedCategories, onToggle, onExpand, level }) => {
+  getFacetCount?: (facetType: 'category', key: string) => number;
+}> = ({
+  node,
+  selectedCategories,
+  expandedCategories,
+  onToggle,
+  onExpand,
+  level,
+  getFacetCount,
+}) => {
   const hasChildren = node.children.size > 0;
   const isExpanded = expandedCategories.has(node.name);
   const isSelected = selectedCategories.includes(node.fullPath);
@@ -340,7 +349,7 @@ const CategoryTreeNode: React.FC<{
             isSelected ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-600'
           }`}
         >
-          {node.count}
+          {getFacetCount ? getFacetCount('category', node.fullPath) : node.count}
         </span>
       </label>
 
@@ -355,6 +364,7 @@ const CategoryTreeNode: React.FC<{
               onToggle={onToggle}
               onExpand={onExpand}
               level={level + 1}
+              getFacetCount={getFacetCount}
             />
           ))}
         </div>
@@ -435,7 +445,6 @@ const KalifindSearch: React.FC<{
   });
   const [totalProducts, setTotalProducts] = useState(0);
   const [displayedProducts, setDisplayedProducts] = useState(0);
-  const [globalTotalProducts, setGlobalTotalProducts] = useState(0); // Global total (never filtered)
 
   // New state variables for search behavior
   const [showRecommendations, setShowRecommendations] = useState(true);
@@ -481,6 +490,27 @@ const KalifindSearch: React.FC<{
   const [globalFacetsFetched, setGlobalFacetsFetched] = useState(false);
   const [isInitialLoading, setIsInitialLoading] = useState(true); // Track initial data loading
 
+  // Client-side reactive facet counts (calculated from visible products)
+  const [clientReactiveFacets, setClientReactiveFacets] = useState<{
+    categories: { [key: string]: number };
+    brands: { [key: string]: number };
+    stockStatus: { [key: string]: number };
+    tags: { [key: string]: number };
+    featured: number;
+    notFeatured: number;
+    sale: number;
+    notSale: number;
+  }>({
+    categories: {},
+    brands: {},
+    stockStatus: {},
+    tags: {},
+    featured: 0,
+    notFeatured: 0,
+    sale: 0,
+    notSale: 0,
+  });
+
   // Helper function to get sort option label
   const getSortLabel = (option: string) => {
     switch (option) {
@@ -514,6 +544,86 @@ const KalifindSearch: React.FC<{
     sale: true,
   });
 
+  // Calculate client-side reactive facets from visible filtered products
+  useEffect(() => {
+    if (filteredProducts.length === 0) return;
+
+    const categories: { [key: string]: number } = {};
+    const brands: { [key: string]: number } = {};
+    const stockStatus: { [key: string]: number } = {};
+    const tags: { [key: string]: number } = {};
+    let featured = 0;
+    let notFeatured = 0;
+    let sale = 0;
+    let notSale = 0;
+
+    filteredProducts.forEach((product) => {
+      // Count categories
+      if (product.categories && Array.isArray(product.categories)) {
+        product.categories.forEach((category) => {
+          categories[category] = (categories[category] || 0) + 1;
+        });
+      }
+
+      // Count brands
+      if (product.brands && Array.isArray(product.brands)) {
+        product.brands.forEach((brand) => {
+          brands[brand] = (brands[brand] || 0) + 1;
+        });
+      } // Count stock status
+      if (product.stockStatus) {
+        const status = product.stockStatus.toLowerCase();
+        const displayName =
+          status === 'instock'
+            ? 'In Stock'
+            : status === 'outofstock'
+              ? 'Out of Stock'
+              : status === 'onbackorder'
+                ? 'On Backorder'
+                : product.stockStatus;
+        stockStatus[displayName] = (stockStatus[displayName] || 0) + 1;
+      }
+
+      // Count tags
+      if (product.tags && Array.isArray(product.tags)) {
+        product.tags.forEach((tag) => {
+          tags[tag] = (tags[tag] || 0) + 1;
+        });
+      }
+
+      // Count featured
+      if (product.featured === true || product.featured === 'true') {
+        featured++;
+      } else {
+        notFeatured++;
+      }
+
+      // Count sale status
+      if (product.onSale === true || product.onSale === 'true') {
+        sale++;
+      } else {
+        notSale++;
+      }
+    });
+
+    setClientReactiveFacets({
+      categories,
+      brands,
+      stockStatus,
+      tags,
+      featured,
+      notFeatured,
+      sale,
+      notSale,
+    });
+
+    console.log(
+      '🎯 Client-side reactive facets calculated from',
+      filteredProducts.length,
+      'visible products'
+    );
+  }, [filteredProducts]);
+
   // Use custom hooks for filters and cart
   const {
     filters,
@@ -526,7 +636,74 @@ const KalifindSearch: React.FC<{
     initialMaxPrice: maxPrice,
   });
 
-  const { addingToCart, cartMessage, addToCart: addToCartHandler } = useCart(); // Detect mobile device
+  const { addingToCart, cartMessage, addToCart: addToCartHandler } = useCart();
+
+  // Helper function to get the appropriate facet count
+  // Uses client-side reactive counts when any filter is active, otherwise uses backend global counts
+  const getFacetCount = useCallback(
+    (
+      facetType:
+        | 'category'
+        | 'brand'
+        | 'stockStatus'
+        | 'tag'
+        | 'featured'
+        | 'notFeatured'
+        | 'sale'
+        | 'notSale',
+      key?: string
+    ) => {
+      const hasActiveFilters =
+        filters.categories.length > 0 ||
+        filters.brands.length > 0 ||
+        filters.colors.length > 0 ||
+        filters.sizes.length > 0 ||
+        filters.tags.length > 0 ||
+        filters.stockStatus.length > 0 ||
+        filters.featuredProducts.length > 0 ||
+        filters.saleStatus.length > 0 ||
+        (filters.priceRange && (filters.priceRange[0] > 0 || filters.priceRange[1] < maxPrice));
+
+      // If no filters active or no visible products, use backend global counts
+      if (!hasActiveFilters || filteredProducts.length === 0) {
+        if (facetType === 'category' && key) return categoryCounts[key] || 0;
+        if (facetType === 'brand' && key) return brandCounts[key] || 0;
+        if (facetType === 'stockStatus' && key) return stockStatusCounts[key] || 0;
+        if (facetType === 'tag' && key) return tagCounts[key] || 0;
+        if (facetType === 'featured') return featuredCount;
+        if (facetType === 'notFeatured') return notFeaturedCount;
+        if (facetType === 'sale') return saleCount;
+        if (facetType === 'notSale') return notSaleCount;
+        return 0;
+      }
+
+      // Use client-side reactive counts when filters are active
+      if (facetType === 'category' && key) return clientReactiveFacets.categories[key] || 0;
+      if (facetType === 'brand' && key) return clientReactiveFacets.brands[key] || 0;
+      if (facetType === 'stockStatus' && key) return clientReactiveFacets.stockStatus[key] || 0;
+      if (facetType === 'tag' && key) return clientReactiveFacets.tags[key] || 0;
+      if (facetType === 'featured') return clientReactiveFacets.featured;
+      if (facetType === 'notFeatured') return clientReactiveFacets.notFeatured;
+      if (facetType === 'sale') return clientReactiveFacets.sale;
+      if (facetType === 'notSale') return clientReactiveFacets.notSale;
+      return 0;
+    },
+    [
+      filters,
+      maxPrice,
+      filteredProducts.length,
+      categoryCounts,
+      brandCounts,
+      stockStatusCounts,
+      tagCounts,
+      featuredCount,
+      notFeaturedCount,
+      saleCount,
+      notSaleCount,
+      clientReactiveFacets,
+    ]
+  );
+  // Detect mobile device
   useEffect(() => {
     const checkIsMobile = () => {
       setIsMobile(window.innerWidth < 1280);
@@ -865,11 +1042,8 @@ const KalifindSearch: React.FC<{
         }
       }
 
-      // Set global total from initial facets fetch (this represents ALL products in the store)
-      if (result.total) {
-        setGlobalTotalProducts(result.total);
-        console.log('🌍 Global total products set to:', result.total);
-      }
+      // Note: We no longer track global total separately
+      // totalProducts will reflect the current filtered count
 
       // Extract max price from products in global facets
       if (result.products && Array.isArray(result.products) && result.products.length > 0) {
@@ -1884,6 +2058,7 @@ const KalifindSearch: React.FC<{
 
   // Mandatory facet handlers
   const handleStockStatusChange = (status: string) => {
+    console.log('📊 Stock status filter toggled:', status);
     toggleFilterItem('stockStatus', status);
   };
 
@@ -2393,44 +2568,28 @@ const KalifindSearch: React.FC<{
                   </AccordionTrigger>
                   <AccordionContent>
                     <div className="space-y-1">
-                      {availableCategories.map((category) => {
-                        const parts = category.split('>').map((part) => part.trim());
-                        const level = parts.length - 1;
-                        // Show full path with proper formatting
-                        const displayText = parts
-                          .map((part) =>
-                            part
-                              .split(' ')
-                              .map(
-                                (word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
-                              )
-                              .join(' ')
-                          )
-                          .join(' > ');
-
-                        return (
-                          <label
-                            key={category}
-                            className="hover:bg-muted flex cursor-pointer items-center justify-between rounded-lg p-1 sm:p-2"
-                            style={{ paddingLeft: `${level * 1.25 + 0.25}rem` }}
-                          >
-                            <div className="flex items-center gap-3">
-                              <input
-                                type="checkbox"
-                                checked={filters.categories.includes(category)}
-                                onChange={() => handleCategoryChange(category)}
-                                className="text-primary bg-background border-border h-4 w-4 rounded sm:h-5 sm:w-5"
-                              />
-                              <span className="text-foreground text-sm sm:text-base lg:leading-6">
-                                {displayText}
-                              </span>
-                            </div>
-                            <span className="text-muted-foreground bg-muted rounded px-2 py-1 text-xs sm:text-sm">
-                              {categoryCounts[category] || 0}
-                            </span>
-                          </label>
-                        );
-                      })}
+                      {availableCategories.length > 0 ? (
+                        (() => {
+                          const categoryTree = buildCategoryTree(
+                            availableCategories,
+                            categoryCounts
+                          );
+                          return Array.from(categoryTree.children.values()).map((rootNode) => (
+                            <CategoryTreeNode
+                              key={rootNode.fullPath}
+                              node={rootNode}
+                              selectedCategories={filters.categories}
+                              expandedCategories={expandedCategories}
+                              onToggle={handleCategoryChange}
+                              onExpand={handleCategoryExpand}
+                              level={0}
+                              getFacetCount={getFacetCount}
+                            />
+                          ));
+                        })()
+                      ) : (
+                        <p className="text-muted-foreground p-2 text-sm">No categories available</p>
+                      )}
                     </div>
                   </AccordionContent>
                 </AccordionItem>
@@ -2456,7 +2615,7 @@ const KalifindSearch: React.FC<{
                               </span>
                             </div>
                             <span className="text-muted-foreground bg-muted rounded px-2 py-1 text-xs sm:text-sm">
-                              {brandCounts[brand] || 0}
+                              {getFacetCount('brand', brand)}
                             </span>
                           </label>
                         ))}
@@ -2559,7 +2718,7 @@ const KalifindSearch: React.FC<{
                               </span>
                             </div>
                             <span className="text-muted-foreground bg-muted rounded px-2 py-1 text-xs sm:text-sm">
-                              {tagCounts[tag] || 0}
+                              {getFacetCount('tag', tag)}
                             </span>
                           </label>
                         ))}
@@ -2669,7 +2828,7 @@ const KalifindSearch: React.FC<{
             <div className="bg-background mt-auto">
               <div className="flex items-center justify-between bg-gray-50 p-3">
                 <div className="text-foreground pl-2 text-sm">
-                  <b>{globalTotalProducts || totalProducts}</b> products found
+                  <b>{totalProducts}</b> products found
                 </div>
                 <DrawerClose asChild>
                   <button
@@ -2757,6 +2916,7 @@ const KalifindSearch: React.FC<{
                               onToggle={handleCategoryChange}
                               onExpand={handleCategoryExpand}
                               level={0}
+                              getFacetCount={getFacetCount}
                             />
                           ));
                         })()
@@ -3273,7 +3433,11 @@ const KalifindSearch: React.FC<{
               <div className="text-muted-foreground mb-4 flex items-center justify-between text-sm">
                 <div className="flex items-center gap-2">
                   <span className="text-foreground text-sm font-medium lg:text-base">
-                    {isShowingRecommended ? (
+                    {isLoading || isPending ? (
+                      <>
+                        <b className="text-foreground font-bold">Loading...</b>
+                      </>
+                    ) : isShowingRecommended ? (
                       <>
                         <b className="text-foreground font-bold">{displayedProducts}</b> recommended
                         products
@@ -3281,10 +3445,7 @@ const KalifindSearch: React.FC<{
                     ) : totalProducts > 0 ? (
                       <>
                         <b className="text-foreground font-bold">{displayedProducts}</b> of{' '}
-                        <b className="text-foreground font-bold">
-                          {globalTotalProducts || totalProducts}
-                        </b>{' '}
-                        results
+                        <b className="text-foreground font-bold">{totalProducts}</b> results
                       </>
                     ) : (
                       <>
