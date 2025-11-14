@@ -82,7 +82,8 @@
         script.defer = true;
         script.onload = function () {
             if (window.Kalifinder) {
-                Kalifinder.init({ storeUrl: 'https://findifly.kalifinder.com' });
+                Kalifinder.init({ storeUrl: 'https://findifly-dev.kalifinder.com' }); // shopify
+                //Kalifinder.init({ storeUrl: 'https://findifly.kalifinder.com' }); // Wordpress/woocommerce
             }
         };
         document.body.appendChild(script);

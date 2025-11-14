@@ -96,47 +96,48 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           loading="lazy"
         />
 
-        {/* Featured Badge */}
-        {product.featured && (
-          <div
-            className="absolute top-2 right-2 rounded-lg border border-white/30 px-2.5 py-1 text-[10px] font-bold tracking-wide text-white uppercase shadow-[0_8px_16px_rgba(0,0,0,0.3)] backdrop-blur-md sm:px-3 sm:text-xs"
-            style={{ backgroundColor: 'var(--color-purple-600)' }}
-          >
-            <span className="drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">⭐ Featured</span>
-          </div>
-        )}
+        {/* Badges Container - Top with flex-wrap */}
+        <div className="absolute top-2 right-2 left-2 flex flex-wrap gap-1">
+          {/* Featured Badge */}
+          {product.featured && (
+            <div
+              className="rounded-full border border-white/30 px-2 py-0.5 text-[9px] font-bold tracking-wide text-white uppercase shadow-md backdrop-blur-sm"
+              style={{ backgroundColor: 'rgba(124, 58, 237, 0.95)' }}
+            >
+              ⭐ Featured
+            </div>
+          )}
 
-        {/* Discount Badge */}
-        {hasDiscount && (
-          <div
-            className="absolute top-2 left-2 rounded-lg border border-white/30 px-2.5 py-1 text-[10px] font-bold tracking-wide text-white uppercase shadow-[0_8px_16px_rgba(0,0,0,0.3)] backdrop-blur-md sm:px-3 sm:text-xs"
-            style={{ backgroundColor: 'var(--color-purple-600)' }}
-          >
-            <span className="drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">
+          {/* Discount Badge */}
+          {hasDiscount && (
+            <div
+              className="rounded-full border border-white/30 px-2 py-0.5 text-[9px] font-bold tracking-wide text-white uppercase shadow-md backdrop-blur-sm"
+              style={{ backgroundColor: 'rgba(124, 58, 237, 0.95)' }}
+            >
               {discountPercentage ? `-${discountPercentage}%` : 'Sale'}
-            </span>
-          </div>
-        )}
+            </div>
+          )}
 
-        {/* Out of Stock Badge */}
-        {isOutOfStock && (
-          <div
-            className="absolute right-2 bottom-2 left-2 rounded-lg border border-white/30 px-2.5 py-1.5 text-center text-xs font-bold tracking-wide text-white uppercase shadow-[0_8px_16px_rgba(0,0,0,0.3)] backdrop-blur-md sm:text-sm"
-            style={{ backgroundColor: 'rgba(220, 38, 38, 0.95)' }}
-          >
-            <span className="drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">Out of Stock</span>
-          </div>
-        )}
+          {/* Out of Stock Badge */}
+          {isOutOfStock && (
+            <div
+              className="rounded-full border border-white/30 px-2 py-0.5 text-[9px] font-bold tracking-wide text-white uppercase shadow-md backdrop-blur-sm"
+              style={{ backgroundColor: 'rgba(220, 38, 38, 0.95)' }}
+            >
+              Out of Stock
+            </div>
+          )}
 
-        {/* On Backorder Badge */}
-        {isOnBackorder && (
-          <div
-            className="absolute right-2 bottom-2 left-2 rounded-lg border border-white/30 px-2.5 py-1.5 text-center text-xs font-bold tracking-wide text-white uppercase shadow-[0_8px_16px_rgba(0,0,0,0.3)] backdrop-blur-md sm:text-sm"
-            style={{ backgroundColor: 'rgba(251, 146, 60, 0.95)' }}
-          >
-            <span className="drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">On Backorder</span>
-          </div>
-        )}
+          {/* On Backorder Badge */}
+          {isOnBackorder && (
+            <div
+              className="rounded-full border border-white/30 px-2 py-0.5 text-[9px] font-bold tracking-wide text-white uppercase shadow-md backdrop-blur-sm"
+              style={{ backgroundColor: 'rgba(251, 146, 60, 0.95)' }}
+            >
+              On Backorder
+            </div>
+          )}
+        </div>
 
         {/* View Product Button - Shown on hover */}
         <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
@@ -145,7 +146,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
               e.stopPropagation();
               onProductClick(product);
             }}
-            className="rounded-lg bg-white px-4 py-2 text-sm font-semibold text-purple-600 shadow-lg transition-all duration-200 hover:bg-purple-600 hover:text-white sm:px-6 sm:py-2.5 sm:text-base"
+            className="cursor-pointer rounded-lg bg-white px-4 py-2 text-sm font-semibold text-purple-600 shadow-lg transition-all duration-200 hover:bg-purple-600 hover:text-white sm:px-6 sm:py-2.5 sm:text-base"
           >
             View Product
           </button>
@@ -172,12 +173,12 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           <div className="flex items-center gap-2">
             {hasDiscount && primaryPrice ? (
               <>
-                <span className="text-base font-bold text-purple-600 sm:text-lg">
-                  {primaryPrice}
-                </span>
                 {secondaryPrice && (
                   <span className="text-xs text-gray-400 line-through">{secondaryPrice}</span>
                 )}
+                <span className="text-base font-bold text-purple-600 sm:text-lg">
+                  {primaryPrice}
+                </span>
               </>
             ) : (
               <span className="text-base font-bold text-gray-900 sm:text-lg">{primaryPrice}</span>

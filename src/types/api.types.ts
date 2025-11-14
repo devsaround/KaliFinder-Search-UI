@@ -28,7 +28,12 @@ export interface SearchSuggestion {
 
 export interface SearchFacets {
   [key: string]: {
+    // Support both direct buckets (legacy) and nested values structure (disjunctive faceting)
     buckets?: FacetBucket[] | StringFacetBucket[] | BooleanFacetBucket[];
+    values?: {
+      buckets?: FacetBucket[] | StringFacetBucket[] | BooleanFacetBucket[];
+      doc_count?: number;
+    };
     doc_count?: number;
   };
 }

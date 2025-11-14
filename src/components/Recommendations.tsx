@@ -51,23 +51,9 @@ const Recommendations: React.FC<RecommendationsProps> = ({
 
   return (
     <div className="mb-12">
-      <div className="mb-6 flex items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 shadow-lg">
-          <svg
-            className="h-5 w-5 text-white"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={2}
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"
-            />
-          </svg>
-        </div>
-        <h3 className="text-left text-2xl font-bold text-gray-900">Recommended for You</h3>
+      <div className="mb-4 flex items-center gap-2">
+        <span className="text-xl">✨</span>
+        <h3 className="text-xl font-bold text-gray-900">Recommended for You</h3>
       </div>
       <div className="grid w-full grid-cols-2 gap-2 sm:gap-3 md:grid-cols-3 lg:grid-cols-4">
         {recommendations.map((product) => (

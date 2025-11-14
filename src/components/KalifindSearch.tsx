@@ -138,7 +138,16 @@ const extractFacetBuckets = (facet: unknown): FacetBucket[] => {
     return [];
   }
 
-  const maybeBuckets = (facet as { buckets?: unknown }).buckets;
+  // Handle disjunctive faceting structure: facet.values.buckets
+  // Backend wraps each facet in a filter aggregation with nested "values"
+  let actualFacet = facet;
+  const maybeValues = (facet as { values?: unknown }).values;
+  if (maybeValues && typeof maybeValues === 'object') {
+    actualFacet = maybeValues;
+    // Disjunctive faceting detected - this means reactive facets are working!
+  }
+
+  const maybeBuckets = (actualFacet as { buckets?: unknown }).buckets;
   if (!Array.isArray(maybeBuckets)) {
     return [];
   }
@@ -203,6 +212,155 @@ const resolveBooleanFacetValue = (bucket: FacetBucket): boolean | null => {
   }
 
   return null;
+};
+
+// Category tree structure
+interface CategoryNode {
+  name: string;
+  fullPath: string;
+  count: number;
+  children: Map<string, CategoryNode>;
+  level: number;
+}
+
+// Build category tree from flat paths
+const buildCategoryTree = (
+  categories: string[],
+  categoryCounts: { [key: string]: number }
+): CategoryNode => {
+  const root: CategoryNode = {
+    name: '',
+    fullPath: '',
+    count: 0,
+    children: new Map(),
+    level: -1,
+  };
+
+  categories.forEach((categoryPath) => {
+    const parts = categoryPath.split('>').map((p) => p.trim());
+    let currentNode = root;
+    let currentPath = '';
+
+    parts.forEach((part, index) => {
+      currentPath = currentPath ? `${currentPath} > ${part}` : part;
+
+      if (!currentNode.children.has(part)) {
+        currentNode.children.set(part, {
+          name: part,
+          fullPath: currentPath,
+          count: categoryCounts[currentPath] || 0,
+          children: new Map(),
+          level: index,
+        });
+      }
+
+      currentNode = currentNode.children.get(part)!;
+    });
+  });
+
+  return root;
+};
+
+// Recursive component to render category tree nodes
+const CategoryTreeNode: React.FC<{
+  node: CategoryNode;
+  selectedCategories: string[];
+  expandedCategories: Set<string>;
+  onToggle: (fullPath: string) => void;
+  onExpand: (name: string) => void;
+  level: number;
+}> = ({ node, selectedCategories, expandedCategories, onToggle, onExpand, level }) => {
+  const hasChildren = node.children.size > 0;
+  const isExpanded = expandedCategories.has(node.name);
+  const isSelected = selectedCategories.includes(node.fullPath);
+
+  return (
+    <div>
+      <label
+        className={`flex cursor-pointer items-center justify-between rounded-lg p-2 transition-all ${
+          isSelected ? 'bg-purple-50 ring-2 ring-purple-600 ring-inset' : 'hover:bg-gray-50'
+        }`}
+        style={{ paddingLeft: hasChildren || level > 0 ? `${level * 1 + 0.5}rem` : undefined }}
+      >
+        <div className="flex flex-1 items-center gap-2">
+          {hasChildren && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onExpand(node.name);
+              }}
+              className="flex-shrink-0 rounded p-0.5 transition-colors hover:bg-gray-200"
+            >
+              <ChevronDown
+                className={`h-4 w-4 text-gray-600 transition-transform ${
+                  isExpanded ? 'rotate-0' : '-rotate-90'
+                }`}
+              />
+            </button>
+          )}
+
+          <div className="flex flex-1 items-center gap-3">
+            <div className="relative flex items-center">
+              <input
+                type="checkbox"
+                checked={isSelected}
+                onChange={() => onToggle(node.fullPath)}
+                className="peer h-5 w-5 cursor-pointer appearance-none rounded border-2 border-gray-300 bg-white transition-all checked:border-purple-600 checked:bg-purple-600 hover:border-purple-400 focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 focus:outline-none"
+              />
+              <svg
+                className="pointer-events-none absolute top-1/2 left-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 text-white opacity-0 transition-opacity peer-checked:opacity-100"
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="4"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+            </div>
+            <span
+              className={`text-sm font-medium select-none ${
+                isSelected ? 'text-purple-900' : 'text-gray-900'
+              }`}
+            >
+              {node.name
+                .split(' ')
+                .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+                .join(' ')}
+            </span>
+          </div>
+        </div>
+
+        <span
+          className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
+            isSelected ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-600'
+          }`}
+        >
+          {node.count}
+        </span>
+      </label>
+
+      {hasChildren && isExpanded && (
+        <div>
+          {Array.from(node.children.values()).map((childNode) => (
+            <CategoryTreeNode
+              key={childNode.fullPath}
+              node={childNode}
+              selectedCategories={selectedCategories}
+              expandedCategories={expandedCategories}
+              onToggle={onToggle}
+              onExpand={onExpand}
+              level={level + 1}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
 };
 
 const KalifindSearch: React.FC<{
@@ -298,6 +456,7 @@ const KalifindSearch: React.FC<{
   const [maxPrice, setMaxPrice] = useState<number>(10000); // Default max price (global)
   const [filteredMaxPrice, setFilteredMaxPrice] = useState<number>(10000); // Max price from filtered results
   const [availableCategories, setAvailableCategories] = useState<string[]>([]);
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
   const [availableBrands, setAvailableBrands] = useState<string[]>([]);
   const [availableColors, setAvailableColors] = useState<string[]>([]);
   const [availableSizes, setAvailableSizes] = useState<string[]>([]);
@@ -1372,85 +1531,8 @@ const KalifindSearch: React.FC<{
             setSearchMessage(message);
             setIsShowingRecommended(showingRecommended);
 
-            // 🎯 REACTIVE FACETS: Calculate counts from filtered products (frontend-only)
-            // This ensures facets show only what's available in current filtered results OR search query
-            const hasActiveQuery = query && query.trim().length > 0;
-            const hasActiveFilters =
-              debouncedFilters.categories.length > 0 ||
-              debouncedFilters.stockStatus.length > 0 ||
-              debouncedFilters.featuredProducts.length > 0 ||
-              debouncedFilters.saleStatus.length > 0;
-
-            if (productsWithStoreUrl.length > 0 && (hasActiveQuery || hasActiveFilters)) {
-              // Calculate reactive stock status counts
-              const reactiveStockCounts: { [key: string]: number } = {};
-              productsWithStoreUrl.forEach((product) => {
-                const status = product.stockStatus?.toLowerCase();
-                const displayName =
-                  status === 'instock'
-                    ? 'In Stock'
-                    : status === 'outofstock'
-                      ? 'Out of Stock'
-                      : status === 'onbackorder'
-                        ? 'On Backorder'
-                        : null;
-                if (displayName) {
-                  reactiveStockCounts[displayName] = (reactiveStockCounts[displayName] || 0) + 1;
-                }
-              });
-              setStockStatusCounts(reactiveStockCounts); // Calculate reactive featured counts
-              let reactiveFeaturedCount = 0;
-              let reactiveNotFeaturedCount = 0;
-              productsWithStoreUrl.forEach((product) => {
-                if (
-                  product.featured === true ||
-                  product.featured === 1 ||
-                  product.featured === '1'
-                ) {
-                  reactiveFeaturedCount++;
-                } else {
-                  reactiveNotFeaturedCount++;
-                }
-              });
-              setFeaturedCount(reactiveFeaturedCount);
-              setNotFeaturedCount(reactiveNotFeaturedCount);
-
-              // Calculate reactive sale counts
-              let reactiveSaleCount = 0;
-              let reactiveNotSaleCount = 0;
-              productsWithStoreUrl.forEach((product) => {
-                if (product.onSale === true || product.onSale === 1 || product.onSale === '1') {
-                  reactiveSaleCount++;
-                } else {
-                  reactiveNotSaleCount++;
-                }
-              });
-              setSaleCount(reactiveSaleCount);
-              setNotSaleCount(reactiveNotSaleCount);
-
-              // Calculate reactive category counts
-              const reactiveCategoryCounts: { [key: string]: number } = {};
-              productsWithStoreUrl.forEach((product) => {
-                if (product.categories && Array.isArray(product.categories)) {
-                  product.categories.forEach((cat: string) => {
-                    reactiveCategoryCounts[cat] = (reactiveCategoryCounts[cat] || 0) + 1;
-                  });
-                }
-              });
-              setCategoryCounts(reactiveCategoryCounts);
-              setAvailableCategories(Object.keys(reactiveCategoryCounts));
-
-              console.log('✨ Reactive facets calculated from filtered products:', {
-                stockStatus: reactiveStockCounts,
-                featured: {
-                  Featured: reactiveFeaturedCount,
-                  'Not Featured': reactiveNotFeaturedCount,
-                },
-                sale: { 'On Sale': reactiveSaleCount, 'Not On Sale': reactiveNotSaleCount },
-                categories: reactiveCategoryCounts,
-                totalProducts: productsWithStoreUrl.length,
-              });
-            }
+            // Backend now provides reactive facets, no need for frontend calculation
+            console.log('✨ Using reactive facets from backend');
 
             // Debug: Log the state updates
             console.log(
@@ -1746,6 +1828,18 @@ const KalifindSearch: React.FC<{
     if (ubiClient) {
       ubiClient.trackFilterClick('category', category);
     }
+  };
+
+  const handleCategoryExpand = (categoryName: string) => {
+    setExpandedCategories((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(categoryName)) {
+        newSet.delete(categoryName);
+      } else {
+        newSet.add(categoryName);
+      }
+      return newSet;
+    });
   };
 
   const handleBrandChange = (brand: string) => {
@@ -2649,72 +2743,23 @@ const KalifindSearch: React.FC<{
                           ))}
                         </>
                       ) : availableCategories.length > 0 ? (
-                        availableCategories.map((category) => {
-                          const isActive = filters.categories.includes(category);
-                          const parts = category.split('>').map((part) => part.trim());
-                          const level = parts.length - 1;
-                          // Show full path with proper formatting
-                          const displayText = parts
-                            .map((part) =>
-                              part
-                                .split(' ')
-                                .map(
-                                  (word) =>
-                                    word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
-                                )
-                                .join(' ')
-                            )
-                            .join(' > ');
-
-                          return (
-                            <label
-                              key={category}
-                              className={`flex cursor-pointer items-center justify-between rounded-lg p-2 transition-all ${
-                                isActive
-                                  ? 'bg-purple-50 ring-2 ring-purple-600 ring-inset'
-                                  : 'hover:bg-gray-50'
-                              }`}
-                              style={{ paddingLeft: `${level * 1.25 + 0.5}rem` }}
-                            >
-                              <div className="flex items-center gap-3">
-                                <div className="relative flex items-center">
-                                  <input
-                                    type="checkbox"
-                                    checked={isActive}
-                                    onChange={() => handleCategoryChange(category)}
-                                    className="peer h-5 w-5 cursor-pointer appearance-none rounded border-2 border-gray-300 bg-white transition-all checked:border-purple-600 checked:bg-purple-600 hover:border-purple-400 focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 focus:outline-none"
-                                  />
-                                  <svg
-                                    className="pointer-events-none absolute top-1/2 left-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 text-white opacity-0 transition-opacity peer-checked:opacity-100"
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    strokeWidth="4"
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                  >
-                                    <polyline points="20 6 9 17 4 12"></polyline>
-                                  </svg>
-                                </div>
-                                <span
-                                  className={`text-sm font-medium select-none ${isActive ? 'text-purple-900' : 'text-gray-900'}`}
-                                >
-                                  {displayText}
-                                </span>
-                              </div>
-                              <span
-                                className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                                  isActive
-                                    ? 'bg-purple-100 text-purple-700'
-                                    : 'bg-gray-100 text-gray-600'
-                                }`}
-                              >
-                                {categoryCounts[category] || 0}
-                              </span>
-                            </label>
+                        (() => {
+                          const categoryTree = buildCategoryTree(
+                            availableCategories,
+                            categoryCounts
                           );
-                        })
+                          return Array.from(categoryTree.children.values()).map((rootNode) => (
+                            <CategoryTreeNode
+                              key={rootNode.fullPath}
+                              node={rootNode}
+                              selectedCategories={filters.categories}
+                              expandedCategories={expandedCategories}
+                              onToggle={handleCategoryChange}
+                              onExpand={handleCategoryExpand}
+                              level={0}
+                            />
+                          ));
+                        })()
                       ) : (
                         <p className="p-2 text-sm text-gray-500">No categories available</p>
                       )}
