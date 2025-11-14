@@ -167,6 +167,21 @@ class SearchService {
       // Determine dynamic TTL based on result size
       const response = await this.httpClient.get<SearchResponse>(url);
 
+      // Extract and set vendor/store IDs and platform for analytics if available
+      if ((response as any).vendorId && (response as any).storeId) {
+        const globalWindow = window as Window & {
+          KALIFIND_VENDOR_ID?: string;
+          KALIFIND_STORE_ID?: string;
+          KALIFIND_PLATFORM?: string;
+        };
+        globalWindow.KALIFIND_VENDOR_ID = String((response as any).vendorId);
+        globalWindow.KALIFIND_STORE_ID = String((response as any).storeId);
+
+        if ((response as any).storeType) {
+          globalWindow.KALIFIND_PLATFORM = String((response as any).storeType);
+        }
+      }
+
       console.log(
         'KaliFinder Search Service: Fresh API call, total =',
         response.total,

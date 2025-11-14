@@ -250,6 +250,7 @@ const KalifindSearch: React.FC<{
         uiDebugger.logProductCard(productCard);
       }
     }, 1000);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Determine if this is a Shopify store
@@ -294,7 +295,8 @@ const KalifindSearch: React.FC<{
   const [isInitialState, setIsInitialState] = useState(true);
   const [searchMessage, setSearchMessage] = useState<string | undefined>(undefined);
   const [isShowingRecommended, setIsShowingRecommended] = useState(false);
-  const [maxPrice, setMaxPrice] = useState<number>(10000); // Default max price
+  const [maxPrice, setMaxPrice] = useState<number>(10000); // Default max price (global)
+  const [filteredMaxPrice, setFilteredMaxPrice] = useState<number>(10000); // Max price from filtered results
   const [availableCategories, setAvailableCategories] = useState<string[]>([]);
   const [availableBrands, setAvailableBrands] = useState<string[]>([]);
   const [availableColors, setAvailableColors] = useState<string[]>([]);
@@ -382,7 +384,27 @@ const KalifindSearch: React.FC<{
     resetPriceRange(maxPrice);
   }, [maxPrice, resetPriceRange]);
 
-  // Load recent searches from localStorage on mount
+  // Reset price range when filtered max price changes (reactive facets)
+  useEffect(() => {
+    // Check if we have active non-price filters
+    const hasActiveNonPriceFilters =
+      filters.categories.length > 0 ||
+      filters.brands.length > 0 ||
+      filters.colors.length > 0 ||
+      filters.sizes.length > 0 ||
+      filters.tags.length > 0 ||
+      filters.stockStatus.length > 0 ||
+      filters.featuredProducts.length > 0 ||
+      filters.saleStatus.length > 0;
+
+    // Only update if filters are active
+    if (hasActiveNonPriceFilters) {
+      // Always reset to full filtered range when filteredMaxPrice changes
+      updateFilter('priceRange', [0, filteredMaxPrice]);
+      console.log('🔧 Price range reset to filtered range: 0 -', filteredMaxPrice);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filteredMaxPrice]); // Only trigger when filteredMaxPrice changes // Load recent searches from localStorage on mount
   useEffect(() => {
     try {
       const storedSearches = localStorage.getItem('recentSearches');
@@ -706,6 +728,7 @@ const KalifindSearch: React.FC<{
           const calculatedMaxPrice = Math.ceil(Math.max(...prices));
           const roundedMaxPrice = Math.ceil(calculatedMaxPrice / 50) * 50;
           setMaxPrice(roundedMaxPrice);
+          setFilteredMaxPrice(roundedMaxPrice); // Initially, filtered max = global max
         }
       }
 
@@ -1039,6 +1062,15 @@ const KalifindSearch: React.FC<{
         setHasMoreProducts(true);
         setDisplayedProducts(0);
         setFilteredProducts([]); // ✅ Clear products immediately
+
+        // Debug: Log pagination reset
+        console.log('🔄 [Pagination] Reset to page 1 - New search with filters:', {
+          categories: debouncedFilters.categories.length,
+          priceRange: debouncedPriceRange,
+          stockStatus: debouncedFilters.stockStatus.length,
+          saleStatus: debouncedFilters.saleStatus.length,
+        });
+
         const fetchProducts = async () => {
           const currentRequestId = ++searchRequestIdRef.current; // Generate unique ID
           if (
@@ -1132,9 +1164,150 @@ const KalifindSearch: React.FC<{
                 products.length
               );
 
-              // NOTE: Facet processing removed - facets are now fetched once on mount
-              // via fetchGlobalFacets() and remain static regardless of search query
-              // This provides a better UX where filter counts don't change as users type
+              // Process facets from search results to update counts based on active filters
+              if (result.facets) {
+                const facets = result.facets as Record<string, unknown>;
+
+                // Debug: Log facets received from API with full structure
+                console.log('🔍 Facets received from API:');
+                console.log('  - Stock Status:', JSON.stringify(facets.instock, null, 2));
+                console.log('  - Featured:', JSON.stringify(facets.featured, null, 2));
+                console.log('  - On Sale:', JSON.stringify(facets.insale, null, 2));
+                console.log('  - Categories:', JSON.stringify(facets.category, null, 2));
+                console.log('  - Active Filters:', {
+                  categories: debouncedFilters.categories,
+                  stockStatus: debouncedFilters.stockStatus,
+                  featuredProducts: debouncedFilters.featuredProducts,
+                  saleStatus: debouncedFilters.saleStatus,
+                });
+
+                // Update stock status counts
+                const stockBuckets = extractFacetBuckets(facets.instock);
+                if (stockBuckets.length > 0) {
+                  const stockStatusCountsLocal: { [key: string]: number } = {};
+                  stockBuckets.forEach((bucket) => {
+                    const key = getFacetBucketKey(bucket);
+                    const normalized = String(key).toLowerCase();
+                    const displayName =
+                      normalized === 'instock' || normalized === 'true'
+                        ? 'In Stock'
+                        : normalized === 'outofstock' || normalized === 'false'
+                          ? 'Out of Stock'
+                          : normalized === 'onbackorder'
+                            ? 'On Backorder'
+                            : String(key);
+                    stockStatusCountsLocal[displayName] = bucket.doc_count;
+                  });
+                  setStockStatusCounts(stockStatusCountsLocal);
+                }
+
+                // Update featured status counts
+                const featuredBuckets = extractFacetBuckets(facets.featured);
+                if (featuredBuckets.length > 0) {
+                  let featuredCountLocal = 0;
+                  let notFeaturedCountLocal = 0;
+                  featuredBuckets.forEach((bucket) => {
+                    const key = getFacetBucketKey(bucket);
+                    if (key === null || key === undefined) return;
+                    // Check if key represents true value (could be string, boolean, or number)
+                    const keyStr = String(key).toLowerCase();
+                    const isOne = typeof key === 'number' && key === 1;
+                    const value = keyStr === 'true' || isOne;
+                    if (value === true) {
+                      featuredCountLocal = bucket.doc_count;
+                    } else if (value === false) {
+                      notFeaturedCountLocal = bucket.doc_count;
+                    }
+                  });
+                  setFeaturedCount(featuredCountLocal);
+                  setNotFeaturedCount(notFeaturedCountLocal);
+                }
+
+                // Update sale status counts
+                const saleBuckets = extractFacetBuckets(facets.insale);
+                if (saleBuckets.length > 0) {
+                  let saleCountLocal = 0;
+                  let notSaleCountLocal = 0;
+                  saleBuckets.forEach((bucket) => {
+                    const key = getFacetBucketKey(bucket);
+                    if (key === null || key === undefined) return;
+                    // Check if key represents true value (could be string, boolean, or number)
+                    const keyStr = String(key).toLowerCase();
+                    const isOne = typeof key === 'number' && key === 1;
+                    const value = keyStr === 'true' || isOne;
+                    if (value === true) {
+                      saleCountLocal = bucket.doc_count;
+                    } else if (value === false) {
+                      notSaleCountLocal = bucket.doc_count;
+                    }
+                  });
+                  setSaleCount(saleCountLocal);
+                  setNotSaleCount(notSaleCountLocal);
+                }
+
+                // Update category counts
+                const categoryBuckets = extractFacetBuckets(facets.category);
+                if (categoryBuckets.length > 0) {
+                  const categoryCounts: { [key: string]: number } = {};
+                  categoryBuckets.forEach((bucket) => {
+                    const key = getFacetBucketKey(bucket);
+                    if (!key) return;
+                    categoryCounts[key] = bucket.doc_count;
+                  });
+                  setCategoryCounts(categoryCounts);
+                  setAvailableCategories(Object.keys(categoryCounts));
+                }
+
+                // Update brand counts
+                const brandBuckets = extractFacetBuckets(facets.brand);
+                if (brandBuckets.length > 0) {
+                  const brandCounts: { [key: string]: number } = {};
+                  brandBuckets.forEach((bucket) => {
+                    const key = getFacetBucketKey(bucket);
+                    if (!key) return;
+                    brandCounts[key] = bucket.doc_count;
+                  });
+                  setBrandCounts(brandCounts);
+                  setAvailableBrands(Object.keys(brandCounts));
+                }
+
+                // Update color options
+                const colorBuckets = extractFacetBuckets(facets.color);
+                if (colorBuckets.length > 0) {
+                  const colors: string[] = [];
+                  colorBuckets.forEach((bucket) => {
+                    const key = getFacetBucketKey(bucket);
+                    if (!key) return;
+                    colors.push(key);
+                  });
+                  setAvailableColors(colors);
+                }
+
+                // Update size options
+                const sizeBuckets = extractFacetBuckets(facets.size);
+                if (sizeBuckets.length > 0) {
+                  const sizes: string[] = [];
+                  sizeBuckets.forEach((bucket) => {
+                    const key = getFacetBucketKey(bucket);
+                    if (!key) return;
+                    sizes.push(key);
+                  });
+                  setAvailableSizes(sizes);
+                }
+
+                // Update tag counts
+                const tagBuckets = extractFacetBuckets(facets.tag);
+                if (tagBuckets.length > 0) {
+                  const tagCounts: { [key: string]: number } = {};
+                  tagBuckets.forEach((bucket) => {
+                    const key = getFacetBucketKey(bucket);
+                    if (!key) return;
+                    tagCounts[key] = bucket.doc_count;
+                  });
+                  setTagCounts(tagCounts);
+                  setAvailableTags(Object.keys(tagCounts));
+                }
+              }
 
               // Detect store type from first product if available
               if (products.length > 0) {
@@ -1148,7 +1321,7 @@ const KalifindSearch: React.FC<{
                   setStoreType(firstProductStoreType);
                 }
 
-                // Calculate max price from products
+                // Calculate filtered max price from current filtered products
                 const prices = products
                   .map(
                     (p) =>
@@ -1160,10 +1333,16 @@ const KalifindSearch: React.FC<{
 
                 if (prices.length > 0) {
                   const calculatedMaxPrice = Math.ceil(Math.max(...prices));
-                  // Add some buffer (e.g., round up to nearest 10 or 50)
+                  // Round up to nearest 50 for cleaner UI
                   const roundedMaxPrice = Math.ceil(calculatedMaxPrice / 50) * 50;
-                  setMaxPrice(roundedMaxPrice);
+                  // Update filtered max price (this is reactive to current filters)
+                  setFilteredMaxPrice(roundedMaxPrice);
+                  console.log('📊 Filtered max price updated to:', roundedMaxPrice);
                 }
+              } else {
+                // No products in filtered results, keep global max price as fallback
+                setFilteredMaxPrice(maxPrice);
+                console.log('⚠️ No products in results, using global max price:', maxPrice);
               }
             } else {
               console.error('Kalifind Search: Unexpected search response format:', result);
@@ -1222,6 +1401,7 @@ const KalifindSearch: React.FC<{
       searchAbortController,
       storeType,
       updateCurrencyFromProducts,
+      maxPrice,
     ]
   );
 
@@ -1471,6 +1651,8 @@ const KalifindSearch: React.FC<{
     setSearchQuery('');
     // Clear all filters
     clearFilters();
+    // Reset filtered max price to global max price
+    setFilteredMaxPrice(maxPrice);
     // Reset to initial state
     setShowRecommendations(true);
     setHasSearched(false);
@@ -1542,6 +1724,13 @@ const KalifindSearch: React.FC<{
   // Load more products function (uses centralized searchService to keep normalization and pagination consistent)
   const loadMoreProducts = useCallback(async () => {
     if (isLoadingMore || !hasMoreProducts || !storeUrl) return;
+
+    console.log('📄 [Load More] Fetching page', currentPage + 1, 'with current filters:', {
+      categories: debouncedFilters.categories.length,
+      priceRange: debouncedPriceRange,
+      stockStatus: debouncedFilters.stockStatus.length,
+      saleStatus: debouncedFilters.saleStatus.length,
+    });
 
     setIsLoadingMore(true);
     try {
@@ -1622,6 +1811,13 @@ const KalifindSearch: React.FC<{
         setDisplayedProducts((prev) => prev + productsWithStoreUrl.length);
         setCurrentPage((prev) => prev + 1);
         setHasMoreProducts(hasMore);
+
+        console.log('✅ [Load More] Page loaded successfully:', {
+          newProductsCount: productsWithStoreUrl.length,
+          totalDisplayed: displayedProducts + productsWithStoreUrl.length,
+          nextPage: currentPage + 1,
+          hasMore,
+        });
       }
     } catch (error) {
       console.error('Failed to load more products:', error);
@@ -1634,6 +1830,7 @@ const KalifindSearch: React.FC<{
     debouncedSearchQuery,
     storeUrl,
     currentPage,
+    displayedProducts,
     debouncedFilters,
     debouncedPriceRange,
     updateCurrencyFromProducts,
@@ -1801,10 +1998,12 @@ const KalifindSearch: React.FC<{
         return `${storeCurrencySymbol}${localizedAmount}`;
       }
 
-      return amount.toLocaleString(undefined, {
+      // Default to Euro symbol if no currency is detected
+      const localizedAmount = amount.toLocaleString(undefined, {
         minimumFractionDigits: amount % 1 === 0 ? 0 : 2,
         maximumFractionDigits: 2,
       });
+      return `€${localizedAmount}`;
     },
     [storeCurrencyCode, storeCurrencySymbol]
   );
@@ -1813,7 +2012,7 @@ const KalifindSearch: React.FC<{
     <div className="bg-background box-border w-full overflow-y-auto font-sans antialiased">
       {!hideHeader && (
         <div className="bg-background border-border/40 sticky top-0 z-50 border-b py-4 shadow-sm backdrop-blur-sm">
-          <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 lg:gap-6 lg:px-8">
+          <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 lg:gap-6 lg:px-6">
             <div className="hidden items-center lg:flex lg:w-auto">
               <a href="/" className="w-70">
                 <img
@@ -2023,11 +2222,17 @@ const KalifindSearch: React.FC<{
                       {availableCategories.map((category) => {
                         const parts = category.split('>').map((part) => part.trim());
                         const level = parts.length - 1;
-                        const lastPart = parts[parts.length - 1] || '';
-                        const displayText = lastPart
-                          .split(' ')
-                          .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-                          .join(' ');
+                        // Show full path with proper formatting
+                        const displayText = parts
+                          .map((part) =>
+                            part
+                              .split(' ')
+                              .map(
+                                (word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+                              )
+                              .join(' ')
+                          )
+                          .join(' > ');
 
                         return (
                           <label
@@ -2092,16 +2297,19 @@ const KalifindSearch: React.FC<{
                   <AccordionContent>
                     <div className="space-y-4 pt-4">
                       <Slider
-                        value={[filters.priceRange[1]]}
+                        value={[Math.min(filters.priceRange[1], filteredMaxPrice)]}
                         onValueChange={(value: number[]) =>
-                          updateFilter('priceRange', [filters.priceRange[0], value[0] ?? maxPrice])
+                          updateFilter('priceRange', [
+                            filters.priceRange[0],
+                            value[0] ?? filteredMaxPrice,
+                          ])
                         }
-                        max={maxPrice}
+                        max={filteredMaxPrice}
                         step={1}
                       />
                       <div className="text-muted-foreground flex justify-between text-sm">
                         <span>{filters.priceRange[0]} €</span>
-                        <span>{filters.priceRange[1]} €</span>
+                        <span>{Math.min(filters.priceRange[1], filteredMaxPrice)} €</span>
                       </div>
                     </div>
                   </AccordionContent>
@@ -2323,1107 +2531,1125 @@ const KalifindSearch: React.FC<{
         </Drawer>
       </div>
 
-      <div className="flex w-full gap-6 px-1.5 py-6 lg:px-2">
-        <aside className="sticky top-24 hidden w-72 flex-shrink-0 rounded-xl border border-gray-200 bg-white p-6 shadow-sm lg:block">
-          <Accordion
-            type="multiple"
-            defaultValue={[
-              'category',
-              'price',
-              'size',
-              'color',
-              'brand',
-              'tags',
-              'stockStatus',
-              'featured',
-              'sale',
-            ]}
-            className="space-y-4"
-          >
-            {showMandatoryFilters.categories && (
-              <AccordionItem value="category" className="border-b border-gray-200 pb-4">
-                <AccordionTrigger className="text-base font-bold text-gray-900 hover:no-underline">
-                  Categories
-                </AccordionTrigger>
-                <AccordionContent className="pt-3">
-                  <div className="space-y-1">
-                    {isInitialLoading ? (
-                      <>
-                        {[...Array(3)].map((_, idx) => (
-                          <div key={idx} className="flex items-center justify-between p-2">
-                            <div className="flex items-center gap-3">
-                              <Skeleton className="h-5 w-5 rounded" />
-                              <Skeleton className="h-4 w-24" />
-                            </div>
-                            <Skeleton className="h-4 w-8 rounded-full" />
-                          </div>
-                        ))}
-                      </>
-                    ) : availableCategories.length > 0 ? (
-                      availableCategories.map((category) => {
-                        const isActive = filters.categories.includes(category);
-                        const parts = category.split('>').map((part) => part.trim());
-                        const level = parts.length - 1;
-                        const lastPart = parts[parts.length - 1] || '';
-                        const displayText = lastPart
-                          .split(' ')
-                          .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-                          .join(' ');
-
-                        return (
-                          <label
-                            key={category}
-                            className={`flex cursor-pointer items-center justify-between rounded-lg p-2 transition-all ${
-                              isActive
-                                ? 'bg-purple-50 ring-2 ring-purple-600 ring-inset'
-                                : 'hover:bg-gray-50'
-                            }`}
-                            style={{ paddingLeft: `${level * 1.25 + 0.5}rem` }}
-                          >
-                            <div className="flex items-center gap-3">
-                              <div className="relative flex items-center">
-                                <input
-                                  type="checkbox"
-                                  checked={isActive}
-                                  onChange={() => handleCategoryChange(category)}
-                                  className="peer h-5 w-5 cursor-pointer appearance-none rounded border-2 border-gray-300 bg-white transition-all checked:border-purple-600 checked:bg-purple-600 hover:border-purple-400 focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 focus:outline-none"
-                                />
-                                <svg
-                                  className="pointer-events-none absolute top-1/2 left-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 text-white opacity-0 transition-opacity peer-checked:opacity-100"
-                                  xmlns="http://www.w3.org/2000/svg"
-                                  viewBox="0 0 24 24"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  strokeWidth="4"
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                >
-                                  <polyline points="20 6 9 17 4 12"></polyline>
-                                </svg>
-                              </div>
-                              <span
-                                className={`text-sm font-medium select-none ${isActive ? 'text-purple-900' : 'text-gray-900'}`}
-                              >
-                                {displayText}
-                              </span>
-                            </div>
-                            <span
-                              className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                                isActive
-                                  ? 'bg-purple-100 text-purple-700'
-                                  : 'bg-gray-100 text-gray-600'
-                              }`}
-                            >
-                              {categoryCounts[category] || 0}
-                            </span>
-                          </label>
-                        );
-                      })
-                    ) : (
-                      <p className="p-2 text-sm text-gray-500">No categories available</p>
-                    )}
-                  </div>
-                </AccordionContent>
-              </AccordionItem>
-            )}
-            {showOptionalFilters.brands && (
-              <AccordionItem value="brand" className="border-b border-gray-200 pb-4">
-                <AccordionTrigger className="text-base font-bold text-gray-900 hover:no-underline">
-                  Brand
-                </AccordionTrigger>
-                <AccordionContent className="pt-3">
-                  <div className="space-y-1">
-                    {isInitialLoading ? (
-                      <>
-                        {[...Array(3)].map((_, idx) => (
-                          <div key={idx} className="flex items-center justify-between p-2">
-                            <div className="flex items-center gap-3">
-                              <Skeleton className="h-5 w-5 rounded" />
-                              <Skeleton className="h-4 w-24" />
-                            </div>
-                            <Skeleton className="h-4 w-8 rounded-full" />
-                          </div>
-                        ))}
-                      </>
-                    ) : availableBrands.length > 0 ? (
-                      availableBrands.map((brand) => {
-                        const isActive = filters.brands.includes(brand);
-                        return (
-                          <label
-                            key={brand}
-                            className={`flex cursor-pointer items-center justify-between rounded-lg p-2 transition-all ${
-                              isActive
-                                ? 'bg-purple-50 ring-2 ring-purple-600 ring-inset'
-                                : 'hover:bg-gray-50'
-                            }`}
-                          >
-                            <div className="flex items-center gap-3">
-                              <div className="relative flex items-center">
-                                <input
-                                  type="checkbox"
-                                  checked={isActive}
-                                  onChange={() => handleBrandChange(brand)}
-                                  className="peer h-5 w-5 cursor-pointer appearance-none rounded border-2 border-gray-300 bg-white transition-all checked:border-purple-600 checked:bg-purple-600 hover:border-purple-400 focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 focus:outline-none"
-                                />
-                                <svg
-                                  className="pointer-events-none absolute top-1/2 left-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 text-white opacity-0 transition-opacity peer-checked:opacity-100"
-                                  xmlns="http://www.w3.org/2000/svg"
-                                  viewBox="0 0 24 24"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  strokeWidth="4"
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                >
-                                  <polyline points="20 6 9 17 4 12"></polyline>
-                                </svg>
-                              </div>
-                              <span
-                                className={`text-sm font-medium select-none ${isActive ? 'text-purple-900' : 'text-gray-900'}`}
-                              >
-                                {brand}
-                              </span>
-                            </div>
-                            <span
-                              className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                                isActive
-                                  ? 'bg-purple-100 text-purple-700'
-                                  : 'bg-gray-100 text-gray-600'
-                              }`}
-                            >
-                              {brandCounts[brand] || 0}
-                            </span>
-                          </label>
-                        );
-                      })
-                    ) : (
-                      <p className="p-2 text-sm text-gray-500">No brands available</p>
-                    )}
-                  </div>
-                </AccordionContent>
-              </AccordionItem>
-            )}
-            {showMandatoryFilters.price && (
-              <AccordionItem value="price" className="border-b border-gray-200 pb-4">
-                <AccordionTrigger className="text-base font-bold text-gray-900 hover:no-underline">
-                  Price
-                </AccordionTrigger>
-                <AccordionContent className="pt-3">
-                  <div className="px-4">
-                    <Slider
-                      value={[filters.priceRange[0], filters.priceRange[1]]}
-                      onValueChange={(value) => {
-                        updateFilter('priceRange', [value[0] ?? 0, value[1] ?? maxPrice]);
-                      }}
-                      max={maxPrice}
-                      min={0}
-                      step={1}
-                      disabled={false}
-                      className="mb-6 w-full"
-                    />
-                    <div className="flex items-center justify-between text-sm font-medium text-gray-700">
-                      <span>{filters.priceRange[0]} €</span>
-                      <span>{filters.priceRange[1]} €</span>
-                    </div>
-                  </div>
-                </AccordionContent>
-              </AccordionItem>
-            )}
-            {showOptionalFilters.sizes && (
-              <AccordionItem value="size">
-                <AccordionTrigger className="text-foreground text-[16px] font-[700] lg:text-[18px]">
-                  <b className="font-extrabold">Size</b>
-                </AccordionTrigger>
-                <AccordionContent>
-                  {isInitialLoading ? (
-                    <div className="grid grid-cols-4 gap-2">
-                      {[...Array(4)].map((_, idx) => (
-                        <Skeleton key={idx} className="h-8 w-full" />
-                      ))}
-                    </div>
-                  ) : availableSizes.length > 0 ? (
-                    <div className="grid grid-cols-4 gap-2">
-                      {availableSizes.map((size) => {
-                        const isActive = filters.sizes.includes(size);
-                        return (
-                          <button
-                            key={size}
-                            onClick={() => handleSizeChange(size)}
-                            className={`my-border rounded py-2 text-xs font-medium transition-all lg:text-sm ${
-                              isActive
-                                ? 'bg-purple-600 text-white shadow-md ring-2 ring-purple-600 ring-offset-2'
-                                : 'bg-white text-gray-700 hover:border-purple-400 hover:bg-gray-50'
-                            }`}
-                          >
-                            {size}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  ) : (
-                    <p className="text-muted-foreground text-sm">No sizes available</p>
-                  )}
-                </AccordionContent>
-              </AccordionItem>
-            )}
-            {showOptionalFilters.colors && (
-              <AccordionItem value="color">
-                <AccordionTrigger className="text-foreground text-[16px] font-[700] lg:text-[18px]">
-                  <b className="font-extrabold">Color</b>
-                </AccordionTrigger>
-                <AccordionContent>
-                  {isInitialLoading ? (
-                    <div className="flex gap-[8px]">
-                      {[...Array(5)].map((_, idx) => (
-                        <Skeleton key={idx} className="h-6 w-6 rounded-full lg:h-8 lg:w-8" />
-                      ))}
-                    </div>
-                  ) : availableColors.length > 0 ? (
-                    <div className="flex gap-[8px]">
-                      {availableColors.map((color) => {
-                        const isActive = filters.colors.includes(color);
-                        return (
-                          <button
-                            key={color}
-                            onClick={() => handleColorChange(color)}
-                            className={`h-6 w-6 rounded-full border-2 transition-all lg:h-8 lg:w-8 ${
-                              isActive
-                                ? 'scale-110 border-purple-600 shadow-lg ring-2 ring-purple-600 ring-offset-2'
-                                : 'border-gray-300 hover:scale-105 hover:border-purple-400'
-                            }`}
-                            data-color={color.toLowerCase()}
-                            title={`Filter by ${color} color`}
-                            aria-label={`Filter by ${color} color${isActive ? ' (selected)' : ''}`}
-                          />
-                        );
-                      })}
-                    </div>
-                  ) : (
-                    <p className="text-muted-foreground text-sm">No colors available</p>
-                  )}
-                </AccordionContent>
-              </AccordionItem>
-            )}
-            {showOptionalFilters.tags && (
-              <AccordionItem value="tags" className="border-b border-gray-200 pb-4">
-                <AccordionTrigger className="text-base font-bold text-gray-900 hover:no-underline">
-                  Tags
-                </AccordionTrigger>
-                <AccordionContent className="pt-3">
-                  <div className="space-y-1">
-                    {isInitialLoading ? (
-                      <>
-                        {[...Array(3)].map((_, idx) => (
-                          <div key={idx} className="flex items-center justify-between p-2">
-                            <div className="flex items-center gap-3">
-                              <Skeleton className="h-5 w-5 rounded" />
-                              <Skeleton className="h-4 w-24" />
-                            </div>
-                            <Skeleton className="h-4 w-8 rounded-full" />
-                          </div>
-                        ))}
-                      </>
-                    ) : availableTags.length > 0 ? (
-                      availableTags.map((tag) => {
-                        const isActive = filters.tags.includes(tag);
-                        return (
-                          <label
-                            key={tag}
-                            className={`flex cursor-pointer items-center justify-between rounded-lg p-2 transition-all ${
-                              isActive
-                                ? 'bg-purple-50 ring-2 ring-purple-600 ring-inset'
-                                : 'hover:bg-gray-50'
-                            }`}
-                          >
-                            <div className="flex items-center gap-3">
-                              <div className="relative flex items-center">
-                                <input
-                                  type="checkbox"
-                                  checked={isActive}
-                                  onChange={() => handleTagChange(tag)}
-                                  className="peer h-5 w-5 cursor-pointer appearance-none rounded border-2 border-gray-300 bg-white transition-all checked:border-purple-600 checked:bg-purple-600 hover:border-purple-400 focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 focus:outline-none"
-                                />
-                                <svg
-                                  className="pointer-events-none absolute top-1/2 left-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 text-white opacity-0 transition-opacity peer-checked:opacity-100"
-                                  xmlns="http://www.w3.org/2000/svg"
-                                  viewBox="0 0 24 24"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  strokeWidth="4"
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                >
-                                  <polyline points="20 6 9 17 4 12"></polyline>
-                                </svg>
-                              </div>
-                              <span
-                                className={`text-sm font-medium select-none ${isActive ? 'text-purple-900' : 'text-gray-900'}`}
-                              >
-                                {tag}
-                              </span>
-                            </div>
-                            <span
-                              className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                                isActive
-                                  ? 'bg-purple-100 text-purple-700'
-                                  : 'bg-gray-100 text-gray-600'
-                              }`}
-                            >
-                              {tagCounts[tag] || 0}
-                            </span>
-                          </label>
-                        );
-                      })
-                    ) : (
-                      <p className="p-2 text-sm text-gray-500">No tags available</p>
-                    )}
-                  </div>
-                </AccordionContent>
-              </AccordionItem>
-            )}
-
-            {showMandatoryFilters.stockStatus && (
-              <AccordionItem value="stockStatus" className="border-b border-gray-200 pb-4">
-                <AccordionTrigger className="text-base font-bold text-gray-900 hover:no-underline">
-                  Stock Status
-                </AccordionTrigger>
-                <AccordionContent className="pt-3">
-                  <div className="space-y-1">
-                    {['In Stock', 'Out of Stock', 'On Backorder'].map((status) => {
-                      const isActive = filters.stockStatus.includes(status);
-                      return (
-                        <label
-                          key={status}
-                          className={`flex cursor-pointer items-center justify-between rounded-lg p-2 transition-all ${
-                            isActive
-                              ? 'bg-purple-50 ring-2 ring-purple-600 ring-inset'
-                              : 'hover:bg-gray-50'
-                          }`}
-                        >
-                          <div className="flex items-center gap-3">
-                            <div className="relative flex items-center">
-                              <input
-                                type="checkbox"
-                                checked={isActive}
-                                onChange={() => handleStockStatusChange(status)}
-                                className="peer h-5 w-5 cursor-pointer appearance-none rounded border-2 border-gray-300 bg-white transition-all checked:border-purple-600 checked:bg-purple-600 hover:border-purple-400 focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 focus:outline-none"
-                              />
-                              <svg
-                                className="pointer-events-none absolute top-1/2 left-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 text-white opacity-0 transition-opacity peer-checked:opacity-100"
-                                xmlns="http://www.w3.org/2000/svg"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="4"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                              >
-                                <polyline points="20 6 9 17 4 12"></polyline>
-                              </svg>
-                            </div>
-                            <span
-                              className={`text-sm font-medium select-none ${isActive ? 'text-purple-900' : 'text-gray-900'}`}
-                            >
-                              {status}
-                            </span>
-                          </div>
-                          <span
-                            className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                              isActive
-                                ? 'bg-purple-100 text-purple-700'
-                                : 'bg-gray-100 text-gray-600'
-                            }`}
-                          >
-                            {stockStatusCounts[status] ?? 0}
-                          </span>
-                        </label>
-                      );
-                    })}
-                  </div>
-                </AccordionContent>
-              </AccordionItem>
-            )}
-
-            {!isShopifyStore && showMandatoryFilters.featured && (
-              <AccordionItem value="featured" className="border-b border-gray-200 pb-4">
-                <AccordionTrigger className="text-base font-bold text-gray-900 hover:no-underline">
-                  Featured Products
-                </AccordionTrigger>
-                <AccordionContent className="pt-3">
-                  <div className="space-y-1">
-                    {['Featured', 'Not Featured'].map((status) => {
-                      const isActive = filters.featuredProducts.includes(status);
-                      return (
-                        <label
-                          key={status}
-                          className={`flex cursor-pointer items-center justify-between rounded-lg p-2 transition-all ${
-                            isActive
-                              ? 'bg-purple-50 ring-2 ring-purple-600 ring-inset'
-                              : 'hover:bg-gray-50'
-                          }`}
-                        >
-                          <div className="flex items-center gap-3">
-                            <div className="relative flex items-center">
-                              <input
-                                type="checkbox"
-                                checked={isActive}
-                                onChange={() => handleFeaturedProductsChange(status)}
-                                className="peer h-5 w-5 cursor-pointer appearance-none rounded border-2 border-gray-300 bg-white transition-all checked:border-purple-600 checked:bg-purple-600 hover:border-purple-400 focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 focus:outline-none"
-                              />
-                              <svg
-                                className="pointer-events-none absolute top-1/2 left-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 text-white opacity-0 transition-opacity peer-checked:opacity-100"
-                                xmlns="http://www.w3.org/2000/svg"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="4"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                              >
-                                <polyline points="20 6 9 17 4 12"></polyline>
-                              </svg>
-                            </div>
-                            <span
-                              className={`text-sm font-medium select-none ${isActive ? 'text-purple-900' : 'text-gray-900'}`}
-                            >
-                              {status}
-                            </span>
-                          </div>
-                          <span
-                            className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                              isActive
-                                ? 'bg-purple-100 text-purple-700'
-                                : 'bg-gray-100 text-gray-600'
-                            }`}
-                          >
-                            {status === 'Featured' ? featuredCount : notFeaturedCount}
-                          </span>
-                        </label>
-                      );
-                    })}
-                  </div>
-                </AccordionContent>
-              </AccordionItem>
-            )}
-
-            {showMandatoryFilters.sale && (
-              <AccordionItem value="sale" className="border-b border-gray-200 pb-4">
-                <AccordionTrigger className="text-base font-bold text-gray-900 hover:no-underline">
-                  Sale Status
-                </AccordionTrigger>
-                <AccordionContent className="pt-3">
-                  <div className="space-y-1">
-                    {['On Sale', 'Not On Sale'].map((status) => {
-                      const isActive = filters.saleStatus.includes(status);
-                      return (
-                        <label
-                          key={status}
-                          className={`flex cursor-pointer items-center justify-between rounded-lg p-2 transition-all ${
-                            isActive
-                              ? 'bg-purple-50 ring-2 ring-purple-600 ring-inset'
-                              : 'hover:bg-gray-50'
-                          }`}
-                        >
-                          <div className="flex items-center gap-3">
-                            <div className="relative flex items-center">
-                              <input
-                                type="checkbox"
-                                checked={isActive}
-                                onChange={() => handleSaleStatusChange(status)}
-                                className="peer h-5 w-5 cursor-pointer appearance-none rounded border-2 border-gray-300 bg-white transition-all checked:border-purple-600 checked:bg-purple-600 hover:border-purple-400 focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 focus:outline-none"
-                              />
-                              <svg
-                                className="pointer-events-none absolute top-1/2 left-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 text-white opacity-0 transition-opacity peer-checked:opacity-100"
-                                xmlns="http://www.w3.org/2000/svg"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="4"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                              >
-                                <polyline points="20 6 9 17 4 12"></polyline>
-                              </svg>
-                            </div>
-                            <span
-                              className={`text-sm font-medium select-none ${isActive ? 'text-purple-900' : 'text-gray-900'}`}
-                            >
-                              {status}
-                            </span>
-                          </div>
-                          <span
-                            className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                              isActive
-                                ? 'bg-purple-100 text-purple-700'
-                                : 'bg-gray-100 text-gray-600'
-                            }`}
-                          >
-                            {status === 'On Sale' ? saleCount : notSaleCount}
-                          </span>
-                        </label>
-                      );
-                    })}
-                  </div>
-                </AccordionContent>
-              </AccordionItem>
-            )}
-          </Accordion>
-          {isAnyFilterActive && (
-            <button
-              onClick={handleClearAll}
-              className="mt-6 w-full rounded-lg border-2 border-purple-600 bg-white px-4 py-3 text-sm font-semibold text-purple-600 transition-colors hover:bg-purple-50"
+      <div className="mx-auto w-full max-w-[95%]">
+        <div className="flex w-full gap-6 px-2 py-6 lg:px-4">
+          <aside className="sticky top-24 hidden w-72 flex-shrink-0 rounded-xl border border-gray-200 bg-white p-6 shadow-sm lg:block">
+            <Accordion
+              type="multiple"
+              defaultValue={[
+                'category',
+                'price',
+                'size',
+                'color',
+                'brand',
+                'tags',
+                'stockStatus',
+                'featured',
+                'sale',
+              ]}
+              className="space-y-4"
             >
-              Clear All Filters
-            </button>
-          )}
-        </aside>
+              {showMandatoryFilters.categories && (
+                <AccordionItem value="category" className="border-b border-gray-200 pb-4">
+                  <AccordionTrigger className="text-base font-bold text-gray-900 hover:no-underline">
+                    Categories
+                  </AccordionTrigger>
+                  <AccordionContent className="pt-3">
+                    <div className="space-y-1">
+                      {isInitialLoading ? (
+                        <>
+                          {[...Array(3)].map((_, idx) => (
+                            <div key={idx} className="flex items-center justify-between p-2">
+                              <div className="flex items-center gap-3">
+                                <Skeleton className="h-5 w-5 rounded" />
+                                <Skeleton className="h-4 w-24" />
+                              </div>
+                              <Skeleton className="h-4 w-8 rounded-full" />
+                            </div>
+                          ))}
+                        </>
+                      ) : availableCategories.length > 0 ? (
+                        availableCategories.map((category) => {
+                          const isActive = filters.categories.includes(category);
+                          const parts = category.split('>').map((part) => part.trim());
+                          const level = parts.length - 1;
+                          // Show full path with proper formatting
+                          const displayText = parts
+                            .map((part) =>
+                              part
+                                .split(' ')
+                                .map(
+                                  (word) =>
+                                    word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+                                )
+                                .join(' ')
+                            )
+                            .join(' > ');
 
-        <main ref={mainContentRef} className="kalifinder-results flex-1">
-          {recentSearches.length > 0 && (
-            <div className="mb-6">
-              <div className="mb-3 flex items-center justify-between">
-                <h3 className="text-foreground text-base font-semibold">Recent Searches</h3>
-                <button
-                  onClick={handleClearRecentSearches}
-                  className="text-muted-foreground hover:text-foreground text-sm transition-colors"
-                >
-                  Clear all
-                </button>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {recentSearches.map((search, index) => (
-                  <div
-                    key={index}
-                    className="bg-muted flex items-center gap-1 rounded-full px-3 py-1.5"
+                          return (
+                            <label
+                              key={category}
+                              className={`flex cursor-pointer items-center justify-between rounded-lg p-2 transition-all ${
+                                isActive
+                                  ? 'bg-purple-50 ring-2 ring-purple-600 ring-inset'
+                                  : 'hover:bg-gray-50'
+                              }`}
+                              style={{ paddingLeft: `${level * 1.25 + 0.5}rem` }}
+                            >
+                              <div className="flex items-center gap-3">
+                                <div className="relative flex items-center">
+                                  <input
+                                    type="checkbox"
+                                    checked={isActive}
+                                    onChange={() => handleCategoryChange(category)}
+                                    className="peer h-5 w-5 cursor-pointer appearance-none rounded border-2 border-gray-300 bg-white transition-all checked:border-purple-600 checked:bg-purple-600 hover:border-purple-400 focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 focus:outline-none"
+                                  />
+                                  <svg
+                                    className="pointer-events-none absolute top-1/2 left-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 text-white opacity-0 transition-opacity peer-checked:opacity-100"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="4"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                  >
+                                    <polyline points="20 6 9 17 4 12"></polyline>
+                                  </svg>
+                                </div>
+                                <span
+                                  className={`text-sm font-medium select-none ${isActive ? 'text-purple-900' : 'text-gray-900'}`}
+                                >
+                                  {displayText}
+                                </span>
+                              </div>
+                              <span
+                                className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                                  isActive
+                                    ? 'bg-purple-100 text-purple-700'
+                                    : 'bg-gray-100 text-gray-600'
+                                }`}
+                              >
+                                {categoryCounts[category] || 0}
+                              </span>
+                            </label>
+                          );
+                        })
+                      ) : (
+                        <p className="p-2 text-sm text-gray-500">No categories available</p>
+                      )}
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              )}
+              {showOptionalFilters.brands && (
+                <AccordionItem value="brand" className="border-b border-gray-200 pb-4">
+                  <AccordionTrigger className="text-base font-bold text-gray-900 hover:no-underline">
+                    Brand
+                  </AccordionTrigger>
+                  <AccordionContent className="pt-3">
+                    <div className="space-y-1">
+                      {isInitialLoading ? (
+                        <>
+                          {[...Array(3)].map((_, idx) => (
+                            <div key={idx} className="flex items-center justify-between p-2">
+                              <div className="flex items-center gap-3">
+                                <Skeleton className="h-5 w-5 rounded" />
+                                <Skeleton className="h-4 w-24" />
+                              </div>
+                              <Skeleton className="h-4 w-8 rounded-full" />
+                            </div>
+                          ))}
+                        </>
+                      ) : availableBrands.length > 0 ? (
+                        availableBrands.map((brand) => {
+                          const isActive = filters.brands.includes(brand);
+                          return (
+                            <label
+                              key={brand}
+                              className={`flex cursor-pointer items-center justify-between rounded-lg p-2 transition-all ${
+                                isActive
+                                  ? 'bg-purple-50 ring-2 ring-purple-600 ring-inset'
+                                  : 'hover:bg-gray-50'
+                              }`}
+                            >
+                              <div className="flex items-center gap-3">
+                                <div className="relative flex items-center">
+                                  <input
+                                    type="checkbox"
+                                    checked={isActive}
+                                    onChange={() => handleBrandChange(brand)}
+                                    className="peer h-5 w-5 cursor-pointer appearance-none rounded border-2 border-gray-300 bg-white transition-all checked:border-purple-600 checked:bg-purple-600 hover:border-purple-400 focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 focus:outline-none"
+                                  />
+                                  <svg
+                                    className="pointer-events-none absolute top-1/2 left-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 text-white opacity-0 transition-opacity peer-checked:opacity-100"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="4"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                  >
+                                    <polyline points="20 6 9 17 4 12"></polyline>
+                                  </svg>
+                                </div>
+                                <span
+                                  className={`text-sm font-medium select-none ${isActive ? 'text-purple-900' : 'text-gray-900'}`}
+                                >
+                                  {brand}
+                                </span>
+                              </div>
+                              <span
+                                className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                                  isActive
+                                    ? 'bg-purple-100 text-purple-700'
+                                    : 'bg-gray-100 text-gray-600'
+                                }`}
+                              >
+                                {brandCounts[brand] || 0}
+                              </span>
+                            </label>
+                          );
+                        })
+                      ) : (
+                        <p className="p-2 text-sm text-gray-500">No brands available</p>
+                      )}
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              )}
+              {showMandatoryFilters.price && (
+                <AccordionItem value="price" className="border-b border-gray-200 pb-4">
+                  <AccordionTrigger className="text-base font-bold text-gray-900 hover:no-underline">
+                    Price
+                  </AccordionTrigger>
+                  <AccordionContent className="pt-3">
+                    <div className="px-4">
+                      <Slider
+                        value={[
+                          filters.priceRange[0],
+                          Math.min(filters.priceRange[1], filteredMaxPrice),
+                        ]}
+                        onValueChange={(value) => {
+                          updateFilter('priceRange', [value[0] ?? 0, value[1] ?? filteredMaxPrice]);
+                        }}
+                        max={filteredMaxPrice}
+                        min={0}
+                        step={1}
+                        disabled={false}
+                        className="mb-6 w-full"
+                      />
+                      <div className="flex items-center justify-between text-sm font-medium text-gray-700">
+                        <span>{filters.priceRange[0]} €</span>
+                        <span>{Math.min(filters.priceRange[1], filteredMaxPrice)} €</span>
+                      </div>
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              )}
+              {showOptionalFilters.sizes && (
+                <AccordionItem value="size">
+                  <AccordionTrigger className="text-foreground text-[16px] font-[700] lg:text-[18px]">
+                    <b className="font-extrabold">Size</b>
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    {isInitialLoading ? (
+                      <div className="grid grid-cols-4 gap-2">
+                        {[...Array(4)].map((_, idx) => (
+                          <Skeleton key={idx} className="h-8 w-full" />
+                        ))}
+                      </div>
+                    ) : availableSizes.length > 0 ? (
+                      <div className="grid grid-cols-4 gap-2">
+                        {availableSizes.map((size) => {
+                          const isActive = filters.sizes.includes(size);
+                          return (
+                            <button
+                              key={size}
+                              onClick={() => handleSizeChange(size)}
+                              className={`my-border rounded py-2 text-xs font-medium transition-all lg:text-sm ${
+                                isActive
+                                  ? 'bg-purple-600 text-white shadow-md ring-2 ring-purple-600 ring-offset-2'
+                                  : 'bg-white text-gray-700 hover:border-purple-400 hover:bg-gray-50'
+                              }`}
+                            >
+                              {size}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <p className="text-muted-foreground text-sm">No sizes available</p>
+                    )}
+                  </AccordionContent>
+                </AccordionItem>
+              )}
+              {showOptionalFilters.colors && (
+                <AccordionItem value="color">
+                  <AccordionTrigger className="text-foreground text-[16px] font-[700] lg:text-[18px]">
+                    <b className="font-extrabold">Color</b>
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    {isInitialLoading ? (
+                      <div className="flex gap-[8px]">
+                        {[...Array(5)].map((_, idx) => (
+                          <Skeleton key={idx} className="h-6 w-6 rounded-full lg:h-8 lg:w-8" />
+                        ))}
+                      </div>
+                    ) : availableColors.length > 0 ? (
+                      <div className="flex gap-[8px]">
+                        {availableColors.map((color) => {
+                          const isActive = filters.colors.includes(color);
+                          return (
+                            <button
+                              key={color}
+                              onClick={() => handleColorChange(color)}
+                              className={`h-6 w-6 rounded-full border-2 transition-all lg:h-8 lg:w-8 ${
+                                isActive
+                                  ? 'scale-110 border-purple-600 shadow-lg ring-2 ring-purple-600 ring-offset-2'
+                                  : 'border-gray-300 hover:scale-105 hover:border-purple-400'
+                              }`}
+                              data-color={color.toLowerCase()}
+                              title={`Filter by ${color} color`}
+                              aria-label={`Filter by ${color} color${isActive ? ' (selected)' : ''}`}
+                            />
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <p className="text-muted-foreground text-sm">No colors available</p>
+                    )}
+                  </AccordionContent>
+                </AccordionItem>
+              )}
+              {showOptionalFilters.tags && (
+                <AccordionItem value="tags" className="border-b border-gray-200 pb-4">
+                  <AccordionTrigger className="text-base font-bold text-gray-900 hover:no-underline">
+                    Tags
+                  </AccordionTrigger>
+                  <AccordionContent className="pt-3">
+                    <div className="space-y-1">
+                      {isInitialLoading ? (
+                        <>
+                          {[...Array(3)].map((_, idx) => (
+                            <div key={idx} className="flex items-center justify-between p-2">
+                              <div className="flex items-center gap-3">
+                                <Skeleton className="h-5 w-5 rounded" />
+                                <Skeleton className="h-4 w-24" />
+                              </div>
+                              <Skeleton className="h-4 w-8 rounded-full" />
+                            </div>
+                          ))}
+                        </>
+                      ) : availableTags.length > 0 ? (
+                        availableTags.map((tag) => {
+                          const isActive = filters.tags.includes(tag);
+                          return (
+                            <label
+                              key={tag}
+                              className={`flex cursor-pointer items-center justify-between rounded-lg p-2 transition-all ${
+                                isActive
+                                  ? 'bg-purple-50 ring-2 ring-purple-600 ring-inset'
+                                  : 'hover:bg-gray-50'
+                              }`}
+                            >
+                              <div className="flex items-center gap-3">
+                                <div className="relative flex items-center">
+                                  <input
+                                    type="checkbox"
+                                    checked={isActive}
+                                    onChange={() => handleTagChange(tag)}
+                                    className="peer h-5 w-5 cursor-pointer appearance-none rounded border-2 border-gray-300 bg-white transition-all checked:border-purple-600 checked:bg-purple-600 hover:border-purple-400 focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 focus:outline-none"
+                                  />
+                                  <svg
+                                    className="pointer-events-none absolute top-1/2 left-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 text-white opacity-0 transition-opacity peer-checked:opacity-100"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="4"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                  >
+                                    <polyline points="20 6 9 17 4 12"></polyline>
+                                  </svg>
+                                </div>
+                                <span
+                                  className={`text-sm font-medium select-none ${isActive ? 'text-purple-900' : 'text-gray-900'}`}
+                                >
+                                  {tag}
+                                </span>
+                              </div>
+                              <span
+                                className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                                  isActive
+                                    ? 'bg-purple-100 text-purple-700'
+                                    : 'bg-gray-100 text-gray-600'
+                                }`}
+                              >
+                                {tagCounts[tag] || 0}
+                              </span>
+                            </label>
+                          );
+                        })
+                      ) : (
+                        <p className="p-2 text-sm text-gray-500">No tags available</p>
+                      )}
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              )}
+
+              {showMandatoryFilters.stockStatus && (
+                <AccordionItem value="stockStatus" className="border-b border-gray-200 pb-4">
+                  <AccordionTrigger className="text-base font-bold text-gray-900 hover:no-underline">
+                    Stock Status
+                  </AccordionTrigger>
+                  <AccordionContent className="pt-3">
+                    <div className="space-y-1">
+                      {['In Stock', 'Out of Stock', 'On Backorder'].map((status) => {
+                        const isActive = filters.stockStatus.includes(status);
+                        return (
+                          <label
+                            key={status}
+                            className={`flex cursor-pointer items-center justify-between rounded-lg p-2 transition-all ${
+                              isActive
+                                ? 'bg-purple-50 ring-2 ring-purple-600 ring-inset'
+                                : 'hover:bg-gray-50'
+                            }`}
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className="relative flex items-center">
+                                <input
+                                  type="checkbox"
+                                  checked={isActive}
+                                  onChange={() => handleStockStatusChange(status)}
+                                  className="peer h-5 w-5 cursor-pointer appearance-none rounded border-2 border-gray-300 bg-white transition-all checked:border-purple-600 checked:bg-purple-600 hover:border-purple-400 focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 focus:outline-none"
+                                />
+                                <svg
+                                  className="pointer-events-none absolute top-1/2 left-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 text-white opacity-0 transition-opacity peer-checked:opacity-100"
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="4"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                >
+                                  <polyline points="20 6 9 17 4 12"></polyline>
+                                </svg>
+                              </div>
+                              <span
+                                className={`text-sm font-medium select-none ${isActive ? 'text-purple-900' : 'text-gray-900'}`}
+                              >
+                                {status}
+                              </span>
+                            </div>
+                            <span
+                              className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                                isActive
+                                  ? 'bg-purple-100 text-purple-700'
+                                  : 'bg-gray-100 text-gray-600'
+                              }`}
+                            >
+                              {stockStatusCounts[status] ?? 0}
+                            </span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              )}
+
+              {!isShopifyStore && showMandatoryFilters.featured && (
+                <AccordionItem value="featured" className="border-b border-gray-200 pb-4">
+                  <AccordionTrigger className="text-base font-bold text-gray-900 hover:no-underline">
+                    Featured Products
+                  </AccordionTrigger>
+                  <AccordionContent className="pt-3">
+                    <div className="space-y-1">
+                      {['Featured', 'Not Featured'].map((status) => {
+                        const isActive = filters.featuredProducts.includes(status);
+                        return (
+                          <label
+                            key={status}
+                            className={`flex cursor-pointer items-center justify-between rounded-lg p-2 transition-all ${
+                              isActive
+                                ? 'bg-purple-50 ring-2 ring-purple-600 ring-inset'
+                                : 'hover:bg-gray-50'
+                            }`}
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className="relative flex items-center">
+                                <input
+                                  type="checkbox"
+                                  checked={isActive}
+                                  onChange={() => handleFeaturedProductsChange(status)}
+                                  className="peer h-5 w-5 cursor-pointer appearance-none rounded border-2 border-gray-300 bg-white transition-all checked:border-purple-600 checked:bg-purple-600 hover:border-purple-400 focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 focus:outline-none"
+                                />
+                                <svg
+                                  className="pointer-events-none absolute top-1/2 left-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 text-white opacity-0 transition-opacity peer-checked:opacity-100"
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="4"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                >
+                                  <polyline points="20 6 9 17 4 12"></polyline>
+                                </svg>
+                              </div>
+                              <span
+                                className={`text-sm font-medium select-none ${isActive ? 'text-purple-900' : 'text-gray-900'}`}
+                              >
+                                {status}
+                              </span>
+                            </div>
+                            <span
+                              className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                                isActive
+                                  ? 'bg-purple-100 text-purple-700'
+                                  : 'bg-gray-100 text-gray-600'
+                              }`}
+                            >
+                              {status === 'Featured' ? featuredCount : notFeaturedCount}
+                            </span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              )}
+
+              {showMandatoryFilters.sale && (
+                <AccordionItem value="sale" className="border-b border-gray-200 pb-4">
+                  <AccordionTrigger className="text-base font-bold text-gray-900 hover:no-underline">
+                    Sale Status
+                  </AccordionTrigger>
+                  <AccordionContent className="pt-3">
+                    <div className="space-y-1">
+                      {['On Sale', 'Not On Sale'].map((status) => {
+                        const isActive = filters.saleStatus.includes(status);
+                        return (
+                          <label
+                            key={status}
+                            className={`flex cursor-pointer items-center justify-between rounded-lg p-2 transition-all ${
+                              isActive
+                                ? 'bg-purple-50 ring-2 ring-purple-600 ring-inset'
+                                : 'hover:bg-gray-50'
+                            }`}
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className="relative flex items-center">
+                                <input
+                                  type="checkbox"
+                                  checked={isActive}
+                                  onChange={() => handleSaleStatusChange(status)}
+                                  className="peer h-5 w-5 cursor-pointer appearance-none rounded border-2 border-gray-300 bg-white transition-all checked:border-purple-600 checked:bg-purple-600 hover:border-purple-400 focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 focus:outline-none"
+                                />
+                                <svg
+                                  className="pointer-events-none absolute top-1/2 left-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 text-white opacity-0 transition-opacity peer-checked:opacity-100"
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="4"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                >
+                                  <polyline points="20 6 9 17 4 12"></polyline>
+                                </svg>
+                              </div>
+                              <span
+                                className={`text-sm font-medium select-none ${isActive ? 'text-purple-900' : 'text-gray-900'}`}
+                              >
+                                {status}
+                              </span>
+                            </div>
+                            <span
+                              className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                                isActive
+                                  ? 'bg-purple-100 text-purple-700'
+                                  : 'bg-gray-100 text-gray-600'
+                              }`}
+                            >
+                              {status === 'On Sale' ? saleCount : notSaleCount}
+                            </span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              )}
+            </Accordion>
+            {isAnyFilterActive && (
+              <button
+                onClick={handleClearAll}
+                className="mt-6 w-full rounded-lg border-2 border-purple-600 bg-white px-4 py-3 text-sm font-semibold text-purple-600 transition-colors hover:bg-purple-50"
+              >
+                Clear All Filters
+              </button>
+            )}
+          </aside>
+
+          <main ref={mainContentRef} className="kalifinder-results flex-1 px-1.5 lg:px-0">
+            {recentSearches.length > 0 && (
+              <div className="mb-6">
+                <div className="mb-3 flex items-center justify-between">
+                  <h3 className="text-foreground text-base font-semibold">Recent Searches</h3>
+                  <button
+                    onClick={handleClearRecentSearches}
+                    className="text-muted-foreground hover:text-foreground text-sm transition-colors"
                   >
-                    <span
-                      className="text-foreground cursor-pointer text-sm"
-                      onClick={() => {
-                        handleSearch(search);
-                      }}
+                    Clear all
+                  </button>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {recentSearches.map((search, index) => (
+                    <div
+                      key={index}
+                      className="bg-muted flex items-center gap-1 rounded-full px-3 py-1.5"
                     >
-                      {search}
-                    </span>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleRemoveRecentSearch(search);
-                      }}
-                      aria-label={`Remove recent search ${search}`}
-                      title={`Remove recent search ${search}`}
-                      className="hover:bg-background rounded-full p-0.5"
-                    >
-                      <X className="text-muted-foreground h-3 w-3" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-          {!showRecommendations && (
-            <div className="text-foreground border-border mb-3 hidden border-b pb-3 text-lg font-semibold lg:block">
-              Search Results
-            </div>
-          )}
-          {!showRecommendations && (
-            <div className="text-muted-foreground mb-4 flex items-center justify-between text-sm">
-              <div className="flex items-center gap-2">
-                <span className="text-foreground text-sm font-medium lg:text-base">
-                  {isShowingRecommended ? (
-                    <>
-                      <b className="text-foreground font-bold">{displayedProducts}</b> recommended
-                      products
-                    </>
-                  ) : totalProducts > 0 ? (
-                    <>
-                      <b className="text-foreground font-bold">{displayedProducts}</b> of{' '}
-                      <b className="text-foreground font-bold">
-                        {globalTotalProducts || totalProducts}
-                      </b>{' '}
-                      results
-                    </>
-                  ) : (
-                    <>
-                      <b className="text-foreground font-bold">{displayedProducts}</b> products
-                    </>
-                  )}
-                </span>
-              </div>
-              <div onClick={(e) => e.stopPropagation()}>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <button
-                      data-sort-button
-                      className="group flex items-center gap-2 rounded-xl border-2 border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-900 shadow-sm transition-all hover:border-purple-400 hover:bg-purple-50 hover:shadow-md focus:border-purple-500 focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:outline-none"
-                    >
-                      <svg
-                        className="h-4 w-4 text-gray-500 transition-colors group-hover:text-purple-600"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                        strokeWidth={2}
+                      <span
+                        className="text-foreground cursor-pointer text-sm"
+                        onClick={() => {
+                          handleSearch(search);
+                        }}
                       >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M3 4h13M3 8h9m-9 4h9m5-4v12m0 0l-4-4m4 4l4-4"
-                        />
-                      </svg>
-                      <span className="font-semibold">{getSortLabel(sortOption)}</span>
-                      <ChevronDown className="h-4 w-4 text-gray-500 transition-all group-hover:text-purple-600 group-data-[state=open]:rotate-180" />
-                    </button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent
-                    align="end"
-                    className="z-[2147483647] min-w-[240px] rounded-xl border border-gray-200 bg-white p-2 shadow-2xl"
-                    style={{
-                      boxShadow:
-                        '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
-                    }}
-                  >
-                    <DropdownMenuLabel className="px-3 py-2 text-xs font-bold tracking-wide text-gray-500 uppercase">
-                      Sort by
-                    </DropdownMenuLabel>
-                    <DropdownMenuSeparator className="my-1 bg-gray-100" />
-                    <DropdownMenuItem
-                      onSelect={(e) => {
-                        e.preventDefault();
-                        setSortOption('default');
-                      }}
-                      className={`group cursor-pointer rounded-lg px-3 py-2.5 text-sm transition-all ${
-                        sortOption === 'default'
-                          ? 'bg-purple-100 font-semibold text-purple-700 shadow-sm'
-                          : 'text-gray-700 hover:bg-purple-50'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <svg
-                            className={`h-4 w-4 ${sortOption === 'default' ? 'text-purple-600' : 'text-muted-foreground'}`}
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                            strokeWidth={2}
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              d="M13 10V3L4 14h7v7l9-11h-7z"
-                            />
-                          </svg>
-                          <span>Relevance</span>
-                        </div>
-                        {sortOption === 'default' && (
-                          <svg
-                            className="h-4 w-4 text-purple-600"
-                            fill="currentColor"
-                            viewBox="0 0 20 20"
-                          >
-                            <path
-                              fillRule="evenodd"
-                              d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                              clipRule="evenodd"
-                            />
-                          </svg>
-                        )}
-                      </div>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onSelect={(e) => {
-                        e.preventDefault();
-                        setSortOption('a-z');
-                      }}
-                      className={`group cursor-pointer rounded-lg px-3 py-2.5 text-sm transition-all ${
-                        sortOption === 'a-z'
-                          ? 'bg-purple-100 font-semibold text-purple-700 shadow-sm'
-                          : 'text-gray-700 hover:bg-purple-50'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <svg
-                            className={`h-4 w-4 ${sortOption === 'a-z' ? 'text-purple-600' : 'text-muted-foreground'}`}
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                            strokeWidth={2}
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12"
-                            />
-                          </svg>
-                          <span>Name: A-Z</span>
-                        </div>
-                        {sortOption === 'a-z' && (
-                          <svg
-                            className="h-4 w-4 text-purple-600"
-                            fill="currentColor"
-                            viewBox="0 0 20 20"
-                          >
-                            <path
-                              fillRule="evenodd"
-                              d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                              clipRule="evenodd"
-                            />
-                          </svg>
-                        )}
-                      </div>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onSelect={(e) => {
-                        e.preventDefault();
-                        setSortOption('z-a');
-                      }}
-                      className={`group cursor-pointer rounded-lg px-3 py-2.5 text-sm transition-all ${
-                        sortOption === 'z-a'
-                          ? 'bg-purple-100 font-semibold text-purple-700 shadow-sm'
-                          : 'text-gray-700 hover:bg-purple-50'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <svg
-                            className={`h-4 w-4 ${sortOption === 'z-a' ? 'text-purple-600' : 'text-muted-foreground'}`}
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                            strokeWidth={2}
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              d="M3 4h13M3 8h9m-9 4h6m4 0l4 4m0 0l4-4m-4 4V8"
-                            />
-                          </svg>
-                          <span>Name: Z-A</span>
-                        </div>
-                        {sortOption === 'z-a' && (
-                          <svg
-                            className="h-4 w-4 text-purple-600"
-                            fill="currentColor"
-                            viewBox="0 0 20 20"
-                          >
-                            <path
-                              fillRule="evenodd"
-                              d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                              clipRule="evenodd"
-                            />
-                          </svg>
-                        )}
-                      </div>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onSelect={(e) => {
-                        e.preventDefault();
-                        setSortOption('price-asc');
-                      }}
-                      className={`group cursor-pointer rounded-lg px-3 py-2.5 text-sm transition-all ${
-                        sortOption === 'price-asc'
-                          ? 'bg-purple-100 font-semibold text-purple-700 shadow-sm'
-                          : 'text-gray-700 hover:bg-purple-50'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <svg
-                            className={`h-4 w-4 ${sortOption === 'price-asc' ? 'text-purple-600' : 'text-muted-foreground'}`}
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                            strokeWidth={2}
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                            />
-                          </svg>
-                          <span>Price: Low to High</span>
-                        </div>
-                        {sortOption === 'price-asc' && (
-                          <svg
-                            className="h-4 w-4 text-purple-600"
-                            fill="currentColor"
-                            viewBox="0 0 20 20"
-                          >
-                            <path
-                              fillRule="evenodd"
-                              d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                              clipRule="evenodd"
-                            />
-                          </svg>
-                        )}
-                      </div>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onSelect={(e) => {
-                        e.preventDefault();
-                        setSortOption('price-desc');
-                      }}
-                      className={`group cursor-pointer rounded-lg px-3 py-2.5 text-sm transition-all ${
-                        sortOption === 'price-desc'
-                          ? 'bg-purple-100 font-semibold text-purple-700 shadow-sm'
-                          : 'text-gray-700 hover:bg-purple-50'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <svg
-                            className={`h-4 w-4 ${sortOption === 'price-desc' ? 'text-purple-600' : 'text-muted-foreground'}`}
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                            strokeWidth={2}
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                            />
-                          </svg>
-                          <span>Price: High to Low</span>
-                        </div>
-                        {sortOption === 'price-desc' && (
-                          <svg
-                            className="h-4 w-4 text-purple-600"
-                            fill="currentColor"
-                            viewBox="0 0 20 20"
-                          >
-                            <path
-                              fillRule="evenodd"
-                              d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                              clipRule="evenodd"
-                            />
-                          </svg>
-                        )}
-                      </div>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                        {search}
+                      </span>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleRemoveRecentSearch(search);
+                        }}
+                        aria-label={`Remove recent search ${search}`}
+                        title={`Remove recent search ${search}`}
+                        className="hover:bg-background rounded-full p-0.5"
+                      >
+                        <X className="text-muted-foreground h-3 w-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
-          )}{' '}
-          {showRecommendations ? (
-            // Show recommendations and popular searches, or skeletons while loading
-            <div className="w-full">
-              {/* Smart Recommendations */}
-              {(() => {
-                return null;
-              })()}
-              {isInitialLoading || recommendations.length > 0 ? (
-                recommendations.length > 0 ? (
-                  <Recommendations
-                    recommendations={recommendations}
-                    handleProductClick={handleProductClick}
-                    calculateDiscountPercentage={calculateDiscountPercentage}
-                    addingToCart={addingToCart}
-                    handleAddToCart={handleAddToCart}
-                    formatPrice={formatPrice}
-                  />
+            )}
+            {!showRecommendations && (
+              <div className="text-foreground border-border mb-3 hidden border-b pb-3 text-lg font-semibold lg:block">
+                Search Results
+              </div>
+            )}
+            {!showRecommendations && (
+              <div className="text-muted-foreground mb-4 flex items-center justify-between text-sm">
+                <div className="flex items-center gap-2">
+                  <span className="text-foreground text-sm font-medium lg:text-base">
+                    {isShowingRecommended ? (
+                      <>
+                        <b className="text-foreground font-bold">{displayedProducts}</b> recommended
+                        products
+                      </>
+                    ) : totalProducts > 0 ? (
+                      <>
+                        <b className="text-foreground font-bold">{displayedProducts}</b> of{' '}
+                        <b className="text-foreground font-bold">
+                          {globalTotalProducts || totalProducts}
+                        </b>{' '}
+                        results
+                      </>
+                    ) : (
+                      <>
+                        <b className="text-foreground font-bold">{displayedProducts}</b> products
+                      </>
+                    )}
+                  </span>
+                </div>
+                <div onClick={(e) => e.stopPropagation()}>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button
+                        data-sort-button
+                        className="group flex items-center gap-2 rounded-xl border-2 border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-900 shadow-sm transition-all hover:border-purple-400 hover:bg-purple-50 hover:shadow-md focus:border-purple-500 focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:outline-none"
+                      >
+                        <svg
+                          className="h-4 w-4 text-gray-500 transition-colors group-hover:text-purple-600"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                          strokeWidth={2}
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M3 4h13M3 8h9m-9 4h9m5-4v12m0 0l-4-4m4 4l4-4"
+                          />
+                        </svg>
+                        <span className="font-semibold">{getSortLabel(sortOption)}</span>
+                        <ChevronDown className="h-4 w-4 text-gray-500 transition-all group-hover:text-purple-600 group-data-[state=open]:rotate-180" />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent
+                      align="end"
+                      className="z-[2147483647] min-w-[240px] rounded-xl border border-gray-200 bg-white p-2 shadow-2xl"
+                      style={{
+                        boxShadow:
+                          '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+                      }}
+                    >
+                      <DropdownMenuLabel className="px-3 py-2 text-xs font-bold tracking-wide text-gray-500 uppercase">
+                        Sort by
+                      </DropdownMenuLabel>
+                      <DropdownMenuSeparator className="my-1 bg-gray-100" />
+                      <DropdownMenuItem
+                        onSelect={(e) => {
+                          e.preventDefault();
+                          setSortOption('default');
+                        }}
+                        className={`group cursor-pointer rounded-lg px-3 py-2.5 text-sm transition-all ${
+                          sortOption === 'default'
+                            ? 'bg-purple-100 font-semibold text-purple-700 shadow-sm'
+                            : 'text-gray-700 hover:bg-purple-50'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <svg
+                              className={`h-4 w-4 ${sortOption === 'default' ? 'text-purple-600' : 'text-muted-foreground'}`}
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                              strokeWidth={2}
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                d="M13 10V3L4 14h7v7l9-11h-7z"
+                              />
+                            </svg>
+                            <span>Relevance</span>
+                          </div>
+                          {sortOption === 'default' && (
+                            <svg
+                              className="h-4 w-4 text-purple-600"
+                              fill="currentColor"
+                              viewBox="0 0 20 20"
+                            >
+                              <path
+                                fillRule="evenodd"
+                                d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                clipRule="evenodd"
+                              />
+                            </svg>
+                          )}
+                        </div>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onSelect={(e) => {
+                          e.preventDefault();
+                          setSortOption('a-z');
+                        }}
+                        className={`group cursor-pointer rounded-lg px-3 py-2.5 text-sm transition-all ${
+                          sortOption === 'a-z'
+                            ? 'bg-purple-100 font-semibold text-purple-700 shadow-sm'
+                            : 'text-gray-700 hover:bg-purple-50'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <svg
+                              className={`h-4 w-4 ${sortOption === 'a-z' ? 'text-purple-600' : 'text-muted-foreground'}`}
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                              strokeWidth={2}
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12"
+                              />
+                            </svg>
+                            <span>Name: A-Z</span>
+                          </div>
+                          {sortOption === 'a-z' && (
+                            <svg
+                              className="h-4 w-4 text-purple-600"
+                              fill="currentColor"
+                              viewBox="0 0 20 20"
+                            >
+                              <path
+                                fillRule="evenodd"
+                                d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                clipRule="evenodd"
+                              />
+                            </svg>
+                          )}
+                        </div>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onSelect={(e) => {
+                          e.preventDefault();
+                          setSortOption('z-a');
+                        }}
+                        className={`group cursor-pointer rounded-lg px-3 py-2.5 text-sm transition-all ${
+                          sortOption === 'z-a'
+                            ? 'bg-purple-100 font-semibold text-purple-700 shadow-sm'
+                            : 'text-gray-700 hover:bg-purple-50'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <svg
+                              className={`h-4 w-4 ${sortOption === 'z-a' ? 'text-purple-600' : 'text-muted-foreground'}`}
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                              strokeWidth={2}
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                d="M3 4h13M3 8h9m-9 4h6m4 0l4 4m0 0l4-4m-4 4V8"
+                              />
+                            </svg>
+                            <span>Name: Z-A</span>
+                          </div>
+                          {sortOption === 'z-a' && (
+                            <svg
+                              className="h-4 w-4 text-purple-600"
+                              fill="currentColor"
+                              viewBox="0 0 20 20"
+                            >
+                              <path
+                                fillRule="evenodd"
+                                d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                clipRule="evenodd"
+                              />
+                            </svg>
+                          )}
+                        </div>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onSelect={(e) => {
+                          e.preventDefault();
+                          setSortOption('price-asc');
+                        }}
+                        className={`group cursor-pointer rounded-lg px-3 py-2.5 text-sm transition-all ${
+                          sortOption === 'price-asc'
+                            ? 'bg-purple-100 font-semibold text-purple-700 shadow-sm'
+                            : 'text-gray-700 hover:bg-purple-50'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <svg
+                              className={`h-4 w-4 ${sortOption === 'price-asc' ? 'text-purple-600' : 'text-muted-foreground'}`}
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                              strokeWidth={2}
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                              />
+                            </svg>
+                            <span>Price: Low to High</span>
+                          </div>
+                          {sortOption === 'price-asc' && (
+                            <svg
+                              className="h-4 w-4 text-purple-600"
+                              fill="currentColor"
+                              viewBox="0 0 20 20"
+                            >
+                              <path
+                                fillRule="evenodd"
+                                d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                clipRule="evenodd"
+                              />
+                            </svg>
+                          )}
+                        </div>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onSelect={(e) => {
+                          e.preventDefault();
+                          setSortOption('price-desc');
+                        }}
+                        className={`group cursor-pointer rounded-lg px-3 py-2.5 text-sm transition-all ${
+                          sortOption === 'price-desc'
+                            ? 'bg-purple-100 font-semibold text-purple-700 shadow-sm'
+                            : 'text-gray-700 hover:bg-purple-50'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <svg
+                              className={`h-4 w-4 ${sortOption === 'price-desc' ? 'text-purple-600' : 'text-muted-foreground'}`}
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                              strokeWidth={2}
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                              />
+                            </svg>
+                            <span>Price: High to Low</span>
+                          </div>
+                          {sortOption === 'price-desc' && (
+                            <svg
+                              className="h-4 w-4 text-purple-600"
+                              fill="currentColor"
+                              viewBox="0 0 20 20"
+                            >
+                              <path
+                                fillRule="evenodd"
+                                d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                clipRule="evenodd"
+                              />
+                            </svg>
+                          )}
+                        </div>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              </div>
+            )}{' '}
+            {showRecommendations ? (
+              // Show recommendations and popular searches, or skeletons while loading
+              <div className="w-full">
+                {/* Smart Recommendations */}
+                {(() => {
+                  return null;
+                })()}
+                {isInitialLoading || recommendations.length > 0 ? (
+                  recommendations.length > 0 ? (
+                    <Recommendations
+                      recommendations={recommendations}
+                      handleProductClick={handleProductClick}
+                      calculateDiscountPercentage={calculateDiscountPercentage}
+                      addingToCart={addingToCart}
+                      handleAddToCart={handleAddToCart}
+                      formatPrice={formatPrice}
+                    />
+                  ) : (
+                    // Show skeleton loaders while recommendations are loading
+                    <LoadingSkeleton />
+                  )
                 ) : (
-                  // Show skeleton loaders while recommendations are loading
-                  <LoadingSkeleton />
-                )
-              ) : (
-                // Show empty state when initial loading is complete and no recommendations
+                  // Show empty state when initial loading is complete and no recommendations
+                  <div className="animate-in fade-in w-full py-12 text-center duration-300">
+                    <div className="flex flex-col items-center gap-4">
+                      <div className="bg-muted animate-in zoom-in flex h-16 w-16 items-center justify-center rounded-full duration-500">
+                        <Search className="text-muted-foreground h-8 w-8" />
+                      </div>
+                      <div className="animate-in slide-in-from-bottom-2 duration-500">
+                        <p className="text-foreground mb-2 text-lg font-semibold lg:text-xl">
+                          No products available
+                        </p>
+                        <p className="text-muted-foreground text-sm lg:text-base">
+                          Start typing to search for products.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : isLoading || isPending ? (
+              <LoadingSkeleton />
+            ) : (
+              <>
+                {/* Show message banner when displaying recommended products */}
+                {isShowingRecommended && searchMessage && filteredProducts.length > 0 && (
+                  <div className="bg-muted/50 animate-in fade-in mb-4 rounded-lg border border-gray-200 p-4 duration-300">
+                    <div className="flex items-start gap-3">
+                      <div className="bg-primary/10 text-primary mt-0.5 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full">
+                        <Search className="h-4 w-4" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-foreground text-sm font-medium">
+                          Showing Recommendations
+                        </p>
+                        <p className="text-muted-foreground mt-1 text-xs lg:text-sm">
+                          {searchMessage}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                <div className="grid w-full grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4 xl:grid-cols-4 2xl:grid-cols-4">
+                  {sortedProducts.map((product) => (
+                    <ProductCard
+                      key={product.id}
+                      product={product}
+                      onProductClick={handleProductClick}
+                      onAddToCart={handleAddToCart}
+                      isAddingToCart={addingToCart === product.id}
+                      calculateDiscountPercentage={calculateDiscountPercentage}
+                      formatPrice={formatPrice}
+                    />
+                  ))}
+                </div>
+
+                {/* Infinite scroll trigger for mobile */}
+                {isMobile &&
+                  hasMoreProducts &&
+                  displayedProducts > 0 &&
+                  !isLoading &&
+                  !isShowingRecommended && (
+                    <div
+                      ref={loadMoreTriggerRef}
+                      id="load-more-trigger"
+                      className="my-4 h-16 w-full"
+                    >
+                      {isLoadingMore && (
+                        <div className="flex items-center justify-center py-4">
+                          <div className="flex items-center gap-2">
+                            <div className="flex space-x-2">
+                              <div className="animate-bounce-delay-0 bg-primary h-2 w-2 animate-bounce rounded-full"></div>
+                              <div className="animate-bounce-delay-150 bg-primary h-2 w-2 animate-bounce rounded-full"></div>
+                              <div className="animate-bounce-delay-300 bg-primary h-2 w-2 animate-bounce rounded-full"></div>
+                            </div>
+                            <span className="text-muted-foreground text-sm">
+                              Loading {Math.min(12, Math.max(0, totalProducts - displayedProducts))}{' '}
+                              more products...
+                            </span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                {/* Load More button for desktop */}
+                {!isMobile &&
+                  hasMoreProducts &&
+                  displayedProducts > 0 &&
+                  !isLoading &&
+                  !isShowingRecommended && (
+                    <div className="mt-8 flex justify-center">
+                      <button
+                        onClick={() => void loadMoreProducts()}
+                        disabled={isLoadingMore}
+                        className="bg-primary text-primary-foreground hover:bg-primary-hover rounded-lg px-8 py-3 font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        {isLoadingMore
+                          ? 'Loading...'
+                          : `Load More (${Math.min(12, Math.max(0, totalProducts - displayedProducts))} more)`}
+                      </button>
+                    </div>
+                  )}
+              </>
+            )}
+            {!isLoading &&
+              !isPending &&
+              !showRecommendations &&
+              filteredProducts.length === 0 &&
+              hasSearched && (
                 <div className="animate-in fade-in w-full py-12 text-center duration-300">
                   <div className="flex flex-col items-center gap-4">
                     <div className="bg-muted animate-in zoom-in flex h-16 w-16 items-center justify-center rounded-full duration-500">
                       <Search className="text-muted-foreground h-8 w-8" />
                     </div>
                     <div className="animate-in slide-in-from-bottom-2 duration-500">
-                      <p className="text-foreground mb-2 text-lg font-semibold lg:text-xl">
-                        No products available
-                      </p>
-                      <p className="text-muted-foreground text-sm lg:text-base">
-                        Start typing to search for products.
-                      </p>
+                      {searchMessage ? (
+                        <>
+                          <p className="text-foreground mb-2 text-lg font-semibold lg:text-xl">
+                            {isShowingRecommended ? 'Showing Recommendations' : 'Search not found'}
+                          </p>
+                          <p className="text-muted-foreground text-sm lg:text-base">
+                            {searchMessage}
+                          </p>
+                        </>
+                      ) : (
+                        <>
+                          <p className="text-foreground mb-2 text-lg font-semibold lg:text-xl">
+                            Search not found
+                          </p>
+                          <p className="text-muted-foreground text-sm lg:text-base">
+                            No products found matching your criteria. Try different keywords or
+                            browse our categories.
+                          </p>
+                        </>
+                      )}
                     </div>
                   </div>
                 </div>
               )}
-            </div>
-          ) : isLoading || isPending ? (
-            <LoadingSkeleton />
-          ) : (
-            <>
-              {/* Show message banner when displaying recommended products */}
-              {isShowingRecommended && searchMessage && filteredProducts.length > 0 && (
-                <div className="bg-muted/50 animate-in fade-in mb-4 rounded-lg border border-gray-200 p-4 duration-300">
-                  <div className="flex items-start gap-3">
-                    <div className="bg-primary/10 text-primary mt-0.5 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full">
-                      <Search className="h-4 w-4" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-foreground text-sm font-medium">Showing Recommendations</p>
-                      <p className="text-muted-foreground mt-1 text-xs lg:text-sm">
-                        {searchMessage}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
-              <div className="grid w-full grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4 xl:grid-cols-4 2xl:grid-cols-4">
-                {sortedProducts.map((product) => (
-                  <ProductCard
-                    key={product.id}
-                    product={product}
-                    onProductClick={handleProductClick}
-                    onAddToCart={handleAddToCart}
-                    isAddingToCart={addingToCart === product.id}
-                    calculateDiscountPercentage={calculateDiscountPercentage}
-                    formatPrice={formatPrice}
-                  />
-                ))}
-              </div>
-
-              {/* Infinite scroll trigger for mobile */}
-              {isMobile &&
-                hasMoreProducts &&
-                displayedProducts > 0 &&
-                !isLoading &&
-                !isShowingRecommended && (
-                  <div ref={loadMoreTriggerRef} id="load-more-trigger" className="my-4 h-16 w-full">
-                    {isLoadingMore && (
-                      <div className="flex items-center justify-center py-4">
-                        <div className="flex items-center gap-2">
-                          <div className="flex space-x-2">
-                            <div className="animate-bounce-delay-0 bg-primary h-2 w-2 animate-bounce rounded-full"></div>
-                            <div className="animate-bounce-delay-150 bg-primary h-2 w-2 animate-bounce rounded-full"></div>
-                            <div className="animate-bounce-delay-300 bg-primary h-2 w-2 animate-bounce rounded-full"></div>
-                          </div>
-                          <span className="text-muted-foreground text-sm">
-                            Loading {Math.min(12, Math.max(0, totalProducts - displayedProducts))}{' '}
-                            more products...
-                          </span>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-              {/* Load More button for desktop */}
-              {!isMobile &&
-                hasMoreProducts &&
-                displayedProducts > 0 &&
-                !isLoading &&
-                !isShowingRecommended && (
-                  <div className="mt-8 flex justify-center">
-                    <button
-                      onClick={() => void loadMoreProducts()}
-                      disabled={isLoadingMore}
-                      className="bg-primary text-primary-foreground hover:bg-primary-hover rounded-lg px-8 py-3 font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                      {isLoadingMore
-                        ? 'Loading...'
-                        : `Load More (${Math.min(12, Math.max(0, totalProducts - displayedProducts))} more)`}
-                    </button>
-                  </div>
-                )}
-            </>
-          )}
-          {!isLoading &&
-            !isPending &&
-            !showRecommendations &&
-            filteredProducts.length === 0 &&
-            hasSearched && (
-              <div className="animate-in fade-in w-full py-12 text-center duration-300">
-                <div className="flex flex-col items-center gap-4">
-                  <div className="bg-muted animate-in zoom-in flex h-16 w-16 items-center justify-center rounded-full duration-500">
-                    <Search className="text-muted-foreground h-8 w-8" />
-                  </div>
-                  <div className="animate-in slide-in-from-bottom-2 duration-500">
-                    {searchMessage ? (
-                      <>
-                        <p className="text-foreground mb-2 text-lg font-semibold lg:text-xl">
-                          {isShowingRecommended ? 'Showing Recommendations' : 'Search not found'}
-                        </p>
-                        <p className="text-muted-foreground text-sm lg:text-base">
-                          {searchMessage}
-                        </p>
-                      </>
-                    ) : (
-                      <>
-                        <p className="text-foreground mb-2 text-lg font-semibold lg:text-xl">
-                          Search not found
-                        </p>
-                        <p className="text-muted-foreground text-sm lg:text-base">
-                          No products found matching your criteria. Try different keywords or browse
-                          our categories.
-                        </p>
-                      </>
-                    )}
-                  </div>
+            {/* Cart Message Display */}
+            {cartMessage && (
+              <div className="bg-primary text-primary-foreground fixed top-4 right-4 z-[999999] max-w-sm rounded-lg px-4 py-2 shadow-lg">
+                <div className="flex items-center gap-2">
+                  <div className="border-primary-foreground h-4 w-4 animate-spin rounded-full border-2 border-t-transparent"></div>
+                  <span className="text-sm font-medium">{cartMessage}</span>
                 </div>
               </div>
             )}
-          {/* Cart Message Display */}
-          {cartMessage && (
-            <div className="bg-primary text-primary-foreground fixed top-4 right-4 z-[999999] max-w-sm rounded-lg px-4 py-2 shadow-lg">
-              <div className="flex items-center gap-2">
-                <div className="border-primary-foreground h-4 w-4 animate-spin rounded-full border-2 border-t-transparent"></div>
-                <span className="text-sm font-medium">{cartMessage}</span>
-              </div>
-            </div>
-          )}
-        </main>
+          </main>
 
-        {/* Framer-style Powered by KaliFinder watermark - Bottom Right */}
-        <div className="fixed right-4 bottom-6 z-40 lg:right-6">
-          <a
-            href="https://kalifinder.com"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="group inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2 shadow-lg transition-all hover:border-purple-300 hover:shadow-xl"
-            style={{
-              backdropFilter: 'blur(8px)',
-              backgroundColor: 'rgba(255, 255, 255, 0.95)',
-            }}
-          >
-            <span className="hidden text-xs font-medium text-gray-500 transition-colors group-hover:text-gray-700 sm:inline">
-              Powered by
-            </span>
-            <div className="flex items-center gap-1.5">
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                className="transition-transform group-hover:scale-110"
-              >
-                <path
-                  d="M12 2L2 7L12 12L22 7L12 2Z"
-                  fill="#7c3aed"
-                  className="transition-colors group-hover:fill-purple-600"
-                />
-                <path
-                  d="M2 17L12 22L22 17"
-                  stroke="#7c3aed"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="transition-colors group-hover:stroke-purple-600"
-                />
-                <path
-                  d="M2 12L12 17L22 12"
-                  stroke="#7c3aed"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="transition-colors group-hover:stroke-purple-600"
-                />
-              </svg>
-              <span className="text-sm font-semibold text-gray-900 transition-colors group-hover:text-purple-600">
-                KaliFinder
+          {/* Framer-style Powered by KaliFinder watermark - Bottom Right */}
+          <div className="fixed right-4 bottom-6 z-40 lg:right-6">
+            <a
+              href="https://kalifinder.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2 shadow-lg transition-all hover:border-purple-300 hover:shadow-xl"
+              style={{
+                backdropFilter: 'blur(8px)',
+                backgroundColor: 'rgba(255, 255, 255, 0.95)',
+              }}
+            >
+              <span className="hidden text-xs font-medium text-gray-500 transition-colors group-hover:text-gray-700 sm:inline">
+                Powered by
               </span>
-            </div>
-          </a>
-        </div>
+              <div className="flex items-center gap-1.5">
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  className="transition-transform group-hover:scale-110"
+                >
+                  <path
+                    d="M12 2L2 7L12 12L22 7L12 2Z"
+                    fill="#7c3aed"
+                    className="transition-colors group-hover:fill-purple-600"
+                  />
+                  <path
+                    d="M2 17L12 22L22 17"
+                    stroke="#7c3aed"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="transition-colors group-hover:stroke-purple-600"
+                  />
+                  <path
+                    d="M2 12L12 17L22 12"
+                    stroke="#7c3aed"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="transition-colors group-hover:stroke-purple-600"
+                  />
+                </svg>
+                <span className="text-sm font-semibold text-gray-900 transition-colors group-hover:text-purple-600">
+                  KaliFinder
+                </span>
+              </div>
+            </a>
+          </div>
 
-        {/* Scroll to top button - shows after scrolling down 400px */}
-        <ScrollToTop containerRef={mainContentRef} showAfter={400} />
+          {/* Scroll to top button - shows after scrolling down 400px */}
+          <ScrollToTop containerRef={mainContentRef} showAfter={400} />
+        </div>
       </div>
     </div>
   );

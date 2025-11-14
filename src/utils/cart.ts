@@ -209,7 +209,7 @@ export const addToCart = async (product: Product, storeUrl: string): Promise<Car
 
     const errorMessage = getErrorMessage(error);
 
-    // Show error toast
+    // Show error toast with optional "View Product" action
     toast.error(`Could not add to cart: ${errorMessage}`, {
       duration: 5000,
       action: product.productUrl
@@ -219,19 +219,6 @@ export const addToCart = async (product: Product, storeUrl: string): Promise<Car
           }
         : undefined,
     });
-
-    // Fallback: redirect to product page if available
-    if (product.productUrl) {
-      console.warn('⚠️ Falling back to product page redirect');
-      setTimeout(() => {
-        window.open(product.productUrl, '_blank');
-      }, 1000);
-
-      return {
-        success: false,
-        message: 'Redirected to product page',
-      };
-    }
 
     throw error;
   }

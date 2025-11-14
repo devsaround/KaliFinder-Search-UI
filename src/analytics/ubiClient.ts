@@ -135,6 +135,9 @@ class UBIClient {
   private addEvent(
     event: Omit<UBIEvent, 'session_id' | 'anonymous_id' | 'vendor_id' | 'store_id' | 'platform'>
   ) {
+    // Re-sync IDs in case they were set by API response after initialization
+    this.resyncIds();
+
     this.events.push({
       ...event,
       session_id: this.sessionId,
@@ -252,9 +255,9 @@ class UBIClient {
     return anonymousId;
   }
 
-  // Get vendor ID from global variable (set by embed script)
+  // Get vendor ID from global variable (set by embed script or API response)
   private getVendorId(): string {
-    // Check for global variable set by embed script
+    // Check for global variable set by embed script or API response
     const globalWindow = window as Window & { KALIFIND_VENDOR_ID?: string };
     if (globalWindow.KALIFIND_VENDOR_ID) {
       const vendorId = globalWindow.KALIFIND_VENDOR_ID;
@@ -266,9 +269,9 @@ class UBIClient {
     return 'unknown';
   }
 
-  // Get store ID from global variable (set by embed script)
+  // Get store ID from global variable (set by embed script or API response)
   private getStoreId(): string {
-    // Check for global variable set by embed script
+    // Check for global variable set by embed script or API response
     const globalWindow = window as Window & { KALIFIND_STORE_ID?: string };
     if (globalWindow.KALIFIND_STORE_ID) {
       const storeId = globalWindow.KALIFIND_STORE_ID;
@@ -278,6 +281,31 @@ class UBIClient {
 
     console.warn('UBI Client: No store ID found, using unknown');
     return 'unknown';
+  }
+
+  // Re-sync vendor and store IDs (call after API response sets them)
+  private resyncIds(): void {
+    const newVendorId = this.getVendorId();
+    const newStoreId = this.getStoreId();
+    const newPlatform = this.getPlatform();
+
+    if (
+      newVendorId !== this.vendorId ||
+      newStoreId !== this.storeId ||
+      newPlatform !== this.platform
+    ) {
+      console.log('UBI Client: Re-syncing IDs:', {
+        oldVendorId: this.vendorId,
+        newVendorId,
+        oldStoreId: this.storeId,
+        newStoreId,
+        oldPlatform: this.platform,
+        newPlatform,
+      });
+      this.vendorId = newVendorId;
+      this.storeId = newStoreId;
+      this.platform = newPlatform;
+    }
   }
 
   // Get platform from page context

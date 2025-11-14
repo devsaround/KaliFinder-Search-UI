@@ -78,12 +78,13 @@ export const ProductCard: React.FC<ProductCardProps> = ({
       : '';
 
   return (
-    <div
-      onClick={() => onProductClick(product)}
-      className="group flex w-full cursor-pointer flex-col overflow-hidden rounded-xl border border-gray-200 bg-white transition-all duration-300 hover:border-purple-300 hover:shadow-xl"
-    >
+    <div className="group flex w-full flex-col overflow-hidden rounded-xl border border-gray-200 bg-white transition-all duration-300 hover:border-purple-300 hover:shadow-xl">
       {/* Product Image */}
-      <div className="relative aspect-square overflow-hidden bg-gray-50">
+      <div
+        className="relative aspect-square cursor-pointer overflow-hidden"
+        style={{ backgroundColor: 'oklch(82.7% 0.119 306.383)' }}
+        onClick={() => onProductClick(product)}
+      >
         <img
           src={product.imageUrl || product.image}
           alt={product.title}
@@ -103,28 +104,48 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
         {/* Discount Badge */}
         {hasDiscount && (
-          <div className="absolute top-2 left-2 rounded-lg border border-white/30 bg-gradient-to-br from-red-500/95 to-pink-600/95 px-2.5 py-1 text-[10px] font-bold tracking-wide text-white uppercase shadow-[0_8px_16px_rgba(0,0,0,0.3)] backdrop-blur-md sm:px-3 sm:text-xs">
+          <div
+            className="absolute top-2 left-2 rounded-lg border border-white/30 px-2.5 py-1 text-[10px] font-bold tracking-wide text-white uppercase shadow-[0_8px_16px_rgba(0,0,0,0.3)] backdrop-blur-md sm:px-3 sm:text-xs"
+            style={{ backgroundColor: 'var(--color-purple-600)' }}
+          >
             <span className="drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">
               {discountPercentage ? `-${discountPercentage}%` : 'Sale'}
             </span>
           </div>
         )}
 
-        {/* Overlay on hover */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+        {/* View Product Button - Shown on hover */}
+        <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onProductClick(product);
+            }}
+            className="rounded-lg bg-white px-4 py-2 text-sm font-semibold text-purple-600 shadow-lg transition-all duration-200 hover:bg-purple-600 hover:text-white sm:px-6 sm:py-2.5 sm:text-base"
+          >
+            View Product
+          </button>
+        </div>
       </div>
 
       {/* Product Info */}
       <div className="flex flex-1 flex-col p-2 sm:p-3">
-        {/* Product Title */}
-        <h3 className="mb-2 line-clamp-2 min-h-[2.5rem] text-sm font-semibold text-gray-900 sm:text-base">
+        {/* Product Title - Now a clickable link */}
+        <a
+          href="#"
+          onClick={(e) => {
+            e.preventDefault();
+            onProductClick(product);
+          }}
+          className="mb-1 line-clamp-2 text-sm font-semibold text-gray-900 transition-colors duration-200 hover:text-purple-600 sm:text-base"
+        >
           {product.title}
-        </h3>
+        </a>
 
         {/* Price and Add to Cart */}
         <div className="mt-auto flex items-center justify-between">
           {/* Price */}
-          <div className="flex flex-col gap-0.5">
+          <div className="flex items-center gap-2">
             {hasDiscount && primaryPrice ? (
               <>
                 <span className="text-base font-bold text-purple-600 sm:text-lg">
@@ -146,7 +167,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
               onAddToCart(product);
             }}
             disabled={isAddingToCart}
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-purple-600 text-white shadow-lg transition-all duration-300 hover:scale-110 hover:bg-purple-700 hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-50"
+            className="relative z-10 flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-purple-600 text-white shadow-[0_4px_12px_rgba(124,58,237,0.5)] transition-all duration-300 hover:scale-110 hover:bg-purple-700 hover:shadow-[0_8px_20px_rgba(124,58,237,0.6)] disabled:cursor-not-allowed disabled:opacity-50"
             aria-label={`Add ${product.title} to cart`}
             title={`Add ${product.title} to cart`}
           >
