@@ -1,5 +1,5 @@
-import React from 'react';
 import { ShoppingCart } from '@/components/icons';
+import React from 'react';
 import type { Product } from '../../types';
 
 const parsePriceToNumber = (value?: string | null): number | undefined => {
@@ -93,7 +93,10 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
         {/* Featured Badge */}
         {product.featured && (
-          <div className="absolute top-2 right-2 rounded-lg border border-white/30 bg-gradient-to-br from-blue-500/95 to-purple-600/95 px-2.5 py-1 text-[10px] font-bold tracking-wide text-white uppercase shadow-[0_8px_16px_rgba(0,0,0,0.3)] backdrop-blur-md sm:px-3 sm:text-xs">
+          <div
+            className="absolute top-2 right-2 rounded-lg border border-white/30 px-2.5 py-1 text-[10px] font-bold tracking-wide text-white uppercase shadow-[0_8px_16px_rgba(0,0,0,0.3)] backdrop-blur-md sm:px-3 sm:text-xs"
+            style={{ backgroundColor: 'var(--color-purple-600)' }}
+          >
             <span className="drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">⭐ Featured</span>
           </div>
         )}

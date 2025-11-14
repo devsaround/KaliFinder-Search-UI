@@ -67,7 +67,7 @@ const Recommendations: React.FC<RecommendationsProps> = ({
             />
           </svg>
         </div>
-        <h3 className="text-2xl font-bold text-gray-900">Recommended for You</h3>
+        <h3 className="text-left text-2xl font-bold text-gray-900">Recommended for You</h3>
       </div>
       <div className="grid w-full grid-cols-2 gap-2 sm:gap-3 md:grid-cols-3 lg:grid-cols-4">
         {recommendations.map((product) => (

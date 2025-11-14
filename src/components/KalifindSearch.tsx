@@ -276,6 +276,7 @@ const KalifindSearch: React.FC<{
   });
   const [totalProducts, setTotalProducts] = useState(0);
   const [displayedProducts, setDisplayedProducts] = useState(0);
+  const [globalTotalProducts, setGlobalTotalProducts] = useState(0); // Global total (never filtered)
 
   // New state variables for search behavior
   const [showRecommendations, setShowRecommendations] = useState(true);
@@ -681,6 +682,12 @@ const KalifindSearch: React.FC<{
           setTagCounts(tagCounts);
           setAvailableTags(Object.keys(tagCounts));
         }
+      }
+
+      // Set global total from initial facets fetch (this represents ALL products in the store)
+      if (result.total) {
+        setGlobalTotalProducts(result.total);
+        console.log('🌍 Global total products set to:', result.total);
       }
 
       // Extract max price from products in global facets
@@ -1806,7 +1813,7 @@ const KalifindSearch: React.FC<{
     <div className="bg-background box-border w-full overflow-y-auto font-sans antialiased">
       {!hideHeader && (
         <div className="bg-background border-border/40 sticky top-0 z-50 border-b py-4 shadow-sm backdrop-blur-sm">
-          <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 lg:gap-6 lg:px-12">
+          <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 lg:gap-6 lg:px-8">
             <div className="hidden items-center lg:flex lg:w-auto">
               <a href="/" className="w-70">
                 <img
@@ -1972,7 +1979,7 @@ const KalifindSearch: React.FC<{
       )}
 
       <div
-        className={`fixed bottom-4 left-4 z-50 ${shouldShowFilters ? 'block lg:hidden' : 'hidden'}`}
+        className={`fixed bottom-6 left-4 z-50 ${shouldShowFilters ? 'block lg:hidden' : 'hidden'}`}
       >
         <Drawer>
           <DrawerTrigger asChild>
@@ -2012,28 +2019,39 @@ const KalifindSearch: React.FC<{
                     Categories
                   </AccordionTrigger>
                   <AccordionContent>
-                    <div className="space-y-2">
-                      {availableCategories.map((category) => (
-                        <label
-                          key={category}
-                          className="hover:bg-muted flex cursor-pointer items-center justify-between rounded-lg p-1 sm:p-2"
-                        >
-                          <div className="flex items-center gap-3">
-                            <input
-                              type="checkbox"
-                              checked={filters.categories.includes(category)}
-                              onChange={() => handleCategoryChange(category)}
-                              className="text-primary bg-background border-border h-4 w-4 rounded sm:h-5 sm:w-5"
-                            />
-                            <span className="text-foreground text-sm sm:text-base lg:leading-6">
-                              {category}
+                    <div className="space-y-1">
+                      {availableCategories.map((category) => {
+                        const parts = category.split('>').map((part) => part.trim());
+                        const level = parts.length - 1;
+                        const lastPart = parts[parts.length - 1] || '';
+                        const displayText = lastPart
+                          .split(' ')
+                          .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+                          .join(' ');
+
+                        return (
+                          <label
+                            key={category}
+                            className="hover:bg-muted flex cursor-pointer items-center justify-between rounded-lg p-1 sm:p-2"
+                            style={{ paddingLeft: `${level * 1.25 + 0.25}rem` }}
+                          >
+                            <div className="flex items-center gap-3">
+                              <input
+                                type="checkbox"
+                                checked={filters.categories.includes(category)}
+                                onChange={() => handleCategoryChange(category)}
+                                className="text-primary bg-background border-border h-4 w-4 rounded sm:h-5 sm:w-5"
+                              />
+                              <span className="text-foreground text-sm sm:text-base lg:leading-6">
+                                {displayText}
+                              </span>
+                            </div>
+                            <span className="text-muted-foreground bg-muted rounded px-2 py-1 text-xs sm:text-sm">
+                              {categoryCounts[category] || 0}
                             </span>
-                          </div>
-                          <span className="text-muted-foreground bg-muted rounded px-2 py-1 text-xs sm:text-sm">
-                            {categoryCounts[category] || 0}
-                          </span>
-                        </label>
-                      ))}
+                          </label>
+                        );
+                      })}
                     </div>
                   </AccordionContent>
                 </AccordionItem>
@@ -2269,7 +2287,7 @@ const KalifindSearch: React.FC<{
             <div className="bg-background mt-auto">
               <div className="flex items-center justify-between bg-gray-50 p-3">
                 <div className="text-foreground pl-2 text-sm">
-                  <b>{totalProducts}</b> products found
+                  <b>{globalTotalProducts || totalProducts}</b> products found
                 </div>
                 <DrawerClose asChild>
                   <button
@@ -2325,7 +2343,7 @@ const KalifindSearch: React.FC<{
             {showMandatoryFilters.categories && (
               <AccordionItem value="category" className="border-b border-gray-200 pb-4">
                 <AccordionTrigger className="text-base font-bold text-gray-900 hover:no-underline">
-                  Category
+                  Categories
                 </AccordionTrigger>
                 <AccordionContent className="pt-3">
                   <div className="space-y-1">
@@ -2344,6 +2362,14 @@ const KalifindSearch: React.FC<{
                     ) : availableCategories.length > 0 ? (
                       availableCategories.map((category) => {
                         const isActive = filters.categories.includes(category);
+                        const parts = category.split('>').map((part) => part.trim());
+                        const level = parts.length - 1;
+                        const lastPart = parts[parts.length - 1] || '';
+                        const displayText = lastPart
+                          .split(' ')
+                          .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+                          .join(' ');
+
                         return (
                           <label
                             key={category}
@@ -2352,6 +2378,7 @@ const KalifindSearch: React.FC<{
                                 ? 'bg-purple-50 ring-2 ring-purple-600 ring-inset'
                                 : 'hover:bg-gray-50'
                             }`}
+                            style={{ paddingLeft: `${level * 1.25 + 0.5}rem` }}
                           >
                             <div className="flex items-center gap-3">
                               <div className="relative flex items-center">
@@ -2377,7 +2404,7 @@ const KalifindSearch: React.FC<{
                               <span
                                 className={`text-sm font-medium select-none ${isActive ? 'text-purple-900' : 'text-gray-900'}`}
                               >
-                                {category}
+                                {displayText}
                               </span>
                             </div>
                             <span
@@ -2910,7 +2937,10 @@ const KalifindSearch: React.FC<{
                   ) : totalProducts > 0 ? (
                     <>
                       <b className="text-foreground font-bold">{displayedProducts}</b> of{' '}
-                      <b className="text-foreground font-bold">{totalProducts}</b> results
+                      <b className="text-foreground font-bold">
+                        {globalTotalProducts || totalProducts}
+                      </b>{' '}
+                      results
                     </>
                   ) : (
                     <>
@@ -3341,58 +3371,56 @@ const KalifindSearch: React.FC<{
         </main>
 
         {/* Framer-style Powered by KaliFinder watermark - Bottom Right */}
-        {filteredProducts.length > 0 && (
-          <div className="fixed right-6 bottom-6 z-40">
-            <a
-              href="https://kalifinder.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="group inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2 shadow-lg transition-all hover:border-purple-300 hover:shadow-xl"
-              style={{
-                backdropFilter: 'blur(8px)',
-                backgroundColor: 'rgba(255, 255, 255, 0.95)',
-              }}
-            >
-              <span className="hidden text-xs font-medium text-gray-500 transition-colors group-hover:text-gray-700 sm:inline">
-                Powered by
+        <div className="fixed right-4 bottom-6 z-40 lg:right-6">
+          <a
+            href="https://kalifinder.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2 shadow-lg transition-all hover:border-purple-300 hover:shadow-xl"
+            style={{
+              backdropFilter: 'blur(8px)',
+              backgroundColor: 'rgba(255, 255, 255, 0.95)',
+            }}
+          >
+            <span className="hidden text-xs font-medium text-gray-500 transition-colors group-hover:text-gray-700 sm:inline">
+              Powered by
+            </span>
+            <div className="flex items-center gap-1.5">
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                className="transition-transform group-hover:scale-110"
+              >
+                <path
+                  d="M12 2L2 7L12 12L22 7L12 2Z"
+                  fill="#7c3aed"
+                  className="transition-colors group-hover:fill-purple-600"
+                />
+                <path
+                  d="M2 17L12 22L22 17"
+                  stroke="#7c3aed"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="transition-colors group-hover:stroke-purple-600"
+                />
+                <path
+                  d="M2 12L12 17L22 12"
+                  stroke="#7c3aed"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="transition-colors group-hover:stroke-purple-600"
+                />
+              </svg>
+              <span className="text-sm font-semibold text-gray-900 transition-colors group-hover:text-purple-600">
+                KaliFinder
               </span>
-              <div className="flex items-center gap-1.5">
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  className="transition-transform group-hover:scale-110"
-                >
-                  <path
-                    d="M12 2L2 7L12 12L22 7L12 2Z"
-                    fill="#7c3aed"
-                    className="transition-colors group-hover:fill-purple-600"
-                  />
-                  <path
-                    d="M2 17L12 22L22 17"
-                    stroke="#7c3aed"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="transition-colors group-hover:stroke-purple-600"
-                  />
-                  <path
-                    d="M2 12L12 17L22 12"
-                    stroke="#7c3aed"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="transition-colors group-hover:stroke-purple-600"
-                  />
-                </svg>
-                <span className="text-sm font-semibold text-gray-900 transition-colors group-hover:text-purple-600">
-                  KaliFinder
-                </span>
-              </div>
-            </a>
-          </div>
-        )}
+            </div>
+          </a>
+        </div>
 
         {/* Scroll to top button - shows after scrolling down 400px */}
         <ScrollToTop containerRef={mainContentRef} showAfter={400} />

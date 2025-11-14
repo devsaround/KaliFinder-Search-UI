@@ -142,8 +142,20 @@ class SearchService {
     // Generate cache key based on all search parameters
     const cacheKey = buildCacheKey('/search', params as unknown as Record<string, unknown>);
 
-    // Check cache first if enabled
-    if (this.config.cache.enabled) {
+    // Check if this is a filtered search (disable cache for filters to ensure fresh counts)
+    const hasFilters =
+      params.categories?.length ||
+      params.colors?.length ||
+      params.sizes?.length ||
+      params.brands?.length ||
+      params.tags?.length ||
+      params.stockStatus?.length ||
+      params.priceRange ||
+      params.insale ||
+      params.featured;
+
+    // Check cache first if enabled (but skip cache for filtered searches to ensure accurate counts)
+    if (this.config.cache.enabled && !hasFilters) {
       const cached = this.cache.get<SearchResponse>(cacheKey);
       if (cached) {
         console.log('KaliFinder Search Service: Returning cached result, total =', cached.total);
