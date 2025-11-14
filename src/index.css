@@ -99,6 +99,18 @@
   --color-loading-shimmer: var(--loading-shimmer);
 }
 
+@supports (padding: env(safe-area-inset-top)) {
+  .pt-safe {
+    padding-top: env(safe-area-inset-top);
+  }
+}
+
+@supports not (padding: env(safe-area-inset-top)) {
+  .pt-safe {
+    padding-top: 0;
+  }
+}
+
 /* ========================================
    NOTES FOR DEVELOPERS
    ========================================

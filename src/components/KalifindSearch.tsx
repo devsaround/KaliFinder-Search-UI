@@ -2360,7 +2360,7 @@ const KalifindSearch: React.FC<{
   return (
     <div className="bg-background box-border w-full overflow-y-auto font-sans antialiased">
       {!hideHeader && (
-        <div className="bg-background border-border/40 sticky top-0 z-50 border-b py-4 shadow-sm backdrop-blur-sm">
+        <div className="bg-background border-border/40 sticky top-0 z-50 border-b py-4 shadow-sm backdrop-blur-sm min-h-[var(--header-height)] pt-safe">
           <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 lg:gap-6 lg:px-6">
             <div className="hidden items-center lg:flex lg:w-auto">
               <a href="/" className="w-70">
@@ -2372,12 +2372,13 @@ const KalifindSearch: React.FC<{
               </a>
             </div>
 
-            <div className="relative flex-1 md:px-0" ref={searchRef}>
+            <div className="relative flex-1 md:px-0 mt-4 sm:mt-4 md:mt-5 lg:mt-6" ref={searchRef}>
               <div className="flex flex-col gap-2" ref={searchRef}>
                 <div className="flex w-full">
-                  <div className="flex w-full items-center gap-3 rounded-xl border border-gray-200 bg-gray-100 px-4 shadow-sm transition-all focus-within:border-purple-500 focus-within:bg-white focus-within:shadow-md hover:border-gray-300 hover:bg-gray-50">
+                  <div role="search" className="flex w-full items-center gap-3 rounded-xl border border-gray-200 bg-gray-100 px-4 shadow-sm transition-all focus-within:border-purple-500 focus-within:bg-white focus-within:shadow-md hover:border-gray-300 hover:bg-gray-50">
                     <Search className="h-5 w-5 flex-shrink-0 text-gray-400" />
                     <input
+                      id="search-input"
                       ref={inputRef}
                       type="text"
                       value={searchQuery}
@@ -2411,6 +2412,8 @@ const KalifindSearch: React.FC<{
                         }
                       }}
                       onKeyDown={handleKeyDown}
+                      aria-expanded={showAutocomplete}
+                      aria-controls="search-autocomplete"
                       placeholder="Search products..."
                       className="w-full border-none bg-transparent py-3.5 text-sm text-gray-900 placeholder-gray-400 outline-none focus:ring-0"
                     />
@@ -2437,7 +2440,9 @@ const KalifindSearch: React.FC<{
                 (isAutocompleteLoading || autocompleteSuggestions.length > 0) && (
                   <div
                     data-autocomplete-dropdown="true"
-                    className="border-border bg-background absolute top-full right-0 left-0 z-[9999999] mt-2 rounded-lg border shadow-lg"
+                    id="search-autocomplete"
+                    className="border-border bg-background absolute top-full right-0 left-0 z-[var(--z-dropdown)] mt-2 rounded-lg border shadow-lg"
+                    aria-labelledby="search-input"
                     onMouseEnter={() => setIsInteractingWithDropdown(true)}
                     onMouseLeave={() => setIsInteractingWithDropdown(false)}
                   >
