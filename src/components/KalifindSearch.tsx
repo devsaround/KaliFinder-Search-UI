@@ -493,6 +493,25 @@ const KalifindSearch: React.FC<{
   const [notFeaturedCount, setNotFeaturedCount] = useState(0);
   const [saleCount, setSaleCount] = useState(0);
   const [notSaleCount, setNotSaleCount] = useState(0);
+
+  // Store global/initial facet counts (never change after initial fetch)
+  const [globalStockStatusCounts, setGlobalStockStatusCounts] = useState<{
+    [key: string]: number;
+  }>({});
+  const [globalFeaturedCount, setGlobalFeaturedCount] = useState(0);
+  const [globalNotFeaturedCount, setGlobalNotFeaturedCount] = useState(0);
+  const [globalSaleCount, setGlobalSaleCount] = useState(0);
+  const [globalNotSaleCount, setGlobalNotSaleCount] = useState(0);
+  const [globalCategoryCounts, setGlobalCategoryCounts] = useState<{
+    [key: string]: number;
+  }>({});
+  const [globalBrandCounts, setGlobalBrandCounts] = useState<{
+    [key: string]: number;
+  }>({});
+  const [globalTagCounts, setGlobalTagCounts] = useState<{
+    [key: string]: number;
+  }>({});
+
   const [sortOption, setSortOption] = useState('default');
   const [globalFacetsFetched, setGlobalFacetsFetched] = useState(false);
   const [isInitialLoading, setIsInitialLoading] = useState(true); // Track initial data loading
@@ -818,6 +837,7 @@ const KalifindSearch: React.FC<{
             stockStatusCounts[displayName] = bucket.doc_count;
           });
           setStockStatusCounts(stockStatusCounts);
+          setGlobalStockStatusCounts(stockStatusCounts); // Store global counts
         }
 
         const featuredBuckets = extractFacetBuckets(facets.featured);
@@ -834,6 +854,8 @@ const KalifindSearch: React.FC<{
           });
           setFeaturedCount(featuredCountLocal);
           setNotFeaturedCount(notFeaturedCountLocal);
+          setGlobalFeaturedCount(featuredCountLocal); // Store global counts
+          setGlobalNotFeaturedCount(notFeaturedCountLocal);
         }
 
         const saleBuckets = extractFacetBuckets(facets.insale);
@@ -850,6 +872,8 @@ const KalifindSearch: React.FC<{
           });
           setSaleCount(saleCountLocal);
           setNotSaleCount(notSaleCountLocal);
+          setGlobalSaleCount(saleCountLocal); // Store global counts
+          setGlobalNotSaleCount(notSaleCountLocal);
         }
 
         const categoryBuckets = extractFacetBuckets(facets.category);
@@ -862,6 +886,7 @@ const KalifindSearch: React.FC<{
           });
           setCategoryCounts(categoryCounts);
           setAvailableCategories(Object.keys(categoryCounts));
+          setGlobalCategoryCounts(categoryCounts); // Store global counts
         }
 
         const brandBuckets = extractFacetBuckets(facets.brand);
@@ -874,6 +899,7 @@ const KalifindSearch: React.FC<{
           });
           setBrandCounts(brandCounts);
           setAvailableBrands(Object.keys(brandCounts));
+          setGlobalBrandCounts(brandCounts); // Store global counts
         }
 
         const colorBuckets = extractFacetBuckets(facets.color);
@@ -908,6 +934,7 @@ const KalifindSearch: React.FC<{
           });
           setTagCounts(tagCounts);
           setAvailableTags(Object.keys(tagCounts));
+          setGlobalTagCounts(tagCounts); // Store global counts
         }
       }
 
@@ -1376,21 +1403,29 @@ const KalifindSearch: React.FC<{
               );
 
               // Process facets from search results to update counts based on active filters
-              if (result.facets) {
+              // NOTE: We should NOT update facet counts from reactive facets - keep global counts static
+              // Only process facets if this is the initial global fetch (no filters active)
+              const hasAnyFilterActive =
+                debouncedFilters.categories.length > 0 ||
+                debouncedFilters.brands.length > 0 ||
+                debouncedFilters.colors.length > 0 ||
+                debouncedFilters.sizes.length > 0 ||
+                debouncedFilters.tags.length > 0 ||
+                debouncedFilters.stockStatus.length > 0 ||
+                debouncedFilters.featuredProducts.length > 0 ||
+                debouncedFilters.saleStatus.length > 0 ||
+                (query && query.trim() !== '');
+
+              // Only update facet counts if NO filters are active (global state)
+              if (result.facets && !hasAnyFilterActive) {
                 const facets = result.facets as Record<string, unknown>;
 
                 // Debug: Log facets received from API with full structure
-                console.log('🔍 Facets received from API:');
+                console.log('🔍 Facets received from API (updating global counts):');
                 console.log('  - Stock Status:', JSON.stringify(facets.instock, null, 2));
                 console.log('  - Featured:', JSON.stringify(facets.featured, null, 2));
                 console.log('  - On Sale:', JSON.stringify(facets.insale, null, 2));
                 console.log('  - Categories:', JSON.stringify(facets.category, null, 2));
-                console.log('  - Active Filters:', {
-                  categories: debouncedFilters.categories,
-                  stockStatus: debouncedFilters.stockStatus,
-                  featuredProducts: debouncedFilters.featuredProducts,
-                  saleStatus: debouncedFilters.saleStatus,
-                });
 
                 // Update stock status counts
                 const stockBuckets = extractFacetBuckets(facets.instock);
@@ -1518,6 +1553,11 @@ const KalifindSearch: React.FC<{
                   setTagCounts(tagCounts);
                   setAvailableTags(Object.keys(tagCounts));
                 }
+              } else if (result.facets && hasAnyFilterActive) {
+                // Filters are active - keep global facet counts, don't update from reactive facets
+                console.log(
+                  '🔒 Filters active - preserving global facet counts (not using reactive facets)'
+                );
               }
 
               // Detect store type from first product if available
@@ -1966,16 +2006,26 @@ const KalifindSearch: React.FC<{
     // Clear all filters
     clearFilters(maxPrice);
 
-    // Reset search behavior states
-    setShowRecommendations(true);
-    setIsInitialState(true);
-    setHasSearched(false);
+    // Restore global facet counts (initial state before any filters were applied)
+    setStockStatusCounts(globalStockStatusCounts);
+    setFeaturedCount(globalFeaturedCount);
+    setNotFeaturedCount(globalNotFeaturedCount);
+    setSaleCount(globalSaleCount);
+    setNotSaleCount(globalNotSaleCount);
+    setCategoryCounts(globalCategoryCounts);
+    setBrandCounts(globalBrandCounts);
+    setTagCounts(globalTagCounts);
+
+    // Reset search behavior states - DO NOT show recommendations, we want to trigger a fresh search
+    setShowRecommendations(false);
+    setIsInitialState(false);
+    setHasSearched(true); // Mark as searched to trigger the search with cleared filters
     setIsSearchingFromSuggestion(false);
     setIsFromSuggestionSelection(false);
     setSearchMessage(undefined);
     setIsShowingRecommended(false);
 
-    // Reset search cache refs to force fresh search
+    // Reset search cache refs to force fresh search with NO filters
     lastSearchedQueryRef.current = null;
     lastSearchedFiltersRef.current = '';
     lastActionRef.current = null;
@@ -1992,7 +2042,7 @@ const KalifindSearch: React.FC<{
       setSearchAbortController(null);
     }
 
-    // Force a search refresh to show recommendations
+    // Force a search refresh with cleared filters to get global facet counts
     setForceSearch((prev) => prev + 1);
   };
 
@@ -2945,10 +2995,10 @@ const KalifindSearch: React.FC<{
                 {isAnyFilterActive && (
                   <button
                     onClick={handleClearAll}
-                    aria-label="Clear all active filters"
-                    className="border-border text-foreground hover:bg-muted min-h-[44px] flex-1 rounded-lg border py-3 text-sm font-medium transition-colors"
+                    aria-label="Reset all filters and search"
+                    className="min-h-[44px] flex-1 rounded-lg bg-purple-600 py-3 text-sm font-semibold text-white transition-colors hover:bg-purple-700"
                   >
-                    Clear All
+                    Reset
                   </button>
                 )}
                 <DrawerClose asChild>
@@ -3488,14 +3538,13 @@ const KalifindSearch: React.FC<{
             {isAnyFilterActive && (
               <button
                 onClick={handleClearAll}
-                aria-label="Clear all active filters"
-                className="mt-6 min-h-[44px] w-full rounded-lg border-2 border-purple-600 bg-white px-4 py-3 text-sm font-semibold text-purple-600 transition-colors hover:bg-purple-50"
+                aria-label="Reset all filters and search"
+                className="mt-6 min-h-[44px] w-full rounded-lg bg-purple-600 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-purple-700"
               >
-                Clear All Filters
+                Reset
               </button>
             )}
-          </aside>
-
+          </aside>{' '}
           <main ref={mainContentRef} className="kalifinder-results flex-1 px-1.5 lg:px-0">
             {recentSearches.length > 0 && (
               <div className="mb-6">
@@ -4092,7 +4141,6 @@ const KalifindSearch: React.FC<{
               </div>
             )}
           </main>
-
           {/* Framer-style Powered by KaliFinder watermark - Bottom Right */}
           <div
             className="fixed right-3 bottom-8 z-[10001] sm:right-4 lg:right-6 lg:bottom-6"
@@ -4149,7 +4197,6 @@ const KalifindSearch: React.FC<{
               </div>
             </a>
           </div>
-
           {/* Scroll to top button - shows after scrolling down 400px */}
           <ScrollToTop containerRef={mainContentRef} showAfter={400} />
         </div>
