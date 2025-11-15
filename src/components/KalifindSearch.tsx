@@ -449,7 +449,8 @@ const KalifindSearch: React.FC<{
     }
     return false;
   });
-  const [totalProducts, setTotalProducts] = useState(0);
+  const [totalProducts, setTotalProducts] = useState(0); // Filtered results count
+  const [globalTotalProducts, setGlobalTotalProducts] = useState(0); // Total products in store
   const [displayedProducts, setDisplayedProducts] = useState(0);
 
   // New state variables for search behavior
@@ -789,6 +790,12 @@ const KalifindSearch: React.FC<{
       });
 
       setGlobalFacetsFetched(true);
+
+      // Store global total products count
+      if (result && typeof result.total === 'number') {
+        setGlobalTotalProducts(result.total);
+        console.log('📊 Global total products in store:', result.total);
+      }
 
       // Process facet data from API response
       if (result && result.facets) {
@@ -3487,9 +3494,11 @@ const KalifindSearch: React.FC<{
                     ? 'Loading search results...'
                     : isShowingRecommended
                       ? `${displayedProducts} recommended products`
-                      : totalProducts > 0
-                        ? `${displayedProducts} of ${totalProducts} results`
-                        : `${displayedProducts} products`}
+                      : totalProducts > 0 && globalTotalProducts > 0
+                        ? `Showing ${displayedProducts} of ${globalTotalProducts} Products`
+                        : totalProducts > 0
+                          ? `${displayedProducts} of ${totalProducts} results`
+                          : `${displayedProducts} products`}
                 </div>
               </>
             )}
@@ -3505,6 +3514,11 @@ const KalifindSearch: React.FC<{
                       <>
                         <b className="text-foreground font-bold">{displayedProducts}</b> recommended
                         products
+                      </>
+                    ) : totalProducts > 0 && globalTotalProducts > 0 ? (
+                      <>
+                        Showing <b className="text-foreground font-bold">{displayedProducts}</b> of{' '}
+                        <b className="text-foreground font-bold">{globalTotalProducts}</b> Products
                       </>
                     ) : totalProducts > 0 ? (
                       <>
