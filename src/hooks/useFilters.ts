@@ -7,7 +7,7 @@ interface UseFiltersReturn {
   setMaxPrice: (price: number) => void;
   updateFilter: <K extends keyof FilterState>(key: K, value: FilterState[K]) => void;
   toggleFilterItem: <K extends keyof FilterState>(key: K, item: string) => void;
-  clearFilters: () => void;
+  clearFilters: (resetMaxPrice?: number) => void;
   resetPriceRange: (newMaxPrice?: number) => void;
   isAnyFilterActive: (searchQuery: string, maxPrice: number) => boolean;
 }
@@ -60,20 +60,24 @@ export function useFilters(options: UseFiltersOptions = {}): UseFiltersReturn {
   }, []);
 
   // Clear all filters
-  const clearFilters = useCallback(() => {
-    setFilters({
-      categories: [],
-      priceRange: [0, maxPrice],
-      colors: [],
-      sizes: [],
-      brands: [],
-      genders: [],
-      tags: [],
-      stockStatus: [],
-      featuredProducts: [],
-      saleStatus: [],
-    });
-  }, [maxPrice]);
+  const clearFilters = useCallback(
+    (resetMaxPrice?: number) => {
+      const targetMax = resetMaxPrice ?? maxPrice;
+      setFilters({
+        categories: [],
+        priceRange: [0, targetMax],
+        colors: [],
+        sizes: [],
+        brands: [],
+        genders: [],
+        tags: [],
+        stockStatus: [],
+        featuredProducts: [],
+        saleStatus: [],
+      });
+    },
+    [maxPrice]
+  );
 
   // Reset only price range (accepts new max price)
   const resetPriceRange = useCallback(
