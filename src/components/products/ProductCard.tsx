@@ -146,7 +146,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({
               e.stopPropagation();
               onProductClick(product);
             }}
-            className="cursor-pointer rounded-lg bg-white px-4 py-2 text-sm font-semibold text-purple-600 shadow-lg transition-all duration-200 hover:bg-purple-600 hover:text-white sm:px-6 sm:py-2.5 sm:text-base"
+            aria-label={`View details for ${product.title}`}
+            className="min-h-[44px] cursor-pointer rounded-lg bg-white px-4 py-2 text-sm font-semibold text-purple-600 shadow-lg transition-all duration-200 hover:bg-purple-600 hover:text-white sm:px-6 sm:py-2.5 sm:text-base"
           >
             View Product
           </button>
@@ -192,14 +193,14 @@ export const ProductCard: React.FC<ProductCardProps> = ({
               onAddToCart(product);
             }}
             disabled={isAddingToCart}
-            className="relative z-10 flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-purple-600 text-white shadow-[0_4px_12px_rgba(124,58,237,0.5)] transition-all duration-300 hover:scale-110 hover:bg-purple-700 hover:shadow-[0_8px_20px_rgba(124,58,237,0.6)] disabled:cursor-not-allowed disabled:opacity-50"
+            className="relative z-10 flex h-11 min-h-[44px] w-11 min-w-[44px] cursor-pointer items-center justify-center rounded-full bg-purple-600 text-white shadow-[0_4px_12px_rgba(124,58,237,0.5)] transition-all duration-300 hover:scale-110 hover:bg-purple-700 hover:shadow-[0_8px_20px_rgba(124,58,237,0.6)] disabled:cursor-not-allowed disabled:opacity-50"
             aria-label={`Add ${product.title} to cart`}
             title={`Add ${product.title} to cart`}
           >
             {isAddingToCart ? (
               <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
             ) : (
-              <ShoppingCart className="h-5 w-5" />
+              <ShoppingCart className="h-5 w-5" aria-hidden="true" />
             )}
           </button>
         </div>

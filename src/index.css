@@ -50,6 +50,7 @@
 
 @import './styles/utilities/animations.css';
 @import './styles/utilities/helpers.css';
+@import './styles/utilities/responsive.css';
 
 /* ========================================
    TAILWIND THEME OVERRIDES

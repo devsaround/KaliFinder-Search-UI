@@ -295,17 +295,20 @@ const CategoryTreeNode: React.FC<{
           {hasChildren && (
             <button
               type="button"
-              onClick={(e) => {
+              onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
                 e.preventDefault();
                 e.stopPropagation();
                 onExpand(node.name);
               }}
-              className="flex-shrink-0 rounded p-0.5 transition-colors hover:bg-gray-200"
+              aria-label={`${isExpanded ? 'Collapse' : 'Expand'} ${node.name} category`}
+              aria-expanded={isExpanded ? 'true' : 'false'}
+              className="flex min-h-[44px] min-w-[44px] flex-shrink-0 items-center justify-center rounded p-1.5 transition-colors hover:bg-gray-200"
             >
               <ChevronDown
                 className={`h-4 w-4 text-gray-600 transition-transform ${
                   isExpanded ? 'rotate-0' : '-rotate-90'
                 }`}
+                aria-hidden="true"
               />
             </button>
           )}
@@ -316,7 +319,8 @@ const CategoryTreeNode: React.FC<{
                 type="checkbox"
                 checked={isSelected}
                 onChange={() => onToggle(node.fullPath)}
-                className="peer h-5 w-5 cursor-pointer appearance-none rounded border-2 border-gray-300 bg-white transition-all checked:border-purple-600 checked:bg-purple-600 hover:border-purple-400 focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 focus:outline-none"
+                aria-label={`Filter by ${node.name} category`}
+                className="peer h-5 w-5 cursor-pointer appearance-none rounded border-2 border-gray-300 bg-white transition-all checked:border-purple-600 checked:bg-purple-600 hover:border-purple-400 focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2 focus-visible:outline-none"
               />
               <svg
                 className="pointer-events-none absolute top-1/2 left-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 text-white opacity-0 transition-opacity peer-checked:opacity-100"
@@ -327,6 +331,7 @@ const CategoryTreeNode: React.FC<{
                 strokeWidth="4"
                 strokeLinecap="round"
                 strokeLinejoin="round"
+                aria-hidden="true"
               >
                 <polyline points="20 6 9 17 4 12"></polyline>
               </svg>
@@ -490,27 +495,6 @@ const KalifindSearch: React.FC<{
   const [globalFacetsFetched, setGlobalFacetsFetched] = useState(false);
   const [isInitialLoading, setIsInitialLoading] = useState(true); // Track initial data loading
 
-  // Client-side reactive facet counts (calculated from visible products)
-  const [clientReactiveFacets, setClientReactiveFacets] = useState<{
-    categories: { [key: string]: number };
-    brands: { [key: string]: number };
-    stockStatus: { [key: string]: number };
-    tags: { [key: string]: number };
-    featured: number;
-    notFeatured: number;
-    sale: number;
-    notSale: number;
-  }>({
-    categories: {},
-    brands: {},
-    stockStatus: {},
-    tags: {},
-    featured: 0,
-    notFeatured: 0,
-    sale: 0,
-    notSale: 0,
-  });
-
   // Helper function to get sort option label
   const getSortLabel = (option: string) => {
     switch (option) {
@@ -525,9 +509,7 @@ const KalifindSearch: React.FC<{
       default:
         return 'Relevance';
     }
-  };
-
-  // State for optional filters - show all during loading, then update based on vendor config
+  }; // State for optional filters - show all during loading, then update based on vendor config
   const [showOptionalFilters, setShowOptionalFilters] = useState({
     brands: false, // Hide by default for optional filters, shown only if configured
     colors: false,
@@ -544,86 +526,6 @@ const KalifindSearch: React.FC<{
     sale: true,
   });
 
-  // Calculate client-side reactive facets from visible filtered products
-  useEffect(() => {
-    if (filteredProducts.length === 0) return;
-
-    const categories: { [key: string]: number } = {};
-    const brands: { [key: string]: number } = {};
-    const stockStatus: { [key: string]: number } = {};
-    const tags: { [key: string]: number } = {};
-    let featured = 0;
-    let notFeatured = 0;
-    let sale = 0;
-    let notSale = 0;
-
-    filteredProducts.forEach((product) => {
-      // Count categories
-      if (product.categories && Array.isArray(product.categories)) {
-        product.categories.forEach((category) => {
-          categories[category] = (categories[category] || 0) + 1;
-        });
-      }
-
-      // Count brands
-      if (product.brands && Array.isArray(product.brands)) {
-        product.brands.forEach((brand) => {
-          brands[brand] = (brands[brand] || 0) + 1;
-        });
-      } // Count stock status
-      if (product.stockStatus) {
-        const status = product.stockStatus.toLowerCase();
-        const displayName =
-          status === 'instock'
-            ? 'In Stock'
-            : status === 'outofstock'
-              ? 'Out of Stock'
-              : status === 'onbackorder'
-                ? 'On Backorder'
-                : product.stockStatus;
-        stockStatus[displayName] = (stockStatus[displayName] || 0) + 1;
-      }
-
-      // Count tags
-      if (product.tags && Array.isArray(product.tags)) {
-        product.tags.forEach((tag) => {
-          tags[tag] = (tags[tag] || 0) + 1;
-        });
-      }
-
-      // Count featured
-      if (product.featured === true || product.featured === 'true') {
-        featured++;
-      } else {
-        notFeatured++;
-      }
-
-      // Count sale status
-      if (product.onSale === true || product.onSale === 'true') {
-        sale++;
-      } else {
-        notSale++;
-      }
-    });
-
-    setClientReactiveFacets({
-      categories,
-      brands,
-      stockStatus,
-      tags,
-      featured,
-      notFeatured,
-      sale,
-      notSale,
-    });
-
-    console.log(
-      '🎯 Client-side reactive facets calculated from',
-      filteredProducts.length,
-      'visible products'
-    );
-  }, [filteredProducts]);
-
   // Use custom hooks for filters and cart
   const {
     filters,
@@ -639,7 +541,8 @@ const KalifindSearch: React.FC<{
   const { addingToCart, cartMessage, addToCart: addToCartHandler } = useCart();
 
   // Helper function to get the appropriate facet count
-  // Uses client-side reactive counts when any filter is active, otherwise uses backend global counts
+  // Always uses backend facet counts from search API
+  // The backend provides reactive facet counts with disjunctive faceting
   const getFacetCount = useCallback(
     (
       facetType:
@@ -653,45 +556,20 @@ const KalifindSearch: React.FC<{
         | 'notSale',
       key?: string
     ) => {
-      const hasActiveFilters =
-        filters.categories.length > 0 ||
-        filters.brands.length > 0 ||
-        filters.colors.length > 0 ||
-        filters.sizes.length > 0 ||
-        filters.tags.length > 0 ||
-        filters.stockStatus.length > 0 ||
-        filters.featuredProducts.length > 0 ||
-        filters.saleStatus.length > 0 ||
-        (filters.priceRange && (filters.priceRange[0] > 0 || filters.priceRange[1] < maxPrice));
-
-      // If no filters active or no visible products, use backend global counts
-      if (!hasActiveFilters || filteredProducts.length === 0) {
-        if (facetType === 'category' && key) return categoryCounts[key] || 0;
-        if (facetType === 'brand' && key) return brandCounts[key] || 0;
-        if (facetType === 'stockStatus' && key) return stockStatusCounts[key] || 0;
-        if (facetType === 'tag' && key) return tagCounts[key] || 0;
-        if (facetType === 'featured') return featuredCount;
-        if (facetType === 'notFeatured') return notFeaturedCount;
-        if (facetType === 'sale') return saleCount;
-        if (facetType === 'notSale') return notSaleCount;
-        return 0;
-      }
-
-      // Use client-side reactive counts when filters are active
-      if (facetType === 'category' && key) return clientReactiveFacets.categories[key] || 0;
-      if (facetType === 'brand' && key) return clientReactiveFacets.brands[key] || 0;
-      if (facetType === 'stockStatus' && key) return clientReactiveFacets.stockStatus[key] || 0;
-      if (facetType === 'tag' && key) return clientReactiveFacets.tags[key] || 0;
-      if (facetType === 'featured') return clientReactiveFacets.featured;
-      if (facetType === 'notFeatured') return clientReactiveFacets.notFeatured;
-      if (facetType === 'sale') return clientReactiveFacets.sale;
-      if (facetType === 'notSale') return clientReactiveFacets.notSale;
+      // Always use backend facet counts from search API
+      // The backend provides reactive facet counts with disjunctive faceting
+      // This ensures counts update correctly when filters are applied
+      if (facetType === 'category' && key) return categoryCounts[key] || 0;
+      if (facetType === 'brand' && key) return brandCounts[key] || 0;
+      if (facetType === 'stockStatus' && key) return stockStatusCounts[key] || 0;
+      if (facetType === 'tag' && key) return tagCounts[key] || 0;
+      if (facetType === 'featured') return featuredCount;
+      if (facetType === 'notFeatured') return notFeaturedCount;
+      if (facetType === 'sale') return saleCount;
+      if (facetType === 'notSale') return notSaleCount;
       return 0;
     },
     [
-      filters,
-      maxPrice,
-      filteredProducts.length,
       categoryCounts,
       brandCounts,
       stockStatusCounts,
@@ -700,7 +578,6 @@ const KalifindSearch: React.FC<{
       notFeaturedCount,
       saleCount,
       notSaleCount,
-      clientReactiveFacets,
     ]
   );
   // Detect mobile device
@@ -2360,7 +2237,7 @@ const KalifindSearch: React.FC<{
   return (
     <div className="bg-background box-border w-full overflow-y-auto font-sans antialiased">
       {!hideHeader && (
-        <div className="bg-background border-border/40 sticky top-0 z-50 border-b py-4 shadow-sm backdrop-blur-sm min-h-[var(--header-height)] pt-safe">
+        <div className="bg-background border-border/40 pt-safe sticky top-0 z-50 min-h-[var(--header-height)] border-b py-4 shadow-sm backdrop-blur-sm">
           <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 lg:gap-6 lg:px-6">
             <div className="hidden items-center lg:flex lg:w-auto">
               <a href="/" className="w-70">
@@ -2372,10 +2249,13 @@ const KalifindSearch: React.FC<{
               </a>
             </div>
 
-            <div className="relative flex-1 md:px-0 mt-4 sm:mt-4 md:mt-5 lg:mt-6" ref={searchRef}>
+            <div className="relative mt-4 flex-1 sm:mt-4 md:mt-5 md:px-0 lg:mt-6" ref={searchRef}>
               <div className="flex flex-col gap-2" ref={searchRef}>
                 <div className="flex w-full">
-                  <div role="search" className="flex w-full items-center gap-3 rounded-xl border border-gray-200 bg-gray-100 px-4 shadow-sm transition-all focus-within:border-purple-500 focus-within:bg-white focus-within:shadow-md hover:border-gray-300 hover:bg-gray-50">
+                  <div
+                    role="search"
+                    className="flex w-full items-center gap-3 rounded-xl border border-gray-200 bg-gray-100 px-4 shadow-sm transition-all focus-within:border-purple-500 focus-within:bg-white focus-within:shadow-md hover:border-gray-300 hover:bg-gray-50"
+                  >
                     <Search className="h-5 w-5 flex-shrink-0 text-gray-400" />
                     <input
                       id="search-input"
@@ -2412,8 +2292,10 @@ const KalifindSearch: React.FC<{
                         }
                       }}
                       onKeyDown={handleKeyDown}
-                      aria-expanded={showAutocomplete}
+                      role="combobox"
+                      aria-expanded={showAutocomplete ? 'true' : 'false'}
                       aria-controls="search-autocomplete"
+                      aria-autocomplete="list"
                       placeholder="Search products..."
                       className="w-full border-none bg-transparent py-3.5 text-sm text-gray-900 placeholder-gray-400 outline-none focus:ring-0"
                     />
@@ -2849,14 +2731,18 @@ const KalifindSearch: React.FC<{
                 {isAnyFilterActive && (
                   <button
                     onClick={handleClearAll}
-                    className="border-border text-foreground hover:bg-muted flex-1 rounded-lg border py-3 text-sm font-medium transition-colors"
+                    aria-label="Clear all active filters"
+                    className="border-border text-foreground hover:bg-muted min-h-[44px] flex-1 rounded-lg border py-3 text-sm font-medium transition-colors"
                   >
                     Clear All
                   </button>
                 )}
                 <DrawerClose asChild>
                   <button
-                    className={`bg-primary text-primary-foreground hover:bg-primary-hover rounded-lg py-3 text-sm font-medium transition-colors ${
+                    aria-label={
+                      isAnyFilterActive ? 'Apply selected filters' : 'Close filter drawer'
+                    }
+                    className={`bg-primary text-primary-foreground hover:bg-primary-hover min-h-[44px] rounded-lg py-3 text-sm font-medium transition-colors ${
                       isAnyFilterActive ? 'flex-1' : 'w-full'
                     }`}
                   >
@@ -2969,7 +2855,8 @@ const KalifindSearch: React.FC<{
                                     type="checkbox"
                                     checked={isActive}
                                     onChange={() => handleBrandChange(brand)}
-                                    className="peer h-5 w-5 cursor-pointer appearance-none rounded border-2 border-gray-300 bg-white transition-all checked:border-purple-600 checked:bg-purple-600 hover:border-purple-400 focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 focus:outline-none"
+                                    aria-label={`Filter by ${brand} brand`}
+                                    className="peer h-5 w-5 cursor-pointer appearance-none rounded border-2 border-gray-300 bg-white transition-all checked:border-purple-600 checked:bg-purple-600 hover:border-purple-400 focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2 focus-visible:outline-none"
                                   />
                                   <svg
                                     className="pointer-events-none absolute top-1/2 left-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 text-white opacity-0 transition-opacity peer-checked:opacity-100"
@@ -2980,6 +2867,7 @@ const KalifindSearch: React.FC<{
                                     strokeWidth="4"
                                     strokeLinecap="round"
                                     strokeLinejoin="round"
+                                    aria-hidden="true"
                                   >
                                     <polyline points="20 6 9 17 4 12"></polyline>
                                   </svg>
@@ -3215,7 +3103,8 @@ const KalifindSearch: React.FC<{
                                   type="checkbox"
                                   checked={isActive}
                                   onChange={() => handleStockStatusChange(status)}
-                                  className="peer h-5 w-5 cursor-pointer appearance-none rounded border-2 border-gray-300 bg-white transition-all checked:border-purple-600 checked:bg-purple-600 hover:border-purple-400 focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 focus:outline-none"
+                                  aria-label={`Filter by ${status}`}
+                                  className="peer h-5 w-5 cursor-pointer appearance-none rounded border-2 border-gray-300 bg-white transition-all checked:border-purple-600 checked:bg-purple-600 hover:border-purple-400 focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2 focus-visible:outline-none"
                                 />
                                 <svg
                                   className="pointer-events-none absolute top-1/2 left-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 text-white opacity-0 transition-opacity peer-checked:opacity-100"
@@ -3226,6 +3115,7 @@ const KalifindSearch: React.FC<{
                                   strokeWidth="4"
                                   strokeLinecap="round"
                                   strokeLinejoin="round"
+                                  aria-hidden="true"
                                 >
                                   <polyline points="20 6 9 17 4 12"></polyline>
                                 </svg>
@@ -3277,7 +3167,8 @@ const KalifindSearch: React.FC<{
                                   type="checkbox"
                                   checked={isActive}
                                   onChange={() => handleFeaturedProductsChange(status)}
-                                  className="peer h-5 w-5 cursor-pointer appearance-none rounded border-2 border-gray-300 bg-white transition-all checked:border-purple-600 checked:bg-purple-600 hover:border-purple-400 focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 focus:outline-none"
+                                  aria-label={`Show ${status.toLowerCase()} products`}
+                                  className="peer h-5 w-5 cursor-pointer appearance-none rounded border-2 border-gray-300 bg-white transition-all checked:border-purple-600 checked:bg-purple-600 hover:border-purple-400 focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2 focus-visible:outline-none"
                                 />
                                 <svg
                                   className="pointer-events-none absolute top-1/2 left-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 text-white opacity-0 transition-opacity peer-checked:opacity-100"
@@ -3288,6 +3179,7 @@ const KalifindSearch: React.FC<{
                                   strokeWidth="4"
                                   strokeLinecap="round"
                                   strokeLinejoin="round"
+                                  aria-hidden="true"
                                 >
                                   <polyline points="20 6 9 17 4 12"></polyline>
                                 </svg>
@@ -3339,7 +3231,8 @@ const KalifindSearch: React.FC<{
                                   type="checkbox"
                                   checked={isActive}
                                   onChange={() => handleSaleStatusChange(status)}
-                                  className="peer h-5 w-5 cursor-pointer appearance-none rounded border-2 border-gray-300 bg-white transition-all checked:border-purple-600 checked:bg-purple-600 hover:border-purple-400 focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 focus:outline-none"
+                                  aria-label={`Show ${status.toLowerCase()} products`}
+                                  className="peer h-5 w-5 cursor-pointer appearance-none rounded border-2 border-gray-300 bg-white transition-all checked:border-purple-600 checked:bg-purple-600 hover:border-purple-400 focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2 focus-visible:outline-none"
                                 />
                                 <svg
                                   className="pointer-events-none absolute top-1/2 left-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 text-white opacity-0 transition-opacity peer-checked:opacity-100"
@@ -3350,6 +3243,7 @@ const KalifindSearch: React.FC<{
                                   strokeWidth="4"
                                   strokeLinecap="round"
                                   strokeLinejoin="round"
+                                  aria-hidden="true"
                                 >
                                   <polyline points="20 6 9 17 4 12"></polyline>
                                 </svg>
@@ -3380,7 +3274,8 @@ const KalifindSearch: React.FC<{
             {isAnyFilterActive && (
               <button
                 onClick={handleClearAll}
-                className="mt-6 w-full rounded-lg border-2 border-purple-600 bg-white px-4 py-3 text-sm font-semibold text-purple-600 transition-colors hover:bg-purple-50"
+                aria-label="Clear all active filters"
+                className="mt-6 min-h-[44px] w-full rounded-lg border-2 border-purple-600 bg-white px-4 py-3 text-sm font-semibold text-purple-600 transition-colors hover:bg-purple-50"
               >
                 Clear All Filters
               </button>
@@ -3394,7 +3289,8 @@ const KalifindSearch: React.FC<{
                   <h3 className="text-foreground text-base font-semibold">Recent Searches</h3>
                   <button
                     onClick={handleClearRecentSearches}
-                    className="text-muted-foreground hover:text-foreground text-sm transition-colors"
+                    aria-label="Clear all recent searches"
+                    className="text-muted-foreground hover:text-foreground min-h-[44px] px-2 text-sm transition-colors"
                   >
                     Clear all
                   </button>

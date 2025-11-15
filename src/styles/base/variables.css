@@ -26,7 +26,7 @@
 
   /* Semantic Colors */
   --muted: hsl(250, 7%, 97%);
-  --muted-foreground: hsl(215.4, 16.3%, 46.9%);
+  --muted-foreground: hsl(215.4, 16.3%, 40%); /* Improved from 46.9% to 40% for better contrast */
   --accent: hsl(264, 83%, 95%);
   --accent-foreground: hsl(264, 83%, 25%);
   --card: hsl(0, 0%, 100%);
@@ -170,28 +170,85 @@
 }
 
 /* ========================================
-   DARK MODE (Future Support)
+   DARK MODE SUPPORT
    ======================================== */
 
 .dark,
 [data-theme='dark'] {
+  /* Backgrounds */
   --background: hsl(222.2, 84%, 4.9%);
   --foreground: hsl(210, 40%, 98%);
-  --card: hsl(222.2, 84%, 4.9%);
+
+  /* Cards & Surfaces */
+  --card: hsl(224, 71%, 8%);
   --card-foreground: hsl(210, 40%, 98%);
-  --popover: hsl(222.2, 84%, 4.9%);
+  --popover: hsl(224, 71%, 8%);
   --popover-foreground: hsl(210, 40%, 98%);
-  --primary: hsl(210, 40%, 98%);
-  --primary-foreground: hsl(222.2, 47.4%, 11.2%);
+
+  /* Primary Brand Colors (Purple) */
+  --primary: hsl(264, 83%, 65%); /* Lighter purple for dark mode */
+  --primary-hover: hsl(264, 83%, 70%);
+  --primary-foreground: hsl(0, 0%, 100%);
+
+  /* Secondary */
   --secondary: hsl(217.2, 32.6%, 17.5%);
   --secondary-foreground: hsl(210, 40%, 98%);
+
+  /* Muted */
   --muted: hsl(217.2, 32.6%, 17.5%);
   --muted-foreground: hsl(215, 20.2%, 65.1%);
-  --accent: hsl(217.2, 32.6%, 17.5%);
+
+  /* Accent */
+  --accent: hsl(264, 83%, 20%);
   --accent-foreground: hsl(210, 40%, 98%);
-  --destructive: hsl(0, 62.8%, 30.6%);
+
+  /* Destructive */
+  --destructive: hsl(0, 62.8%, 50%);
   --destructive-foreground: hsl(210, 40%, 98%);
-  --border: hsl(217.2, 32.6%, 17.5%);
+
+  /* Borders & Inputs */
+  --border: hsl(217.2, 32.6%, 20%);
   --input: hsl(217.2, 32.6%, 17.5%);
-  --ring: hsl(212.7, 26.8%, 83.9%);
+  --ring: hsl(264, 83%, 65%);
+
+  /* Search-specific dark mode */
+  --search-highlight: hsl(264, 83%, 65%);
+  --search-bar: hsl(222.2, 84%, 8%);
+  --filter-bg: hsl(224, 71%, 8%);
+
+  /* Loading States */
+  --loading: hsl(217.2, 32.6%, 20%);
+  --loading-shimmer: hsl(217.2, 32.6%, 25%);
+}
+
+/* Dark mode media query preference */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    /* Inherit dark mode variables */
+    --background: hsl(222.2, 84%, 4.9%);
+    --foreground: hsl(210, 40%, 98%);
+    --card: hsl(224, 71%, 8%);
+    --card-foreground: hsl(210, 40%, 98%);
+    --popover: hsl(224, 71%, 8%);
+    --popover-foreground: hsl(210, 40%, 98%);
+    --primary: hsl(264, 83%, 65%);
+    --primary-hover: hsl(264, 83%, 70%);
+    --primary-foreground: hsl(0, 0%, 100%);
+    --secondary: hsl(217.2, 32.6%, 17.5%);
+    --secondary-foreground: hsl(210, 40%, 98%);
+    --muted: hsl(217.2, 32.6%, 17.5%);
+    --muted-foreground: hsl(215, 20.2%, 65.1%);
+    --accent: hsl(264, 83%, 20%);
+    --accent-foreground: hsl(210, 40%, 98%);
+    --destructive: hsl(0, 62.8%, 50%);
+    --destructive-foreground: hsl(210, 40%, 98%);
+    --border: hsl(217.2, 32.6%, 20%);
+    --input: hsl(217.2, 32.6%, 17.5%);
+    --ring: hsl(264, 83%, 65%);
+    --search-highlight: hsl(264, 83%, 65%);
+    --search-bar: hsl(222.2, 84%, 8%);
+    --filter-bg: hsl(224, 71%, 8%);
+    --loading: hsl(217.2, 32.6%, 20%);
+    --loading-shimmer: hsl(217.2, 32.6%, 25%);
+  }
 }

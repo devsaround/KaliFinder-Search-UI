@@ -48,13 +48,23 @@
 }
 
 /* Mobile: Hide sidebar */
-@media (max-width: 1023px) {
+@media (max-width: 767px) {
   .kalifinder-filter-sidebar {
     display: none;
   }
 }
 
-/* Desktop: Show sidebar */
+/* Tablet: Show compact sidebar */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .kalifinder-filter-sidebar {
+    display: block;
+    width: 240px;
+    min-width: 240px;
+    max-width: 240px;
+  }
+}
+
+/* Desktop: Show full sidebar */
 @media (min-width: 1024px) {
   .kalifinder-filter-sidebar {
     display: block;

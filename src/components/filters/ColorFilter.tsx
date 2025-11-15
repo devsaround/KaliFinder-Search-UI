@@ -3,9 +3,9 @@
  * Color selection with color circles
  */
 
-import React from 'react';
+import { AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Skeleton } from '@/components/ui/skeleton';
-import { AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion';
+import React from 'react';
 
 export interface ColorFilterProps {
   // Data
@@ -49,19 +49,22 @@ export const ColorFilter: React.FC<ColorFilterProps> = ({
           <div className="flex flex-wrap gap-[8px]">
             {colors.map((color) => (
               <button
+                type="button"
                 key={color}
                 onClick={() => {
                   if (!disabled) onColorChange(color);
                 }}
                 disabled={disabled}
-                className={`h-6 w-6 rounded-full border-2 transition-all disabled:cursor-not-allowed disabled:opacity-50 lg:h-8 lg:w-8 ${
+                className={`h-8 min-h-[44px] w-8 min-w-[44px] rounded-full border-2 transition-all disabled:cursor-not-allowed disabled:opacity-50 lg:h-10 lg:w-10 ${
                   selectedColors.includes(color)
                     ? 'border-primary scale-110'
                     : 'border-border hover:scale-105'
                 }`}
                 data-color={color.toLowerCase()}
-                title={`Filter by ${color} color`}
-                aria-label={`Filter by ${color} color${selectedColors.includes(color) ? ' (selected)' : ''}`}
+                title={`Filter by color`}
+                aria-label={`Filter by color`}
+                // This is the updated line
+                aria-pressed={selectedColors.includes(color)}
                 style={{
                   backgroundColor: color.toLowerCase(),
                 }}

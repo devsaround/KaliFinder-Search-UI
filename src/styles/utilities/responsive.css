@@ -1,0 +1,168 @@
+/**
+ * Responsive Grid Utilities
+ * Enhanced responsive breakpoints for tablet optimization
+ */
+
+/* ========================================
+   PRODUCT GRID RESPONSIVE IMPROVEMENTS
+   ======================================== */
+
+/* Enhanced responsive grid with tablet support */
+.kalifinder-product-grid {
+  display: grid;
+  gap: 0.5rem; /* 8px */
+  width: 100%;
+}
+
+/* Mobile: 2 columns (default) */
+@media (max-width: 639px) {
+  .kalifinder-product-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.5rem; /* 8px */
+  }
+}
+
+/* Small tablets: 3 columns */
+@media (min-width: 640px) and (max-width: 767px) {
+  .kalifinder-product-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.75rem; /* 12px */
+  }
+}
+
+/* Large tablets: 3 columns with more spacing */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .kalifinder-product-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem; /* 16px */
+  }
+}
+
+/* Desktop: 4 columns */
+@media (min-width: 1024px) {
+  .kalifinder-product-grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.75rem; /* 12px */
+  }
+}
+
+/* Large desktop: 5 columns */
+@media (min-width: 1536px) {
+  .kalifinder-product-grid {
+    grid-template-columns: repeat(5, 1fr);
+    gap: 1rem; /* 16px */
+  }
+}
+
+/* ========================================
+   FILTER BUTTON (Mobile/Tablet)
+   ======================================== */
+
+.kalifinder-filter-toggle {
+  display: block;
+}
+
+/* Hide on desktop when sidebar is visible */
+@media (min-width: 1024px) {
+  .kalifinder-filter-toggle {
+    display: none;
+  }
+}
+
+/* ========================================
+   TYPOGRAPHY RESPONSIVE ADJUSTMENTS
+   ======================================== */
+
+/* Product card title responsiveness */
+.kalifinder-product-title {
+  font-size: 0.875rem; /* 14px */
+  line-height: 1.5;
+}
+
+@media (min-width: 640px) {
+  .kalifinder-product-title {
+    font-size: 0.9375rem; /* 15px */
+  }
+}
+
+@media (min-width: 768px) {
+  .kalifinder-product-title {
+    font-size: 1rem; /* 16px */
+  }
+}
+
+@media (min-width: 1024px) {
+  .kalifinder-product-title {
+    font-size: 1rem; /* 16px */
+  }
+}
+
+/* Product price responsiveness */
+.kalifinder-product-price {
+  font-size: 1rem; /* 16px */
+}
+
+@media (min-width: 768px) {
+  .kalifinder-product-price {
+    font-size: 1.125rem; /* 18px */
+  }
+}
+
+@media (min-width: 1024px) {
+  .kalifinder-product-price {
+    font-size: 1.125rem; /* 18px */
+  }
+}
+
+/* ========================================
+   CONTAINER RESPONSIVE PADDING
+   ======================================== */
+
+.kalifinder-container {
+  padding-left: 0.5rem; /* 8px */
+  padding-right: 0.5rem;
+}
+
+@media (min-width: 640px) {
+  .kalifinder-container {
+    padding-left: 1rem; /* 16px */
+    padding-right: 1rem;
+  }
+}
+
+@media (min-width: 768px) {
+  .kalifinder-container {
+    padding-left: 1.5rem; /* 24px */
+    padding-right: 1.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .kalifinder-container {
+    padding-left: 1rem; /* 16px */
+    padding-right: 1rem;
+  }
+}
+
+/* ========================================
+   SEARCH BAR RESPONSIVE
+   ======================================== */
+
+.kalifinder-search-bar {
+  font-size: 0.875rem; /* 14px */
+  padding: 0.75rem; /* 12px */
+}
+
+@media (min-width: 640px) {
+  .kalifinder-search-bar {
+    font-size: 0.9375rem; /* 15px */
+    padding: 0.875rem; /* 14px */
+  }
+}
+
+@media (min-width: 768px) {
+  .kalifinder-search-bar {
+    font-size: 1rem; /* 16px */
+    padding: 1rem; /* 16px */
+  }
+}

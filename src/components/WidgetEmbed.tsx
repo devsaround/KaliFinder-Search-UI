@@ -10,6 +10,7 @@
  */
 
 import { useEffect, useRef, useState } from 'react';
+import ErrorBoundary from './ErrorBoundary';
 import KalifindSearch from './KalifindSearch';
 import { Toaster } from './ui/sonner';
 
@@ -217,17 +218,19 @@ export default function WidgetEmbed({ storeUrl }: WidgetEmbedProps) {
               </div>
             )}
 
-            {/* Search widget */}
-            <div className="kalifinder-widget-content">
-              <KalifindSearch
-                searchQuery={searchQuery}
-                setSearchQuery={setSearchQuery}
-                hasSearched={hasSearched}
-                setHasSearched={setHasSearched}
-                storeUrl={storeUrl}
-                onClose={() => setIsOpen(false)}
-              />
-            </div>
+            {/* Search widget wrapped in Error Boundary */}
+            <ErrorBoundary>
+              <div className="kalifinder-widget-content">
+                <KalifindSearch
+                  searchQuery={searchQuery}
+                  setSearchQuery={setSearchQuery}
+                  hasSearched={hasSearched}
+                  setHasSearched={setHasSearched}
+                  storeUrl={storeUrl}
+                  onClose={() => setIsOpen(false)}
+                />
+              </div>
+            </ErrorBoundary>
           </div>
         </div>
       )}
