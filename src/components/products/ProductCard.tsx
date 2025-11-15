@@ -193,7 +193,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
               onAddToCart(product);
             }}
             disabled={isAddingToCart}
-            className="relative z-10 flex h-11 min-h-[44px] w-11 min-w-[44px] cursor-pointer items-center justify-center rounded-full bg-purple-600 text-white shadow-[0_4px_12px_rgba(124,58,237,0.5)] transition-all duration-300 hover:scale-110 hover:bg-purple-700 hover:shadow-[0_8px_20px_rgba(124,58,237,0.6)] disabled:cursor-not-allowed disabled:opacity-50"
+            className="relative z-10 flex h-11 min-h-[44px] w-11 min-w-[44px] cursor-pointer touch-manipulation items-center justify-center rounded-full bg-purple-600 text-white shadow-[0_4px_12px_rgba(124,58,237,0.5)] transition-all duration-300 hover:scale-110 hover:bg-purple-700 hover:shadow-[0_8px_20px_rgba(124,58,237,0.6)] disabled:cursor-not-allowed disabled:opacity-50"
             aria-label={`Add ${product.title} to cart`}
             title={`Add ${product.title} to cart`}
           >

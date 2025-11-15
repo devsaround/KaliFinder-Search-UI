@@ -75,7 +75,9 @@
   position: fixed;
   inset: 0;
   width: 100%;
-  height: 100%;
+  /* Use 100vh as fallback for mobile to account for dynamic browser UI (address bar) */
+  height: 100vh;
+  min-height: 100vh; /* Fallback for browsers that don't support dvh */
   background: rgba(0, 0, 0, 0.5);
   -webkit-backdrop-filter: blur(4px);
   backdrop-filter: blur(4px);
@@ -87,6 +89,18 @@
   overflow-y: auto;
   pointer-events: auto;
   padding: var(--space-4);
+  /* Ensure modal starts from top of visible viewport */
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
+
+/* Use dynamic viewport height when supported (accounts for mobile browser UI) */
+@supports (height: 100dvh) {
+  .kalifinder-widget-modal {
+    height: 100dvh;
+  }
 }
 
 /* ========================================
@@ -102,8 +116,8 @@
   animation: kf-slide-up 300ms var(--easing-out);
   width: 95%;
   max-width: 1400px;
-  max-height: 90vh;
-  height: 90vh;
+  max-height: 90vh; /* Fallback for browsers that don't support dvh */
+  height: 90vh; /* Fallback for browsers that don't support dvh */
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -117,14 +131,46 @@
   font-size: 16px;
 }
 
+/* Use dynamic viewport height when supported (for mobile browser UI) */
+@supports (height: 100dvh) {
+  .kalifinder-widget-modal-content {
+    max-height: 90dvh;
+    height: 90dvh;
+  }
+}
+
 @media (max-width: 768px) {
   .kalifinder-widget-modal-content {
     width: 100%;
     max-width: 100%;
-    height: 100%;
-    max-height: 100%;
+    /* Use 100vh as fallback for mobile browser UI */
+    height: 100vh;
+    min-height: 100vh;
+    max-height: 100vh;
     border-radius: 0;
     margin: 0;
+    /* Ensure it starts from top of visible viewport */
+    align-self: flex-start;
+  }
+
+  /* Use dynamic viewport height when supported */
+  @supports (height: 100dvh) {
+    .kalifinder-widget-modal-content {
+      height: 100dvh;
+      max-height: 100dvh;
+    }
+  }
+
+  .kalifinder-widget-modal {
+    align-items: flex-start;
+    padding: 0;
+    height: 100vh;
+  }
+
+  @supports (height: 100dvh) {
+    .kalifinder-widget-modal {
+      height: 100dvh;
+    }
   }
 }
 
@@ -171,6 +217,26 @@
   display: block;
   overflow-y: auto;
   overflow-x: hidden;
+  /* Ensure smooth scrolling on mobile */
+  -webkit-overflow-scrolling: touch;
+  /* Ensure content starts from top on mobile */
+  scroll-behavior: auto;
+}
+
+/* On mobile, ensure content can scroll and header stays visible */
+@media (max-width: 768px) {
+  .kalifinder-widget-content {
+    /* Ensure proper scrolling */
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    /* Prevent content from being hidden behind browser UI */
+    padding-top: 0 !important;
+  }
+
+  /* Ensure the root container allows scrolling */
+  .kalifinder-widget-content > div {
+    min-height: 100%;
+  }
 }
 
 .kalifinder-widget-content > div {
@@ -313,14 +379,34 @@
   }
 
   .kalifinder-widget-modal {
-    align-items: flex-end;
+    align-items: flex-start;
     padding: 0;
+    /* Ensure modal covers full viewport including safe areas */
+    height: 100vh;
+    min-height: 100vh;
+  }
+
+  @supports (height: 100dvh) {
+    .kalifinder-widget-modal {
+      height: 100dvh;
+    }
   }
 
   .kalifinder-widget-modal-content {
     border-radius: var(--radius-xl) var(--radius-xl) 0 0;
-    height: 95vh;
-    max-height: 95vh;
+    /* Use 100vh as fallback to account for mobile browser address bar */
+    height: 100vh;
+    min-height: 100vh;
+    max-height: 100vh;
+    /* Ensure content starts from top */
+    align-self: flex-start;
+  }
+
+  @supports (height: 100dvh) {
+    .kalifinder-widget-modal-content {
+      height: 100dvh;
+      max-height: 100dvh;
+    }
   }
 
   .kalifinder-widget-modal-close {

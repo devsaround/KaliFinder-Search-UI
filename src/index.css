@@ -51,6 +51,7 @@
 @import './styles/utilities/animations.css';
 @import './styles/utilities/helpers.css';
 @import './styles/utilities/responsive.css';
+@import './styles/utilities/mobile-cross-browser.css';
 
 /* ========================================
    TAILWIND THEME OVERRIDES

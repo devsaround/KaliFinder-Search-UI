@@ -29,6 +29,7 @@ export default function WidgetEmbed({ storeUrl }: WidgetEmbedProps) {
   const [hasSearched, setHasSearched] = useState<boolean>(false);
   const [isReady, setIsReady] = useState<boolean | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const modalContentRef = useRef<HTMLDivElement>(null);
 
   /**
    * Listen for host-page open/search events
@@ -200,6 +201,67 @@ export default function WidgetEmbed({ storeUrl }: WidgetEmbedProps) {
     setIsOpen(false);
   };
 
+  /**
+   * Handle mobile viewport issues - ensure search bar is always visible
+   * Fixes issue where browser address bar can hide the top of the modal
+   */
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const ensureSearchBarVisible = () => {
+      // On mobile, scroll modal content to top to ensure search bar is visible
+      if (modalContentRef.current && window.innerWidth < 768) {
+        // Use requestAnimationFrame to ensure DOM is ready
+        requestAnimationFrame(() => {
+          if (modalContentRef.current) {
+            // Scroll the modal content to top
+            modalContentRef.current.scrollTop = 0;
+
+            // Also scroll window to top if needed (for browsers that don't support dvh)
+            if (window.scrollY > 0) {
+              window.scrollTo({ top: 0, behavior: 'instant' });
+            }
+          }
+        });
+      }
+    };
+
+    // Initial scroll on open
+    ensureSearchBarVisible();
+
+    // Handle viewport resize (address bar show/hide)
+    const handleResize = () => {
+      ensureSearchBarVisible();
+    };
+
+    // Handle visual viewport changes (mobile browser UI)
+    const handleVisualViewportChange = () => {
+      ensureSearchBarVisible();
+    };
+
+    window.addEventListener('resize', handleResize, { passive: true });
+    window.addEventListener('orientationchange', handleResize, { passive: true });
+
+    // Use Visual Viewport API if available (better for mobile browser UI)
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', handleVisualViewportChange, {
+        passive: true,
+      });
+      window.visualViewport.addEventListener('scroll', handleVisualViewportChange, {
+        passive: true,
+      });
+    }
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('orientationchange', handleResize);
+      if (window.visualViewport) {
+        window.visualViewport.removeEventListener('resize', handleVisualViewportChange);
+        window.visualViewport.removeEventListener('scroll', handleVisualViewportChange);
+      }
+    };
+  }, [isOpen]);
+
   return (
     <div ref={containerRef} className="kalifinder-widget-root" data-testid="widget-embed">
       {/* Toast notifications */}
@@ -209,6 +271,7 @@ export default function WidgetEmbed({ storeUrl }: WidgetEmbedProps) {
       {isOpen && (
         <div className="kalifinder-widget-modal" onClick={handleBackdropClick}>
           <div
+            ref={modalContentRef}
             className="kalifinder-widget-modal-content"
             onClick={(e) => e.stopPropagation()} // Prevent modal close on content click
           >

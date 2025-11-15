@@ -2471,11 +2471,11 @@ const KalifindSearch: React.FC<{
       )}
 
       <div
-        className={`fixed bottom-20 left-4 z-50 sm:bottom-6 ${shouldShowFilters ? 'block lg:hidden' : 'hidden'}`}
+        className={`fixed bottom-4 left-3 z-[10001] sm:bottom-6 ${shouldShowFilters ? 'block lg:hidden' : 'hidden'}`}
       >
         <Drawer>
           <DrawerTrigger asChild>
-            <button className="bg-primary text-primary-foreground hover:bg-primary-hover flex min-h-[48px] transform items-center gap-1.5 rounded-full px-4 py-2.5 text-sm font-medium shadow-lg transition-all duration-300 hover:scale-105 sm:min-h-0 sm:px-3 sm:py-2">
+            <button className="bg-primary text-primary-foreground hover:bg-primary-hover flex min-h-[44px] transform items-center gap-1.5 rounded-full px-4 py-2.5 text-sm font-medium shadow-lg transition-all duration-300 hover:scale-105 sm:min-h-[40px] sm:px-3 sm:py-2">
               <Filter className="h-3.5 w-3.5" />
               Filters
               <span className="bg-primary-foreground text-primary rounded-full px-1.5 py-0.5 text-[10px] font-bold">
@@ -3840,12 +3840,12 @@ const KalifindSearch: React.FC<{
           </main>
 
           {/* Framer-style Powered by KaliFinder watermark - Bottom Right */}
-          <div className="fixed right-3 bottom-4 z-40 sm:right-4 sm:bottom-6 lg:right-6">
+          <div className="fixed right-3 bottom-4 z-[10001] sm:right-4 sm:bottom-6 lg:right-6">
             <a
               href="https://kalifinder.com"
               target="_blank"
               rel="noopener noreferrer"
-              className="group inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-white px-2.5 py-1.5 shadow-lg transition-all hover:border-purple-300 hover:shadow-xl sm:gap-2 sm:px-4 sm:py-2"
+              className="group inline-flex min-h-[44px] items-center gap-1.5 rounded-full border border-gray-200 bg-white px-4 py-2.5 shadow-lg transition-all hover:border-purple-300 hover:shadow-xl sm:min-h-[40px] sm:gap-2 sm:px-3 sm:py-2"
               style={{
                 backdropFilter: 'blur(8px)',
                 backgroundColor: 'rgba(255, 255, 255, 0.95)',

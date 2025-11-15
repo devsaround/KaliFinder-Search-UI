@@ -40,14 +40,14 @@ export const AppliedFilters: React.FC<AppliedFiltersProps> = ({
 
   const renderFilterChip = (label: string, onRemove: () => void, ariaLabel: string) => (
     <div
-      className="bg-primary/10 text-primary border-primary/20 hover:border-primary/40 hover:bg-primary/15 flex items-center gap-2 rounded-full border-2 px-3 py-1.5 text-sm font-medium transition-all"
+      className="bg-primary/10 text-primary border-primary/20 hover:border-primary/40 hover:bg-primary/15 flex min-h-[36px] items-center gap-2 rounded-full border-2 px-3 py-1.5 text-sm font-medium transition-all"
       role="group"
       aria-label={ariaLabel}
     >
       <span>{label}</span>
       <button
         onClick={onRemove}
-        className="hover:bg-primary/20 focus-visible:ring-primary rounded-full p-0.5 transition-colors focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:outline-none"
+        className="hover:bg-primary/20 focus-visible:ring-primary min-h-[32px] min-w-[32px] touch-manipulation rounded-full p-0.5 transition-colors focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:outline-none"
         aria-label={`Remove ${label} filter`}
         type="button"
       >
@@ -62,7 +62,7 @@ export const AppliedFilters: React.FC<AppliedFiltersProps> = ({
         <h3 className="text-foreground text-sm font-semibold">Active Filters</h3>
         <button
           onClick={onClearAll}
-          className="text-primary hover:text-primary-hover focus-visible:ring-primary text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+          className="text-primary hover:text-primary-hover focus-visible:ring-primary min-h-[44px] touch-manipulation px-3 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
           aria-label="Clear all filters"
         >
           Clear all

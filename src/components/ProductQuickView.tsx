@@ -137,7 +137,7 @@ export const ProductQuickView: React.FC<ProductQuickViewProps> = ({
           {/* Close Button */}
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-gray-700 shadow-lg transition-all hover:bg-white hover:text-gray-900 hover:shadow-xl focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2 focus-visible:outline-none"
+            className="absolute top-4 right-4 z-10 flex h-10 min-h-[44px] w-10 min-w-[44px] touch-manipulation items-center justify-center rounded-full bg-white/90 text-gray-700 shadow-lg transition-all hover:bg-white hover:text-gray-900 hover:shadow-xl focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2 focus-visible:outline-none"
             aria-label="Close quick view"
           >
             <X className="h-5 w-5" aria-hidden="true" />
@@ -241,7 +241,7 @@ export const ProductQuickView: React.FC<ProductQuickViewProps> = ({
                 <button
                   onClick={() => onAddToCart(product)}
                   disabled={isAddingToCart || isOutOfStock}
-                  className="flex min-h-[48px] items-center justify-center gap-2 rounded-lg bg-purple-600 px-6 py-3 text-base font-semibold text-white shadow-lg transition-all hover:bg-purple-700 hover:shadow-xl focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                  className="flex min-h-[48px] touch-manipulation items-center justify-center gap-2 rounded-lg bg-purple-600 px-6 py-3 text-base font-semibold text-white shadow-lg transition-all hover:bg-purple-700 hover:shadow-xl focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
                   aria-label={`Add ${product.title} to cart`}
                 >
                   {isAddingToCart ? (
@@ -259,7 +259,7 @@ export const ProductQuickView: React.FC<ProductQuickViewProps> = ({
 
                 <button
                   onClick={() => onViewFullProduct(product)}
-                  className="min-h-[48px] rounded-lg border-2 border-purple-600 bg-white px-6 py-3 text-base font-semibold text-purple-600 transition-all hover:bg-purple-50 focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2 focus-visible:outline-none"
+                  className="min-h-[48px] touch-manipulation rounded-lg border-2 border-purple-600 bg-white px-6 py-3 text-base font-semibold text-purple-600 transition-all hover:bg-purple-50 focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2 focus-visible:outline-none"
                   aria-label={`View full details for ${product.title}`}
                 >
                   View Full Details
