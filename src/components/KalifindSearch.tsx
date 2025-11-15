@@ -434,6 +434,7 @@ const KalifindSearch: React.FC<{
   const [isInteractingWithDropdown, setIsInteractingWithDropdown] = useState(false);
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [suggestionsEnabled, setSuggestionsEnabled] = useState(true); // Toggle for autocomplete suggestions
   const [isPending, startTransition] = useTransition();
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const [autocompleteSuggestions, setAutocompleteSuggestions] = useState<string[]>([]);
@@ -1188,7 +1189,9 @@ const KalifindSearch: React.FC<{
 
     // Only show autocomplete when user is actually typing and has a meaningful query
     // Skip autocomplete if the change is from selecting a suggestion or not from user typing
+    // Only fetch if suggestions are enabled
     if (
+      suggestionsEnabled &&
       debouncedSearchQuery &&
       debouncedSearchQuery.trim().length > 0 &&
       userTypingRef.current &&
@@ -1251,7 +1254,14 @@ const KalifindSearch: React.FC<{
     return () => {
       isCancelled = true;
     };
-  }, [debouncedSearchQuery, storeUrl, scoreSuggestion, isFromSuggestionSelection, userTypingRef]);
+  }, [
+    debouncedSearchQuery,
+    storeUrl,
+    scoreSuggestion,
+    isFromSuggestionSelection,
+    userTypingRef,
+    suggestionsEnabled,
+  ]);
 
   // Extract search logic into a reusable function
   const performSearch = useCallback(
@@ -2237,8 +2247,8 @@ const KalifindSearch: React.FC<{
   return (
     <div className="bg-background box-border w-full overflow-y-auto font-sans antialiased">
       {!hideHeader && (
-        <div className="bg-background border-border/40 pt-safe sticky top-0 z-50 min-h-[var(--header-height)] border-b py-4 shadow-sm backdrop-blur-sm">
-          <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 lg:gap-6 lg:px-6">
+        <div className="bg-background border-border/40 sticky top-0 z-50 border-b py-3 shadow-sm backdrop-blur-sm lg:py-4">
+          <div className="mx-auto flex max-w-7xl items-center justify-between gap-2 px-3 sm:gap-4 sm:px-4 lg:gap-6 lg:px-6">
             <div className="hidden items-center lg:flex lg:w-auto">
               <a href="/" className="w-70">
                 <img
@@ -2249,176 +2259,223 @@ const KalifindSearch: React.FC<{
               </a>
             </div>
 
-            <div className="relative mt-4 flex-1 sm:mt-4 md:mt-5 md:px-0 lg:mt-6" ref={searchRef}>
-              <div className="flex flex-col gap-2" ref={searchRef}>
-                <div className="flex w-full">
-                  <div
-                    role="search"
-                    className="flex w-full items-center gap-3 rounded-xl border border-gray-200 bg-gray-100 px-4 shadow-sm transition-all focus-within:border-purple-500 focus-within:bg-white focus-within:shadow-md hover:border-gray-300 hover:bg-gray-50"
-                  >
-                    <Search className="h-5 w-5 flex-shrink-0 text-gray-400" />
-                    <input
-                      id="search-input"
-                      ref={inputRef}
-                      type="text"
-                      value={searchQuery}
-                      onChange={(e) => handleSearch(e.target.value)}
-                      onFocus={() => {
-                        // Input focused
-                        if (
-                          searchQuery &&
-                          searchQuery.length > 0 &&
-                          userTypingRef.current &&
-                          !isFromSuggestionSelection
-                        ) {
-                          setShowAutocomplete(true);
-                          setIsInteractingWithDropdown(false);
-                        }
-                      }}
-                      onBlur={(e) => {
-                        // Input blurred
-                        // Only close autocomplete if the blur is not caused by clicking on a suggestion
-                        // or if the input is being cleared
-                        const relatedTarget = e.relatedTarget as HTMLElement | null;
-                        const isClickingOnSuggestion =
-                          relatedTarget?.closest('[data-suggestion-item]') ??
-                          relatedTarget?.closest('[data-autocomplete-dropdown]');
+            <div className="relative flex flex-1 items-center gap-2">
+              {/* Autocomplete Toggle Button */}
+              <button
+                onClick={() => {
+                  setSuggestionsEnabled(!suggestionsEnabled);
+                  if (!suggestionsEnabled) {
+                    // Clear suggestions when disabling
+                    setAutocompleteSuggestions([]);
+                    setShowAutocomplete(false);
+                  }
+                }}
+                className={`hidden items-center gap-1.5 rounded-lg px-2.5 py-3 text-xs font-medium transition-all sm:flex sm:gap-2 sm:px-3 ${
+                  suggestionsEnabled
+                    ? 'bg-purple-100 text-purple-700 hover:bg-purple-200'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+                title={
+                  suggestionsEnabled
+                    ? 'Disable autocomplete suggestions'
+                    : 'Enable autocomplete suggestions'
+                }
+                aria-label={
+                  suggestionsEnabled
+                    ? 'Disable autocomplete suggestions'
+                    : 'Enable autocomplete suggestions'
+                }
+              >
+                <svg
+                  className="h-4 w-4"
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <circle cx="11" cy="11" r="8"></circle>
+                  <path d="m21 21-4.3-4.3"></path>
+                  {suggestionsEnabled && <path d="M11 8v6"></path>}
+                  {suggestionsEnabled && <path d="M8 11h6"></path>}
+                </svg>
+                <span className="hidden md:inline">
+                  {suggestionsEnabled ? 'Suggestions ON' : 'Suggestions OFF'}
+                </span>
+              </button>
 
-                        if (!isClickingOnSuggestion && !isInteractingWithDropdown) {
-                          // Small delay to allow for suggestion clicks to process
-                          setTimeout(() => {
-                            setShowAutocomplete(false);
-                          }, 100);
-                        }
+              <div className="relative flex-1" ref={searchRef}>
+                <div
+                  role="search"
+                  className="flex w-full items-center gap-2 rounded-xl border border-gray-200 bg-gray-100 px-3 shadow-sm transition-all focus-within:border-purple-500 focus-within:bg-white focus-within:shadow-md hover:border-gray-300 hover:bg-gray-50 sm:gap-3 sm:px-4"
+                >
+                  <Search className="h-4 w-4 flex-shrink-0 text-gray-400 sm:h-5 sm:w-5" />
+                  <input
+                    id="search-input"
+                    ref={inputRef}
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => handleSearch(e.target.value)}
+                    onFocus={() => {
+                      // Input focused
+                      if (
+                        suggestionsEnabled &&
+                        searchQuery &&
+                        searchQuery.length > 0 &&
+                        userTypingRef.current &&
+                        !isFromSuggestionSelection
+                      ) {
+                        setShowAutocomplete(true);
+                        setIsInteractingWithDropdown(false);
+                      }
+                    }}
+                    onBlur={(e) => {
+                      // Input blurred
+                      // Only close autocomplete if the blur is not caused by clicking on a suggestion
+                      // or if the input is being cleared
+                      const relatedTarget = e.relatedTarget as HTMLElement | null;
+                      const isClickingOnSuggestion =
+                        relatedTarget?.closest('[data-suggestion-item]') ??
+                        relatedTarget?.closest('[data-autocomplete-dropdown]');
+
+                      if (!isClickingOnSuggestion && !isInteractingWithDropdown) {
+                        // Small delay to allow for suggestion clicks to process
+                        setTimeout(() => {
+                          setShowAutocomplete(false);
+                        }, 100);
+                      }
+                    }}
+                    onKeyDown={handleKeyDown}
+                    role="combobox"
+                    aria-expanded={showAutocomplete ? 'true' : 'false'}
+                    aria-controls="search-autocomplete"
+                    aria-autocomplete="list"
+                    placeholder="Search products..."
+                    className="w-full border-none bg-transparent py-3 text-sm text-gray-900 placeholder-gray-400 outline-none focus:ring-0 sm:py-3.5"
+                  />
+                  {searchQuery && (
+                    <button
+                      onClick={() => {
+                        setSearchQuery('');
+                        inputRef.current?.focus();
                       }}
-                      onKeyDown={handleKeyDown}
-                      role="combobox"
-                      aria-expanded={showAutocomplete ? 'true' : 'false'}
-                      aria-controls="search-autocomplete"
-                      aria-autocomplete="list"
-                      placeholder="Search products..."
-                      className="w-full border-none bg-transparent py-3.5 text-sm text-gray-900 placeholder-gray-400 outline-none focus:ring-0"
-                    />
-                    {searchQuery && (
-                      <button
-                        onClick={() => {
-                          setSearchQuery('');
-                          inputRef.current?.focus();
-                        }}
-                        className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-gray-100 transition-colors hover:bg-gray-200"
-                        aria-label="Clear search"
-                        type="button"
-                      >
-                        <X className="h-3.5 w-3.5 text-gray-600" />
-                      </button>
-                    )}
-                  </div>
+                      className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-gray-100 transition-colors hover:bg-gray-200"
+                      aria-label="Clear search"
+                      type="button"
+                    >
+                      <X className="h-3.5 w-3.5 text-gray-600" />
+                    </button>
+                  )}
                 </div>
+
+                {/* Autocomplete Dropdown */}
+                {suggestionsEnabled &&
+                  showAutocomplete &&
+                  searchQuery &&
+                  searchQuery.length > 0 &&
+                  (isAutocompleteLoading || autocompleteSuggestions.length > 0) && (
+                    <div
+                      data-autocomplete-dropdown="true"
+                      id="search-autocomplete"
+                      className="border-border bg-background absolute top-full right-0 left-0 z-[var(--z-dropdown)] mt-2 max-h-[60vh] overflow-y-auto rounded-lg border shadow-lg"
+                      aria-labelledby="search-input"
+                      onMouseEnter={() => setIsInteractingWithDropdown(true)}
+                      onMouseLeave={() => setIsInteractingWithDropdown(false)}
+                    >
+                      <div className="p-3 sm:p-4">
+                        {isAutocompleteLoading ? (
+                          <div className="text-muted-foreground flex items-center justify-center gap-2 py-3">
+                            <div className="border-muted-foreground h-4 w-4 animate-spin rounded-full border-2 border-t-transparent"></div>
+                            <span className="text-sm">Loading suggestions...</span>
+                          </div>
+                        ) : autocompleteSuggestions.length > 0 ? (
+                          <>
+                            <h3 className="text-foreground mb-3 text-xs font-semibold tracking-wider uppercase">
+                              Suggestions
+                            </h3>
+                            <div className="space-y-1">
+                              {autocompleteSuggestions.map((suggestion, index) => (
+                                <div
+                                  key={index}
+                                  data-suggestion-item="true"
+                                  className={`flex cursor-pointer items-center gap-3 rounded-md p-2 transition-colors ${
+                                    index === highlightedSuggestionIndex
+                                      ? 'bg-muted'
+                                      : 'hover:bg-muted/50'
+                                  }`}
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    e.nativeEvent.stopImmediatePropagation();
+                                    setIsInteractingWithDropdown(false);
+                                    handleSuggestionClick(suggestion);
+                                  }}
+                                  onMouseDown={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    e.nativeEvent.stopImmediatePropagation();
+                                  }}
+                                >
+                                  <Search className="text-muted-foreground h-4 w-4 flex-shrink-0" />
+                                  <span className="text-foreground pointer-events-none text-sm">
+                                    {suggestion}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          </>
+                        ) : (
+                          <div className="flex flex-col items-center justify-center py-8 text-center">
+                            <div className="bg-muted mb-3 flex h-12 w-12 items-center justify-center rounded-full">
+                              <Search className="text-muted-foreground h-6 w-6" />
+                            </div>
+                            <div>
+                              <p className="text-foreground mb-1 text-sm font-medium">
+                                No suggestions found
+                              </p>
+                              <p className="text-muted-foreground text-xs">
+                                No suggestions for "{searchQuery}"
+                              </p>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
               </div>
 
-              {showAutocomplete &&
-                searchQuery &&
-                searchQuery.length > 0 &&
-                (isAutocompleteLoading || autocompleteSuggestions.length > 0) && (
-                  <div
-                    data-autocomplete-dropdown="true"
-                    id="search-autocomplete"
-                    className="border-border bg-background absolute top-full right-0 left-0 z-[var(--z-dropdown)] mt-2 rounded-lg border shadow-lg"
-                    aria-labelledby="search-input"
-                    onMouseEnter={() => setIsInteractingWithDropdown(true)}
-                    onMouseLeave={() => setIsInteractingWithDropdown(false)}
-                  >
-                    <div className="p-4">
-                      {isAutocompleteLoading ? (
-                        <div className="text-muted-foreground flex items-center justify-center gap-2 py-3">
-                          <div className="border-muted-foreground h-4 w-4 animate-spin rounded-full border-2 border-t-transparent"></div>
-                          <span className="text-sm">Loading suggestions...</span>
-                        </div>
-                      ) : autocompleteSuggestions.length > 0 ? (
-                        <>
-                          <h3 className="text-foreground mb-3 text-xs font-semibold tracking-wider uppercase">
-                            Suggestions
-                          </h3>
-                          <div className="space-y-1">
-                            {autocompleteSuggestions.map((suggestion, index) => (
-                              <div
-                                key={index}
-                                data-suggestion-item="true"
-                                className={`flex cursor-pointer items-center gap-3 rounded-md p-2 transition-colors ${
-                                  index === highlightedSuggestionIndex
-                                    ? 'bg-muted'
-                                    : 'hover:bg-muted/50'
-                                }`}
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                  e.nativeEvent.stopImmediatePropagation();
-                                  setIsInteractingWithDropdown(false);
-                                  handleSuggestionClick(suggestion);
-                                }}
-                                onMouseDown={(e) => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                  e.nativeEvent.stopImmediatePropagation();
-                                }}
-                              >
-                                <Search className="text-muted-foreground h-4 w-4 flex-shrink-0" />
-                                <span className="text-foreground pointer-events-none text-sm">
-                                  {suggestion}
-                                </span>
-                              </div>
-                            ))}
-                          </div>
-                        </>
-                      ) : (
-                        <div className="flex flex-col items-center justify-center py-8 text-center">
-                          <div className="bg-muted mb-3 flex h-12 w-12 items-center justify-center rounded-full">
-                            <Search className="text-muted-foreground h-6 w-6" />
-                          </div>
-                          <div>
-                            <p className="text-foreground mb-1 text-sm font-medium">
-                              No suggestions found
-                            </p>
-                            <p className="text-muted-foreground text-xs">
-                              No suggestions for "{searchQuery}"
-                            </p>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
+              {/* Close button - aligned with search bar */}
+              <button
+                onClick={() => {
+                  if (onClose) {
+                    onClose();
+                  }
+                  // Also send message if in iframe
+                  if (window.parent !== window) {
+                    window.parent.postMessage({ type: 'kalifinder:close' }, '*');
+                  }
+                  // Dispatch event for other listeners
+                  window.dispatchEvent(new CustomEvent('kalifinder:close'));
+                }}
+                className="group flex h-[44px] w-[44px] flex-shrink-0 cursor-pointer items-center justify-center rounded-lg border border-gray-200 bg-white shadow-sm transition-all hover:border-gray-300 hover:bg-gray-50 hover:shadow-md focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:outline-none sm:h-[50px] sm:w-[50px] sm:rounded-xl"
+                aria-label="Close search"
+                title="Close search"
+              >
+                <X className="h-5 w-5 text-gray-500 transition-colors group-hover:text-gray-700" />
+              </button>
             </div>
-
-            {/* Close button - positioned on the right */}
-            <button
-              onClick={() => {
-                if (onClose) {
-                  onClose();
-                }
-                // Also send message if in iframe
-                if (window.parent !== window) {
-                  window.parent.postMessage({ type: 'kalifinder:close' }, '*');
-                }
-                // Dispatch event for other listeners
-                window.dispatchEvent(new CustomEvent('kalifinder:close'));
-              }}
-              className="group flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full border-2 border-gray-200 bg-white transition-all hover:border-purple-500 hover:bg-purple-50"
-              aria-label="Close search"
-              title="Close search"
-            >
-              <X className="h-5 w-5 text-gray-600 transition-colors group-hover:text-purple-600" />
-            </button>
           </div>
         </div>
       )}
 
       <div
-        className={`fixed bottom-6 left-4 z-50 ${shouldShowFilters ? 'block lg:hidden' : 'hidden'}`}
+        className={`fixed bottom-20 left-4 z-50 sm:bottom-6 ${shouldShowFilters ? 'block lg:hidden' : 'hidden'}`}
       >
         <Drawer>
           <DrawerTrigger asChild>
-            <button className="bg-primary text-primary-foreground hover:bg-primary-hover flex transform items-center gap-1.5 rounded-full px-3 py-2 text-sm font-medium shadow-lg transition-all duration-300 hover:scale-105">
+            <button className="bg-primary text-primary-foreground hover:bg-primary-hover flex min-h-[48px] transform items-center gap-1.5 rounded-full px-4 py-2.5 text-sm font-medium shadow-lg transition-all duration-300 hover:scale-105 sm:min-h-0 sm:px-3 sm:py-2">
               <Filter className="h-3.5 w-3.5" />
               Filters
               <span className="bg-primary-foreground text-primary rounded-full px-1.5 py-0.5 text-[10px] font-bold">
@@ -3773,7 +3830,7 @@ const KalifindSearch: React.FC<{
               )}
             {/* Cart Message Display */}
             {cartMessage && (
-              <div className="bg-primary text-primary-foreground fixed top-4 right-4 z-[999999] max-w-sm rounded-lg px-4 py-2 shadow-lg">
+              <div className="bg-primary text-primary-foreground fixed top-20 right-4 left-4 z-[999999] mx-auto max-w-sm rounded-lg px-4 py-2 shadow-lg sm:top-4 sm:left-auto">
                 <div className="flex items-center gap-2">
                   <div className="border-primary-foreground h-4 w-4 animate-spin rounded-full border-2 border-t-transparent"></div>
                   <span className="text-sm font-medium">{cartMessage}</span>
@@ -3783,12 +3840,12 @@ const KalifindSearch: React.FC<{
           </main>
 
           {/* Framer-style Powered by KaliFinder watermark - Bottom Right */}
-          <div className="fixed right-4 bottom-6 z-40 lg:right-6">
+          <div className="fixed right-3 bottom-4 z-40 sm:right-4 sm:bottom-6 lg:right-6">
             <a
               href="https://kalifinder.com"
               target="_blank"
               rel="noopener noreferrer"
-              className="group inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2 shadow-lg transition-all hover:border-purple-300 hover:shadow-xl"
+              className="group inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-white px-2.5 py-1.5 shadow-lg transition-all hover:border-purple-300 hover:shadow-xl sm:gap-2 sm:px-4 sm:py-2"
               style={{
                 backdropFilter: 'blur(8px)',
                 backgroundColor: 'rgba(255, 255, 255, 0.95)',

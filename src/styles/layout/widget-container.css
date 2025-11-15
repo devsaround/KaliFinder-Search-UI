@@ -53,6 +53,7 @@
   box-sizing: border-box !important;
   transform: none !important;
   zoom: 1 !important;
+  z-index: 9 !important;
 }
 
 /* ========================================
