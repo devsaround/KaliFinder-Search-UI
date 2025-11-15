@@ -496,21 +496,7 @@ const KalifindSearch: React.FC<{
   const [globalFacetsFetched, setGlobalFacetsFetched] = useState(false);
   const [isInitialLoading, setIsInitialLoading] = useState(true); // Track initial data loading
 
-  // Helper function to get sort option label
-  const getSortLabel = (option: string) => {
-    switch (option) {
-      case 'a-z':
-        return 'Name: A-Z';
-      case 'z-a':
-        return 'Name: Z-A';
-      case 'price-asc':
-        return 'Price: Low to High';
-      case 'price-desc':
-        return 'Price: High to Low';
-      default:
-        return 'Relevance';
-    }
-  }; // State for optional filters - show all during loading, then update based on vendor config
+  // State for optional filters - show all during loading, then update based on vendor config
   const [showOptionalFilters, setShowOptionalFilters] = useState({
     brands: false, // Hide by default for optional filters, shown only if configured
     colors: false,
@@ -1575,6 +1561,81 @@ const KalifindSearch: React.FC<{
               return;
             }
 
+            // ============================================================
+            // ZERO RESULTS FALLBACK: Show popular products instead
+            // ============================================================
+            const hasActiveFilters =
+              debouncedFilters.categories.length > 0 ||
+              debouncedFilters.brands.length > 0 ||
+              debouncedFilters.colors.length > 0 ||
+              debouncedFilters.sizes.length > 0 ||
+              debouncedFilters.tags.length > 0 ||
+              debouncedFilters.stockStatus.length > 0 ||
+              debouncedFilters.featuredProducts.length > 0 ||
+              debouncedFilters.saleStatus.length > 0;
+
+            // If filters are applied and we got zero results, fetch popular products
+            if (total === 0 && hasActiveFilters) {
+              console.log('🔍 Zero results with filters - fetching popular products as fallback');
+
+              try {
+                // Fetch popular products (no filters)
+                const fallbackResult = await searchService.searchProducts({
+                  q: '', // Empty query to get all products
+                  storeUrl,
+                  page: 1,
+                  limit: 12,
+                  sort: 'featured', // Get featured/popular products
+                });
+
+                if (isSearchResponse(fallbackResult) && fallbackResult.products.length > 0) {
+                  console.log(
+                    `✅ Showing ${fallbackResult.products.length} popular products as fallback`
+                  );
+
+                  // Build filter description for the message
+                  const appliedFilters: string[] = [];
+                  if (debouncedFilters.categories.length > 0)
+                    appliedFilters.push(
+                      debouncedFilters.categories.length === 1
+                        ? `category "${debouncedFilters.categories[0]}"`
+                        : `${debouncedFilters.categories.length} categories`
+                    );
+                  if (debouncedFilters.brands.length > 0)
+                    appliedFilters.push(
+                      debouncedFilters.brands.length === 1
+                        ? `brand "${debouncedFilters.brands[0]}"`
+                        : `${debouncedFilters.brands.length} brands`
+                    );
+                  if (debouncedFilters.colors.length > 0)
+                    appliedFilters.push(`${debouncedFilters.colors.length} color(s)`);
+                  if (debouncedFilters.sizes.length > 0)
+                    appliedFilters.push(`${debouncedFilters.sizes.length} size(s)`);
+                  if (debouncedFilters.stockStatus.length > 0)
+                    appliedFilters.push(
+                      debouncedFilters.stockStatus
+                        .map((s) => s.toLowerCase().replace(' ', '-'))
+                        .join(', ')
+                    );
+                  if (debouncedFilters.featuredProducts.length > 0)
+                    appliedFilters.push('featured products');
+                  if (debouncedFilters.saleStatus.length > 0) appliedFilters.push('on sale');
+
+                  const filterDescription =
+                    appliedFilters.length > 0 ? appliedFilters.join(', ') : 'your filters';
+
+                  products = fallbackResult.products;
+                  total = 0; // Keep total as 0 to indicate no matches
+                  hasMore = false;
+                  message = `No results found for ${filterDescription}. Showing popular products instead.`;
+                  showingRecommended = true;
+                }
+              } catch (fallbackError) {
+                console.error('Failed to fetch fallback products:', fallbackError);
+                // Continue with zero results if fallback fails
+              }
+            }
+
             updateCurrencyFromProducts(products);
 
             // Ensure all products have storeUrl for cart operations
@@ -1852,10 +1913,18 @@ const KalifindSearch: React.FC<{
         );
       }
     } else if (event.key === 'Escape') {
+      event.preventDefault();
       setShowAutocomplete(false);
       setHighlightedSuggestionIndex(-1);
       setAutocompleteSuggestions([]);
-      inputRef.current?.blur();
+      // If autocomplete is closed and search query is empty, close modal
+      if (!searchQuery || searchQuery.trim() === '') {
+        if (onClose) {
+          onClose();
+        }
+      } else {
+        inputRef.current?.blur();
+      }
     }
   };
 
@@ -2350,9 +2419,15 @@ const KalifindSearch: React.FC<{
                     aria-expanded={showAutocomplete ? 'true' : 'false'}
                     aria-controls="search-autocomplete"
                     aria-autocomplete="list"
+                    aria-describedby="search-help-text"
+                    aria-label="Search for products"
                     placeholder="Search products..."
                     className="w-full border-none bg-transparent py-3 text-sm text-gray-900 placeholder-gray-400 outline-none focus:ring-0 sm:py-3.5"
                   />
+                  <span id="search-help-text" className="sr-only">
+                    Type to search for products. Use arrow keys to navigate suggestions, Enter to
+                    search, Escape to close.
+                  </span>
                   {searchQuery && (
                     <button
                       onClick={() => {
@@ -2393,11 +2468,26 @@ const KalifindSearch: React.FC<{
                             <h3 className="text-foreground mb-3 text-xs font-semibold tracking-wider uppercase">
                               Suggestions
                             </h3>
-                            <div className="space-y-1">
+                            <div
+                              className="space-y-1"
+                              role="listbox"
+                              aria-label="Search suggestions"
+                            >
                               {autocompleteSuggestions.map((suggestion, index) => (
                                 <div
                                   key={index}
                                   data-suggestion-item="true"
+                                  role="option"
+                                  aria-selected={
+                                    index === highlightedSuggestionIndex ? 'true' : 'false'
+                                  }
+                                  tabIndex={0}
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter' || e.key === ' ') {
+                                      e.preventDefault();
+                                      handleSuggestionClick(suggestion);
+                                    }
+                                  }}
                                   className={`flex cursor-pointer items-center gap-3 rounded-md p-2 transition-colors ${
                                     index === highlightedSuggestionIndex
                                       ? 'bg-muted'
@@ -2416,7 +2506,10 @@ const KalifindSearch: React.FC<{
                                     e.nativeEvent.stopImmediatePropagation();
                                   }}
                                 >
-                                  <Search className="text-muted-foreground h-4 w-4 flex-shrink-0" />
+                                  <Search
+                                    className="text-muted-foreground h-4 w-4 flex-shrink-0"
+                                    aria-hidden="true"
+                                  />
                                   <span className="text-foreground pointer-events-none text-sm">
                                     {suggestion}
                                   </span>
@@ -3379,9 +3472,26 @@ const KalifindSearch: React.FC<{
               </div>
             )}
             {!showRecommendations && (
-              <div className="text-foreground border-border mb-3 hidden border-b pb-3 text-lg font-semibold lg:block">
-                Search Results
-              </div>
+              <>
+                <h2 className="text-foreground border-border mb-3 hidden border-b pb-3 text-lg font-semibold lg:block">
+                  Search Results
+                </h2>
+                <div
+                  role="status"
+                  aria-live="polite"
+                  aria-atomic="true"
+                  className="sr-only"
+                  id="search-results-announcement"
+                >
+                  {isLoading || isPending
+                    ? 'Loading search results...'
+                    : isShowingRecommended
+                      ? `${displayedProducts} recommended products`
+                      : totalProducts > 0
+                        ? `${displayedProducts} of ${totalProducts} results`
+                        : `${displayedProducts} products`}
+                </div>
+              </>
             )}
             {!showRecommendations && (
               <div className="text-muted-foreground mb-4 flex items-center justify-between text-sm">
@@ -3419,9 +3529,7 @@ const KalifindSearch: React.FC<{
                         setShowAutocomplete(false);
                       }
                     }}
-                    className={`group flex items-center gap-2 rounded-xl border-2 border-gray-200 bg-white px-3 py-2.5 text-sm font-medium text-gray-900 shadow-sm transition-all hover:border-purple-400 hover:bg-purple-50 hover:shadow-md focus:border-purple-500 focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:outline-none sm:px-4 ${
-                      suggestionsEnabled ? 'border-purple-300 bg-purple-50' : ''
-                    }`}
+                    className="group flex items-center gap-1.5 rounded-xl border-2 border-gray-200 bg-white px-3 py-2.5 text-sm leading-normal font-medium text-gray-900 shadow-sm transition-all hover:border-purple-400 hover:bg-purple-50 hover:shadow-md focus:border-purple-500 focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:outline-none"
                     title={
                       suggestionsEnabled
                         ? 'Hide autocomplete suggestions'
@@ -3438,14 +3546,16 @@ const KalifindSearch: React.FC<{
                       fill="none"
                       viewBox="0 0 24 24"
                       stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
+                      strokeWidth={2}
                     >
                       <circle cx="11" cy="11" r="8"></circle>
-                      <path d="m21 21-4.3-4.3"></path>
-                      {suggestionsEnabled && <path d="M11 8v6"></path>}
-                      {suggestionsEnabled && <path d="M8 11h6"></path>}
+                      <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-4.3-4.3" />
+                      {suggestionsEnabled && (
+                        <>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M11 8v6" />
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M8 11h6" />
+                        </>
+                      )}
                     </svg>
                     <span className="font-semibold">Suggest</span>
                   </button>
@@ -3455,7 +3565,10 @@ const KalifindSearch: React.FC<{
                     <DropdownMenuTrigger asChild>
                       <button
                         data-sort-button
-                        className="group flex items-center gap-2 rounded-xl border-2 border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-900 shadow-sm transition-all hover:border-purple-400 hover:bg-purple-50 hover:shadow-md focus:border-purple-500 focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:outline-none"
+                        aria-label="Sort results"
+                        aria-haspopup="true"
+                        aria-expanded="false"
+                        className="group flex items-center gap-1.5 rounded-xl border-2 border-gray-200 bg-white px-3 py-2.5 text-sm leading-normal font-medium text-gray-900 shadow-sm transition-all hover:border-purple-400 hover:bg-purple-50 hover:shadow-md focus:border-purple-500 focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:outline-none"
                       >
                         <svg
                           className="h-4 w-4 text-gray-500 transition-colors group-hover:text-purple-600"
@@ -3470,7 +3583,7 @@ const KalifindSearch: React.FC<{
                             d="M3 4h13M3 8h9m-9 4h9m5-4v12m0 0l-4-4m4 4l4-4"
                           />
                         </svg>
-                        <span className="font-semibold">{getSortLabel(sortOption)}</span>
+                        <span className="font-semibold">Sort</span>
                         <ChevronDown className="h-4 w-4 text-gray-500 transition-all group-hover:text-purple-600 group-data-[state=open]:rotate-180" />
                       </button>
                     </DropdownMenuTrigger>

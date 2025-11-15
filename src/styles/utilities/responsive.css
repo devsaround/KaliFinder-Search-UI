@@ -22,13 +22,7 @@
   }
 }
 
-/* Small tablets: 3 columns */
-@media (min-width: 640px) and (max-width: 767px) {
-  .kalifinder-product-grid {
-    grid-template-columns: repeat(3, 1fr);
-    gap: 0.75rem; /* 12px */
-  }
-}
+/* Small tablets: 3 columns - using default Tailwind responsive classes */
 
 /* Large tablets: 3 columns with more spacing */
 @media (min-width: 768px) and (max-width: 1023px) {
@@ -292,14 +286,7 @@
   }
 }
 
-/* Small tablets */
-@media (min-width: 640px) and (max-width: 767px) {
-  .kalifinder-widget-content [role='search'] input[type='text'],
-  .kalifinder-widget-content [role='search'] input[id='search-input'],
-  .kalifinder-widget-content input[id='search-input'] {
-    font-size: 16px !important; /* Prevent zoom on iOS */
-  }
-}
+/* Small tablets - using default Tailwind responsive classes */
 
 /* Ensure search bar is visible on all screen sizes */
 @media (min-width: 768px) {

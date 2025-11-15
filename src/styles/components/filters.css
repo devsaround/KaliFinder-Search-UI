@@ -47,12 +47,7 @@
   background: var(--primary);
 }
 
-/* Mobile: Hide sidebar */
-@media (max-width: 767px) {
-  .kalifinder-filter-sidebar {
-    display: none;
-  }
-}
+/* Mobile: Hide sidebar - using default Tailwind responsive classes */
 
 /* Tablet: Show compact sidebar */
 @media (min-width: 768px) and (max-width: 1023px) {
