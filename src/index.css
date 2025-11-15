@@ -113,6 +113,51 @@
   }
 }
 
+/* Bottom safe area for mobile browser bars */
+@supports (padding: env(safe-area-inset-bottom)) {
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .bottom-safe {
+    bottom: calc(1rem + env(safe-area-inset-bottom));
+  }
+
+  /* Extra padding for mobile browser navigation bars (typically 40-60px) */
+  @media (max-width: 767px) {
+    .bottom-safe {
+      /* Base spacing + safe area + browser bar (2.5rem = 40px typical browser bar height) */
+      bottom: calc(1rem + env(safe-area-inset-bottom) + 2.5rem) !important;
+    }
+  }
+
+  @media (min-width: 768px) {
+    .bottom-safe {
+      bottom: calc(1.5rem + env(safe-area-inset-bottom)); /* bottom-6 = 1.5rem */
+    }
+  }
+}
+
+@supports not (padding: env(safe-area-inset-bottom)) {
+  .pb-safe {
+    padding-bottom: 0;
+  }
+
+  /* Fallback: Add extra bottom spacing for mobile browser bars */
+  @media (max-width: 767px) {
+    .bottom-safe {
+      /* Base spacing (1rem = 16px) + browser bar (2.5rem = 40px) = 56px from bottom */
+      bottom: calc(1rem + 2.5rem) !important;
+    }
+  }
+
+  @media (min-width: 768px) {
+    .bottom-safe {
+      bottom: 1.5rem; /* bottom-6 = 1.5rem */
+    }
+  }
+}
+
 /* ========================================
    NOTES FOR DEVELOPERS
    ========================================

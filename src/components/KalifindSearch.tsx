@@ -2471,7 +2471,7 @@ const KalifindSearch: React.FC<{
       )}
 
       <div
-        className={`fixed bottom-4 left-3 z-[10001] sm:bottom-6 ${shouldShowFilters ? 'block lg:hidden' : 'hidden'}`}
+        className={`bottom-safe fixed left-3 z-[10001] sm:bottom-6 ${shouldShowFilters ? 'block lg:hidden' : 'hidden'}`}
       >
         <Drawer>
           <DrawerTrigger asChild>
@@ -3840,7 +3840,7 @@ const KalifindSearch: React.FC<{
           </main>
 
           {/* Framer-style Powered by KaliFinder watermark - Bottom Right */}
-          <div className="fixed right-3 bottom-4 z-[10001] sm:right-4 sm:bottom-6 lg:right-6">
+          <div className="bottom-safe fixed right-3 z-[10001] sm:right-4 sm:bottom-6 lg:right-6">
             <a
               href="https://kalifinder.com"
               target="_blank"

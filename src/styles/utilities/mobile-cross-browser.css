@@ -481,20 +481,30 @@ body.kalifinder-open {
    ======================================== */
 
 /* Ensure Filter and KaliFinder buttons are aligned and same size on mobile */
+/* Account for mobile browser bottom navigation bar */
 @media (max-width: 767px) {
-  /* Filter button container */
+  /* Filter button container - account for browser bottom bar */
+  .kalifinder-widget-content > div > div[class*='fixed'][class*='bottom-safe'],
+  .kalifinder-widget-content > div > div[class*='fixed'][class*='bottom-4'] {
+    /* Base spacing (1rem) + safe area + browser bar height (2.5rem = 40px) */
+    bottom: calc(1rem + env(safe-area-inset-bottom, 0px) + 2.5rem) !important;
+  }
+
+  /* Filter button - left side */
+  .kalifinder-widget-content > div > div[class*='fixed'][class*='bottom-safe'][class*='left'],
   .kalifinder-widget-content > div > div[class*='fixed'][class*='bottom-4'][class*='left'] {
-    bottom: 1rem !important; /* bottom-4 = 1rem */
     left: 0.75rem !important; /* left-3 = 0.75rem */
   }
 
-  /* KaliFinder watermark container */
+  /* KaliFinder watermark container - right side */
+  .kalifinder-widget-content > div > div[class*='fixed'][class*='bottom-safe'][class*='right'],
   .kalifinder-widget-content > div > div[class*='fixed'][class*='bottom-4'][class*='right'] {
-    bottom: 1rem !important; /* bottom-4 = 1rem */
     right: 0.75rem !important; /* right-3 = 0.75rem */
   }
 
   /* Ensure both buttons have consistent sizing */
+  .kalifinder-widget-content > div > div[class*='fixed'][class*='bottom-safe'] button,
+  .kalifinder-widget-content > div > div[class*='fixed'][class*='bottom-safe'] a,
   .kalifinder-widget-content > div > div[class*='fixed'][class*='bottom-4'] button,
   .kalifinder-widget-content > div > div[class*='fixed'][class*='bottom-4'] a {
     min-height: 44px !important;
