@@ -101,7 +101,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           {/* Featured Badge */}
           {product.featured && (
             <div
-              className="rounded-full border border-white/30 px-2 py-0.5 text-[9px] font-bold tracking-wide text-white uppercase shadow-md backdrop-blur-sm"
+              className="rounded-full border border-white/30 px-2 py-0.5 text-xs font-bold tracking-wide text-white uppercase shadow-md backdrop-blur-sm sm:text-sm"
               style={{ backgroundColor: 'rgba(124, 58, 237, 0.95)' }}
             >
               ⭐ Featured
@@ -111,7 +111,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           {/* Discount Badge */}
           {hasDiscount && (
             <div
-              className="rounded-full border border-white/30 px-2 py-0.5 text-[9px] font-bold tracking-wide text-white uppercase shadow-md backdrop-blur-sm"
+              className="rounded-full border border-white/30 px-2 py-0.5 text-xs font-bold tracking-wide text-white uppercase shadow-md backdrop-blur-sm sm:text-sm"
               style={{ backgroundColor: 'rgba(124, 58, 237, 0.95)' }}
             >
               {discountPercentage ? `-${discountPercentage}%` : 'Sale'}
@@ -121,7 +121,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           {/* Out of Stock Badge */}
           {isOutOfStock && (
             <div
-              className="rounded-full border border-white/30 px-2 py-0.5 text-[9px] font-bold tracking-wide text-white uppercase shadow-md backdrop-blur-sm"
+              className="rounded-full border border-white/30 px-2 py-0.5 text-xs font-bold tracking-wide text-white uppercase shadow-md backdrop-blur-sm sm:text-sm"
               style={{ backgroundColor: 'rgba(220, 38, 38, 0.95)' }}
             >
               Out of Stock
@@ -131,7 +131,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           {/* On Backorder Badge */}
           {isOnBackorder && (
             <div
-              className="rounded-full border border-white/30 px-2 py-0.5 text-[9px] font-bold tracking-wide text-white uppercase shadow-md backdrop-blur-sm"
+              className="rounded-full border border-white/30 px-2 py-0.5 text-xs font-bold tracking-wide text-white uppercase shadow-md backdrop-blur-sm sm:text-sm"
               style={{ backgroundColor: 'rgba(251, 146, 60, 0.95)' }}
             >
               On Backorder

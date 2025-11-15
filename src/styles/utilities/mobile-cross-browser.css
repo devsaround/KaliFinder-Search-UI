@@ -486,8 +486,8 @@ body.kalifinder-open {
   /* Filter button container - account for browser bottom bar */
   .kalifinder-widget-content > div > div[class*='fixed'][class*='bottom-safe'],
   .kalifinder-widget-content > div > div[class*='fixed'][class*='bottom-4'] {
-    /* Base spacing (1rem) + safe area + browser bar height (2.5rem = 40px) */
-    bottom: calc(1rem + env(safe-area-inset-bottom, 0px) + 2.5rem) !important;
+    /* Base spacing (1rem) + safe area + browser bar height (4rem = 64px to account for taller browser bars) */
+    bottom: calc(1rem + env(safe-area-inset-bottom, 0px) + 4rem) !important;
   }
 
   /* Filter button - left side */

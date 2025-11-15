@@ -123,11 +123,11 @@
     bottom: calc(1rem + env(safe-area-inset-bottom));
   }
 
-  /* Extra padding for mobile browser navigation bars (typically 40-60px) */
+  /* Extra padding for mobile browser navigation bars (typically 50-70px) */
   @media (max-width: 767px) {
     .bottom-safe {
-      /* Base spacing + safe area + browser bar (2.5rem = 40px typical browser bar height) */
-      bottom: calc(1rem + env(safe-area-inset-bottom) + 2.5rem) !important;
+      /* Base spacing (1rem) + safe area + browser bar (4rem = 64px to account for taller browser bars) */
+      bottom: calc(1rem + env(safe-area-inset-bottom) + 4rem) !important;
     }
   }
 
@@ -146,8 +146,8 @@
   /* Fallback: Add extra bottom spacing for mobile browser bars */
   @media (max-width: 767px) {
     .bottom-safe {
-      /* Base spacing (1rem = 16px) + browser bar (2.5rem = 40px) = 56px from bottom */
-      bottom: calc(1rem + 2.5rem) !important;
+      /* Base spacing (1rem = 16px) + browser bar (4rem = 64px) = 80px from bottom to ensure visibility */
+      bottom: calc(1rem + 4rem) !important;
     }
   }
 

@@ -707,9 +707,7 @@ const KalifindSearch: React.FC<{
   // Check if any filter is active (including search query)
   const isAnyFilterActive = isFilterActive(debouncedSearchQuery || '', maxPrice);
 
-  // Show filters ALWAYS (even on initial state) for better UX
-  // Users can see available filters immediately
-  const shouldShowFilters = true; // Fetch vendor facet configuration
+  // Fetch vendor facet configuration
   const fetchFacetConfiguration = useCallback(async () => {
     if (!storeUrl) return;
 
@@ -2470,9 +2468,7 @@ const KalifindSearch: React.FC<{
         </div>
       )}
 
-      <div
-        className={`bottom-safe fixed left-3 z-[10001] sm:bottom-6 ${shouldShowFilters ? 'block lg:hidden' : 'hidden'}`}
-      >
+      <div className="bottom-safe fixed left-3 z-[10001] block lg:hidden">
         <Drawer>
           <DrawerTrigger asChild>
             <button className="bg-primary text-primary-foreground hover:bg-primary-hover flex min-h-[44px] transform items-center gap-1.5 rounded-full px-4 py-2.5 text-sm font-medium shadow-lg transition-all duration-300 hover:scale-105 sm:min-h-[40px] sm:px-3 sm:py-2">
@@ -3412,7 +3408,49 @@ const KalifindSearch: React.FC<{
                     )}
                   </span>
                 </div>
-                <div onClick={(e) => e.stopPropagation()}>
+                <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                  {/* Autocomplete Toggle Button - Visible on all devices */}
+                  <button
+                    onClick={() => {
+                      setSuggestionsEnabled(!suggestionsEnabled);
+                      if (!suggestionsEnabled) {
+                        // Clear suggestions when disabling
+                        setAutocompleteSuggestions([]);
+                        setShowAutocomplete(false);
+                      }
+                    }}
+                    className={`group flex items-center gap-2 rounded-xl border-2 border-gray-200 bg-white px-3 py-2.5 text-sm font-medium text-gray-900 shadow-sm transition-all hover:border-purple-400 hover:bg-purple-50 hover:shadow-md focus:border-purple-500 focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:outline-none sm:px-4 ${
+                      suggestionsEnabled ? 'border-purple-300 bg-purple-50' : ''
+                    }`}
+                    title={
+                      suggestionsEnabled
+                        ? 'Hide autocomplete suggestions'
+                        : 'Show autocomplete suggestions'
+                    }
+                    aria-label={
+                      suggestionsEnabled
+                        ? 'Hide autocomplete suggestions'
+                        : 'Show autocomplete suggestions'
+                    }
+                  >
+                    <svg
+                      className="h-4 w-4 text-gray-500 transition-colors group-hover:text-purple-600"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <circle cx="11" cy="11" r="8"></circle>
+                      <path d="m21 21-4.3-4.3"></path>
+                      {suggestionsEnabled && <path d="M11 8v6"></path>}
+                      {suggestionsEnabled && <path d="M8 11h6"></path>}
+                    </svg>
+                    <span className="font-semibold">Suggest</span>
+                  </button>
+
+                  {/* Sorting Dropdown */}
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <button

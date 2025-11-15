@@ -156,17 +156,17 @@ export const ProductQuickView: React.FC<ProductQuickViewProps> = ({
               {/* Badges */}
               <div className="absolute top-4 left-4 flex flex-col gap-2">
                 {product.featured && (
-                  <div className="rounded-full bg-purple-600/95 px-3 py-1 text-xs font-bold text-white uppercase shadow-md backdrop-blur-sm">
+                  <div className="rounded-full bg-purple-600/95 px-3 py-1 text-xs font-bold text-white uppercase shadow-md backdrop-blur-sm sm:text-sm">
                     ⭐ Featured
                   </div>
                 )}
                 {hasDiscount && discountPercentage && (
-                  <div className="rounded-full bg-red-600/95 px-3 py-1 text-xs font-bold text-white uppercase shadow-md backdrop-blur-sm">
+                  <div className="rounded-full bg-red-600/95 px-3 py-1 text-xs font-bold text-white uppercase shadow-md backdrop-blur-sm sm:text-sm">
                     -{discountPercentage}% OFF
                   </div>
                 )}
                 {isOutOfStock && (
-                  <div className="rounded-full bg-gray-800/95 px-3 py-1 text-xs font-bold text-white uppercase shadow-md backdrop-blur-sm">
+                  <div className="rounded-full bg-gray-800/95 px-3 py-1 text-xs font-bold text-white uppercase shadow-md backdrop-blur-sm sm:text-sm">
                     Out of Stock
                   </div>
                 )}
