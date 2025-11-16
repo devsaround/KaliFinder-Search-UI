@@ -138,6 +138,17 @@
   height: 90vh !important;
 }
 
+/* Ensure drawer footer stays at bottom and doesn't overlap */
+.kalifinder-widget-content
+  [data-radix-drawer-content]
+  > div[class*='flex-shrink-0'][class*='border-t'] {
+  flex-shrink: 0 !important;
+  margin-top: auto !important;
+  background: white !important;
+  position: relative !important;
+  z-index: 10 !important;
+}
+
 /* Drawer scrollable content area */
 .kalifinder-widget-content [data-radix-drawer-content] > div[class*='overflow-y-auto'],
 .kalifinder-widget-content [data-radix-drawer-content] > div[class*='overscroll-contain'] {

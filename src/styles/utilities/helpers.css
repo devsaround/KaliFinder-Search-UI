@@ -160,8 +160,14 @@
    WATERMARK / BRANDING ELEMENTS
    ======================================== */
 
-/* Ensure watermark appears above all content */
-.kalifinder-widget-content > div > div[class*='absolute'][class*='bottom'] {
-  z-index: 10001 !important;
-  position: absolute !important;
+/* Ensure Filter Button and Watermark are fixed and always visible on mobile */
+@media (max-width: 1024px) {
+  .kalifinder-widget-content > div > div[class*='fixed'][class*='bottom'],
+  .kalifinder-widget-content > div > div[class*='fixed'][class*='z-\\[10001\\]'] {
+    position: fixed !important;
+    z-index: 10001 !important;
+    /* Ensure they're positioned relative to viewport, not scrollable container */
+    transform: translateZ(0) !important;
+    will-change: transform !important;
+  }
 }

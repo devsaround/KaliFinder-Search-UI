@@ -450,6 +450,15 @@ const KalifindSearch: React.FC<{
     }
     return false;
   });
+
+  // Dynamic bottom position for mobile floating buttons (accounts for browser UI bars)
+  const [bottomOffset, setBottomOffset] = useState<number>(32); // Default 2rem (32px)
+
+  // Control drawer open state to hide Filter Button when drawer is open
+  const [isDrawerOpen, setIsDrawerOpen] = useState<boolean>(false);
+
+  // Track search input focus state for keyboard hint
+  const [isSearchFocused, setIsSearchFocused] = useState<boolean>(false);
   const [totalProducts, setTotalProducts] = useState(0); // Filtered results count
   const [globalTotalProducts, setGlobalTotalProducts] = useState(0); // Total products in store
   const [displayedProducts, setDisplayedProducts] = useState(0);
@@ -598,6 +607,109 @@ const KalifindSearch: React.FC<{
     window.addEventListener('resize', checkIsMobile);
 
     return () => window.removeEventListener('resize', checkIsMobile);
+  }, []);
+
+  // Dynamically calculate bottom offset for floating buttons (accounts for browser UI bars and safe areas)
+  useEffect(() => {
+    if (!isMobile) return;
+
+    const calculateBottomOffset = () => {
+      // Base offset (2rem = 32px)
+      let offset = 32;
+
+      // Use Visual Viewport API if available (best for detecting browser UI bars)
+      if (window.visualViewport) {
+        const viewportHeight = window.visualViewport.height;
+        const windowHeight = window.innerHeight;
+        const browserBarHeight = windowHeight - viewportHeight;
+
+        // Browser bar height (typically 0 when hidden, ~50-60px when visible)
+        // We add this to ensure buttons aren't hidden behind the browser bar
+        if (browserBarHeight > 0) {
+          offset += browserBarHeight;
+        }
+
+        // For devices with home indicators (iPhone X+), add extra padding
+        // Visual viewport height is smaller on these devices
+        const isLikelyHomeIndicator = viewportHeight < windowHeight * 0.9;
+        if (isLikelyHomeIndicator) {
+          offset += 8; // Extra padding for home indicator area
+        }
+      } else {
+        // Fallback: detect browser bar by comparing innerHeight with clientHeight
+        const windowHeight = window.innerHeight;
+        const documentHeight = document.documentElement.clientHeight;
+        const browserBarHeight = windowHeight - documentHeight;
+
+        if (browserBarHeight > 0) {
+          offset += browserBarHeight;
+        }
+
+        // Estimate safe area for devices with home indicators
+        // On iPhone X+, innerHeight is typically smaller
+        const screenHeight = window.screen.height;
+        const isLikelyHomeIndicator = windowHeight < screenHeight * 0.85;
+        if (isLikelyHomeIndicator) {
+          offset += 8; // Extra padding for home indicator area
+        }
+      }
+
+      // Ensure minimum offset (at least 2rem)
+      offset = Math.max(offset, 32);
+
+      setBottomOffset(offset);
+    };
+
+    // Calculate on mount
+    calculateBottomOffset();
+
+    // Update on resize (browser bar show/hide)
+    window.addEventListener('resize', calculateBottomOffset);
+
+    // Use Visual Viewport API if available (better for mobile browser UI)
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', calculateBottomOffset);
+      window.visualViewport.addEventListener('scroll', calculateBottomOffset);
+    }
+
+    // Update on scroll (some browsers change UI on scroll)
+    let scrollTimeout: NodeJS.Timeout;
+    const handleScroll = () => {
+      clearTimeout(scrollTimeout);
+      scrollTimeout = setTimeout(calculateBottomOffset, 100);
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+
+    return () => {
+      window.removeEventListener('resize', calculateBottomOffset);
+      window.removeEventListener('scroll', handleScroll);
+      if (window.visualViewport) {
+        window.visualViewport.removeEventListener('resize', calculateBottomOffset);
+        window.visualViewport.removeEventListener('scroll', calculateBottomOffset);
+      }
+    };
+  }, [isMobile]);
+
+  // Global keyboard shortcut: "/" to focus search input
+  useEffect(() => {
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      // Only handle "/" if not typing in an input/textarea
+      if (
+        e.key === '/' &&
+        !e.metaKey &&
+        !e.ctrlKey &&
+        !e.altKey &&
+        !e.shiftKey &&
+        document.activeElement?.tagName !== 'INPUT' &&
+        document.activeElement?.tagName !== 'TEXTAREA'
+      ) {
+        e.preventDefault();
+        inputRef.current?.focus();
+      }
+    };
+
+    window.addEventListener('keydown', handleGlobalKeyDown);
+    return () => window.removeEventListener('keydown', handleGlobalKeyDown);
   }, []);
 
   // Update the filters hook when maxPrice changes
@@ -1403,30 +1515,11 @@ const KalifindSearch: React.FC<{
                 products.length
               );
 
-              // Process facets from search results to update counts based on active filters
-              // NOTE: We should NOT update facet counts from reactive facets - keep global counts static
-              // Only process facets if this is the initial global fetch (no filters active)
-              const hasAnyFilterActive =
-                debouncedFilters.categories.length > 0 ||
-                debouncedFilters.brands.length > 0 ||
-                debouncedFilters.colors.length > 0 ||
-                debouncedFilters.sizes.length > 0 ||
-                debouncedFilters.tags.length > 0 ||
-                debouncedFilters.stockStatus.length > 0 ||
-                debouncedFilters.featuredProducts.length > 0 ||
-                debouncedFilters.saleStatus.length > 0 ||
-                (query && query.trim() !== '');
-
-              // Only update facet counts if NO filters are active (global state)
-              if (result.facets && !hasAnyFilterActive) {
+              // ✅ SIMPLIFIED: Backend handles reactive faceting correctly
+              // Always use facets from backend - they're already reactive
+              if (result.facets) {
                 const facets = result.facets as Record<string, unknown>;
-
-                // Debug: Log facets received from API with full structure
-                console.log('🔍 Facets received from API (updating global counts):');
-                console.log('  - Stock Status:', JSON.stringify(facets.instock, null, 2));
-                console.log('  - Featured:', JSON.stringify(facets.featured, null, 2));
-                console.log('  - On Sale:', JSON.stringify(facets.insale, null, 2));
-                console.log('  - Categories:', JSON.stringify(facets.category, null, 2));
+                console.log('✨ Using reactive facets from backend');
 
                 // Update stock status counts
                 const stockBuckets = extractFacetBuckets(facets.instock);
@@ -1554,11 +1647,6 @@ const KalifindSearch: React.FC<{
                   setTagCounts(tagCounts);
                   setAvailableTags(Object.keys(tagCounts));
                 }
-              } else if (result.facets && hasAnyFilterActive) {
-                // Filters are active - keep global facet counts, don't update from reactive facets
-                console.log(
-                  '🔒 Filters active - preserving global facet counts (not using reactive facets)'
-                );
               }
 
               // Detect store type from first product if available
@@ -2326,14 +2414,22 @@ const KalifindSearch: React.FC<{
   };
 
   const LoadingSkeleton = () => (
-    <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4">
+    <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4 xl:grid-cols-4 2xl:grid-cols-4">
       {Array.from({ length: 8 }).map((_, i) => (
-        <div key={i} className="animate-pulse-slow bg-loading rounded-lg p-2 md:p-4">
-          <div className="bg-loading-shimmer relative mb-3 h-32 overflow-hidden rounded-md md:mb-4 md:h-48">
-            <div className="animate-shimmer via-loading-shimmer absolute inset-0 bg-gradient-to-r from-transparent to-transparent"></div>
+        <div
+          key={i}
+          className="animate-pulse-slow bg-card rounded-lg border border-gray-200 p-2 shadow-sm md:p-4"
+        >
+          {/* Image skeleton */}
+          <div className="bg-loading-shimmer relative mb-3 aspect-square w-full overflow-hidden rounded-md md:mb-4">
+            <div className="animate-shimmer via-loading-shimmer absolute inset-0 bg-gradient-to-r from-transparent via-gray-200 to-transparent"></div>
           </div>
-          <div className="bg-loading-shimmer mb-2 h-4 rounded"></div>
-          <div className="bg-loading-shimmer h-6 w-20 rounded"></div>
+          {/* Title skeleton */}
+          <div className="bg-loading-shimmer mb-2 h-4 w-3/4 rounded"></div>
+          {/* Price skeleton */}
+          <div className="bg-loading-shimmer mb-1 h-5 w-1/2 rounded"></div>
+          {/* Optional badge skeleton */}
+          {i % 3 === 0 && <div className="bg-loading-shimmer mt-2 h-4 w-16 rounded-full"></div>}
         </div>
       ))}
     </div>
@@ -2490,6 +2586,7 @@ const KalifindSearch: React.FC<{
                     value={searchQuery}
                     onChange={(e) => handleSearch(e.target.value)}
                     onFocus={() => {
+                      setIsSearchFocused(true);
                       // Input focused
                       if (
                         suggestionsEnabled &&
@@ -2503,6 +2600,7 @@ const KalifindSearch: React.FC<{
                       }
                     }}
                     onBlur={(e) => {
+                      setIsSearchFocused(false);
                       // Input blurred
                       // Only close autocomplete if the blur is not caused by clicking on a suggestion
                       // or if the input is being cleared
@@ -2530,21 +2628,49 @@ const KalifindSearch: React.FC<{
                   />
                   <span id="search-help-text" className="sr-only">
                     Type to search for products. Use arrow keys to navigate suggestions, Enter to
-                    search, Escape to close.
+                    search, Escape to close autocomplete. Press / to focus search.
                   </span>
-                  {searchQuery && (
-                    <button
-                      onClick={() => {
-                        setSearchQuery('');
-                        inputRef.current?.focus();
-                      }}
-                      className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-gray-100 transition-colors hover:bg-gray-200"
-                      aria-label="Clear search"
-                      type="button"
-                    >
-                      <X className="h-3.5 w-3.5 text-gray-600" />
-                    </button>
+                  {/* Keyboard shortcut hint for desktop - only show when input is not focused */}
+                  {!isSearchFocused && !searchQuery && (
+                    <div className="text-muted-foreground pointer-events-none hidden items-center gap-1 text-xs lg:flex">
+                      <kbd className="bg-muted border-border rounded border px-1.5 py-0.5 font-mono text-[10px]">
+                        /
+                      </kbd>
+                      <span>to focus</span>
+                    </div>
                   )}
+                  <div className="flex items-center gap-1">
+                    {searchQuery && (
+                      <button
+                        onClick={() => {
+                          setSearchQuery('');
+                          inputRef.current?.focus();
+                        }}
+                        className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-gray-100 transition-colors hover:bg-gray-200 active:scale-95"
+                        aria-label="Clear search"
+                        type="button"
+                      >
+                        <X className="h-3.5 w-3.5 text-gray-600" />
+                      </button>
+                    )}
+                    {/* Search button for mobile - triggers search on click */}
+                    {searchQuery && searchQuery.trim().length > 0 && (
+                      <button
+                        onClick={() => {
+                          if (searchQuery.trim()) {
+                            setHasSearched(true);
+                            setShowAutocomplete(false);
+                            inputRef.current?.blur();
+                          }
+                        }}
+                        className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-purple-600 text-white transition-all hover:bg-purple-700 active:scale-95 sm:hidden"
+                        aria-label="Search"
+                        type="button"
+                      >
+                        <Search className="h-4 w-4" />
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 {/* Autocomplete Dropdown */}
@@ -2667,12 +2793,16 @@ const KalifindSearch: React.FC<{
 
       {/* Mobile Filter Button */}
       <div
-        className="absolute bottom-8 left-3 z-[10001] block lg:hidden"
+        className="fixed left-3 z-[10001] block lg:hidden"
         style={{
-          bottom: 'max(2rem, calc(2rem + env(safe-area-inset-bottom)))',
+          bottom: `max(${bottomOffset}px, calc(${bottomOffset}px + env(safe-area-inset-bottom)))`,
+          left: 'max(0.75rem, calc(0.75rem + env(safe-area-inset-left)))',
+          transition: 'bottom 0.2s ease-out, opacity 0.2s ease-out',
+          opacity: isDrawerOpen ? 0 : 1,
+          pointerEvents: isDrawerOpen ? 'none' : 'auto',
         }}
       >
-        <Drawer>
+        <Drawer open={isDrawerOpen} onOpenChange={setIsDrawerOpen}>
           <DrawerTrigger asChild>
             <button className="group inline-flex min-h-[44px] items-center gap-1.5 rounded-full border border-purple-600 bg-purple-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg transition-all hover:border-purple-700 hover:shadow-xl sm:min-h-[40px] sm:gap-2 sm:px-3 sm:py-2">
               <Filter className="h-4 w-4" />
@@ -2689,14 +2819,17 @@ const KalifindSearch: React.FC<{
               </span>
             </button>
           </DrawerTrigger>
-          <DrawerContent className="z-[100000] flex h-[90vh] max-h-[90vh] flex-col overflow-hidden">
+          <DrawerContent
+            className="z-[100000] flex max-h-[90vh] flex-col overflow-hidden"
+            style={{ height: '90vh' }}
+          >
             {/* Mobile Filter Header */}
             <div className="border-border flex-shrink-0 border-b bg-white px-4 py-4 sm:px-6">
               <h2 className="text-foreground text-lg font-semibold">Filters</h2>
               <p className="text-muted-foreground mt-1 text-sm">Refine your search results</p>
             </div>
             <div
-              className="flex-1 overflow-y-auto overscroll-contain px-4 py-4 sm:px-6"
+              className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 sm:px-6"
               style={{ WebkitOverflowScrolling: 'touch' }}
             >
               <Accordion
@@ -3671,8 +3804,8 @@ const KalifindSearch: React.FC<{
               </>
             )}
             {!showRecommendations && (
-              <div className="text-muted-foreground mb-4 flex items-center justify-between text-sm">
-                <div className="flex items-center gap-2">
+              <div className="text-muted-foreground mb-4 flex flex-col gap-2 text-sm sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex flex-wrap items-center gap-2">
                   <span className="text-foreground text-sm font-medium lg:text-base">
                     {isLoading || isPending ? (
                       <div className="flex items-center gap-2">
@@ -3685,37 +3818,50 @@ const KalifindSearch: React.FC<{
                       </div>
                     ) : isShowingRecommended ? (
                       <>
-                        <b className="text-foreground font-bold">{displayedProducts}</b> recommended
-                        products
+                        <b className="text-foreground font-bold">{displayedProducts}</b>{' '}
+                        <span className="text-muted-foreground">recommended products</span>
                       </>
                     ) : totalProducts > 0 && globalTotalProducts > 0 ? (
                       <>
                         {displayedProducts < totalProducts ? (
                           <>
-                            Showing <b className="text-foreground font-bold">{displayedProducts}</b>{' '}
-                            of <b className="text-foreground font-bold">{totalProducts}</b> (
-                            <b className="text-foreground font-bold">{globalTotalProducts}</b>{' '}
-                            Total)
+                            <b className="text-foreground font-bold">{displayedProducts}</b>{' '}
+                            <span className="text-muted-foreground">of</span>{' '}
+                            <b className="text-foreground font-bold">{totalProducts}</b>{' '}
+                            <span className="text-muted-foreground">
+                              ({globalTotalProducts} total)
+                            </span>
                           </>
                         ) : (
                           <>
-                            Showing <b className="text-foreground font-bold">{totalProducts}</b> of{' '}
+                            <b className="text-foreground font-bold">{totalProducts}</b>{' '}
+                            <span className="text-muted-foreground">of</span>{' '}
                             <b className="text-foreground font-bold">{globalTotalProducts}</b>{' '}
-                            Products
+                            <span className="text-muted-foreground">products</span>
                           </>
                         )}
                       </>
                     ) : totalProducts > 0 ? (
                       <>
-                        <b className="text-foreground font-bold">{displayedProducts}</b> of{' '}
-                        <b className="text-foreground font-bold">{totalProducts}</b> results
+                        <b className="text-foreground font-bold">{displayedProducts}</b>{' '}
+                        <span className="text-muted-foreground">of</span>{' '}
+                        <b className="text-foreground font-bold">{totalProducts}</b>{' '}
+                        <span className="text-muted-foreground">results</span>
                       </>
                     ) : (
                       <>
-                        <b className="text-foreground font-bold">{displayedProducts}</b> products
+                        <b className="text-foreground font-bold">{displayedProducts}</b>{' '}
+                        <span className="text-muted-foreground">products</span>
                       </>
                     )}
                   </span>
+                  {/* Active filters indicator */}
+                  {isAnyFilterActive && !isLoading && !isPending && (
+                    <span className="text-primary inline-flex items-center gap-1 rounded-full bg-purple-50 px-2.5 py-0.5 text-xs font-medium">
+                      <Filter className="h-3 w-3" />
+                      Filters active
+                    </span>
+                  )}
                 </div>
                 <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
                   {/* Autocomplete Toggle Button - Visible on all devices */}
@@ -4080,7 +4226,7 @@ const KalifindSearch: React.FC<{
                     </div>
                   </div>
                 )}
-                <div className="grid w-full grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4 xl:grid-cols-4 2xl:grid-cols-4">
+                <div className="grid w-full grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4 xl:grid-cols-4 2xl:grid-cols-4">
                   {sortedProducts.map((product) => (
                     <ProductCard
                       key={product.id}
@@ -4162,25 +4308,50 @@ const KalifindSearch: React.FC<{
                     <div className="bg-muted animate-in zoom-in flex h-16 w-16 items-center justify-center rounded-full duration-500">
                       <Search className="text-muted-foreground h-8 w-8" />
                     </div>
-                    <div className="animate-in slide-in-from-bottom-2 duration-500">
+                    <div className="animate-in slide-in-from-bottom-2 max-w-md duration-500">
                       {searchMessage ? (
                         <>
                           <p className="text-foreground mb-2 text-lg font-semibold lg:text-xl">
-                            {isShowingRecommended ? 'Showing Recommendations' : 'Search not found'}
+                            {isShowingRecommended ? 'Showing Recommendations' : 'No results found'}
                           </p>
-                          <p className="text-muted-foreground text-sm lg:text-base">
+                          <p className="text-muted-foreground mb-4 text-sm lg:text-base">
                             {searchMessage}
                           </p>
                         </>
                       ) : (
                         <>
                           <p className="text-foreground mb-2 text-lg font-semibold lg:text-xl">
-                            Search not found
+                            No products found
                           </p>
-                          <p className="text-muted-foreground text-sm lg:text-base">
-                            No products found matching your criteria. Try different keywords or
-                            browse our categories.
+                          <p className="text-muted-foreground mb-4 text-sm lg:text-base">
+                            We couldn't find any products matching "{searchQuery}". Try:
                           </p>
+                          <div className="flex flex-col gap-2 text-left sm:flex-row sm:justify-center">
+                            <button
+                              onClick={() => {
+                                setSearchQuery('');
+                                setHasSearched(false);
+                                inputRef.current?.focus();
+                              }}
+                              className="text-primary hover:text-primary-hover text-sm font-medium underline transition-colors"
+                            >
+                              Clear search
+                            </button>
+                            <span className="text-muted-foreground hidden sm:inline">•</span>
+                            <button
+                              onClick={() => {
+                                handleClearAll();
+                                inputRef.current?.focus();
+                              }}
+                              className="text-primary hover:text-primary-hover text-sm font-medium underline transition-colors"
+                            >
+                              Clear all filters
+                            </button>
+                            <span className="text-muted-foreground hidden sm:inline">•</span>
+                            <span className="text-muted-foreground text-sm">
+                              Try different keywords
+                            </span>
+                          </div>
                         </>
                       )}
                     </div>
@@ -4199,9 +4370,15 @@ const KalifindSearch: React.FC<{
           </main>
           {/* Framer-style Powered by KaliFinder watermark - Bottom Right */}
           <div
-            className="absolute right-3 bottom-8 z-[10001] sm:right-4 lg:right-6 lg:bottom-6"
+            className="fixed right-3 z-[10001] sm:right-4 lg:right-6"
             style={{
-              bottom: 'max(2rem, calc(2rem + env(safe-area-inset-bottom)))',
+              bottom: isMobile
+                ? `max(${bottomOffset}px, calc(${bottomOffset}px + env(safe-area-inset-bottom)))`
+                : '1.5rem',
+              right: 'max(0.75rem, calc(0.75rem + env(safe-area-inset-right)))',
+              transition: 'bottom 0.2s ease-out, opacity 0.2s ease-out',
+              opacity: isDrawerOpen ? 0 : 1,
+              pointerEvents: isDrawerOpen ? 'none' : 'auto',
             }}
           >
             <a
