@@ -1577,6 +1577,13 @@ const KalifindSearch: React.FC<{
                       notSaleCountLocal = bucket.doc_count;
                     }
                   });
+
+                  console.log(
+                    '🔢 [FACETS] Sale facets updated: On Sale =',
+                    saleCountLocal,
+                    ', Not On Sale =',
+                    notSaleCountLocal
+                  );
                   setSaleCount(saleCountLocal);
                   setNotSaleCount(notSaleCountLocal);
                 }
@@ -1828,10 +1835,39 @@ const KalifindSearch: React.FC<{
       query: debouncedSearchQuery,
     });
 
-    // Skip search if we're in initial state showing recommendations
-    if (!storeUrl || showRecommendations || isInitialState) {
+    if (!storeUrl) {
+      console.log('⏭️  [SEARCH EFFECT] Skipping - no store URL');
+      return;
+    }
+
+    // Check if we need to transition out of initial state (using DEBOUNCED filters)
+    const hasActiveDebouncedFilters =
+      debouncedFilters.categories.length > 0 ||
+      debouncedFilters.stockStatus.length > 0 ||
+      debouncedFilters.featuredProducts.length > 0 ||
+      debouncedFilters.saleStatus.length > 0 ||
+      (debouncedFilters.priceRange &&
+        (debouncedFilters.priceRange[0] > 0 || debouncedFilters.priceRange[1] < maxPrice));
+
+    // Transition out of initial state when filters are applied
+    const justTransitioned =
+      hasActiveDebouncedFilters && isInitialState && !debouncedSearchQuery?.trim();
+    if (justTransitioned) {
+      console.log('🔧 [SEARCH EFFECT] Transitioning out of initial state (filters applied)');
+      setShowRecommendations(false);
+      setIsInitialState(false);
+      setHasSearched(true);
+      // Don't return - continue to execute the search
+    }
+
+    // Skip search if we're in initial state showing recommendations (but allow if we just transitioned)
+    if (
+      !justTransitioned &&
+      (showRecommendations ||
+        (isInitialState && !hasActiveDebouncedFilters && !debouncedSearchQuery?.trim()))
+    ) {
       console.log('⏭️  [SEARCH EFFECT] Skipping - initial state or recommendations');
-      return; // Wait for the initial price to be loaded or skip if showing recommendations or in initial state
+      return;
     }
 
     // Skip search if we're searching from a suggestion click (already handled)
@@ -1855,25 +1891,6 @@ const KalifindSearch: React.FC<{
     // Update the last searched query and filters
     lastSearchedQueryRef.current = currentQuery;
     lastSearchedFiltersRef.current = currentFilters;
-
-    // Check if we need to transition out of initial state (using DEBOUNCED filters)
-    const hasActiveDebouncedFilters =
-      debouncedFilters.categories.length > 0 ||
-      debouncedFilters.stockStatus.length > 0 ||
-      debouncedFilters.featuredProducts.length > 0 ||
-      debouncedFilters.saleStatus.length > 0 ||
-      (debouncedFilters.priceRange &&
-        (debouncedFilters.priceRange[0] > 0 || debouncedFilters.priceRange[1] < maxPrice));
-
-    // Transition out of initial state when executing search with filters
-    if (hasActiveDebouncedFilters && isInitialState && !currentQuery) {
-      console.log(
-        '🔧 [SEARCH EFFECT] Transitioning out of initial state (debounced filters ready)'
-      );
-      setShowRecommendations(false);
-      setIsInitialState(false);
-      setHasSearched(true);
-    }
 
     console.log('✅ [SEARCH EFFECT] Executing search with filters:', {
       saleStatus: debouncedFilters.saleStatus,
@@ -2686,23 +2703,6 @@ const KalifindSearch: React.FC<{
                         <X className="h-3.5 w-3.5 text-gray-600" />
                       </button>
                     )}
-                    {/* Search button for mobile - triggers search on click */}
-                    {searchQuery && searchQuery.trim().length > 0 && (
-                      <button
-                        onClick={() => {
-                          if (searchQuery.trim()) {
-                            setHasSearched(true);
-                            setShowAutocomplete(false);
-                            inputRef.current?.blur();
-                          }
-                        }}
-                        className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-purple-600 text-white transition-all hover:bg-purple-700 active:scale-95 sm:hidden"
-                        aria-label="Search"
-                        type="button"
-                      >
-                        <Search className="h-4 w-4" />
-                      </button>
-                    )}
                   </div>
                 </div>
 
@@ -3166,33 +3166,37 @@ const KalifindSearch: React.FC<{
                     </AccordionTrigger>
                     <AccordionContent className="pt-3">
                       <div className="space-y-1">
-                        {['On Sale', 'Not On Sale'].map((status) => (
-                          <label
-                            key={status}
-                            className={`flex cursor-pointer items-center justify-between rounded-lg p-2 transition-all ${
-                              filters.saleStatus.includes(status)
-                                ? 'bg-purple-50 ring-2 ring-purple-600 ring-inset'
-                                : 'hover:bg-gray-50'
-                            }`}
-                          >
-                            <div className="flex items-center gap-3">
-                              <div className="relative flex items-center">
-                                <input
-                                  type="checkbox"
-                                  checked={filters.saleStatus.includes(status)}
-                                  onChange={() => handleSaleStatusChange(status)}
-                                  className="border-border bg-background text-primary h-4 w-4 rounded sm:h-5 sm:w-5"
-                                />
+                        {['On Sale', 'Not On Sale'].map((status) => {
+                          const count = status === 'On Sale' ? saleCount : notSaleCount;
+                          console.log(`📊 [RENDER-MOBILE] Displaying ${status}: ${count}`);
+                          return (
+                            <label
+                              key={status}
+                              className={`flex cursor-pointer items-center justify-between rounded-lg p-2 transition-all ${
+                                filters.saleStatus.includes(status)
+                                  ? 'bg-purple-50 ring-2 ring-purple-600 ring-inset'
+                                  : 'hover:bg-gray-50'
+                              }`}
+                            >
+                              <div className="flex items-center gap-3">
+                                <div className="relative flex items-center">
+                                  <input
+                                    type="checkbox"
+                                    checked={filters.saleStatus.includes(status)}
+                                    onChange={() => handleSaleStatusChange(status)}
+                                    className="border-border bg-background text-primary h-4 w-4 rounded sm:h-5 sm:w-5"
+                                  />
+                                </div>
+                                <span className="text-foreground text-sm sm:text-base lg:leading-4">
+                                  {status}
+                                </span>
                               </div>
-                              <span className="text-foreground text-sm sm:text-base lg:leading-4">
-                                {status}
+                              <span className="bg-muted text-muted-foreground rounded px-2 py-1 text-xs sm:text-sm">
+                                {count}
                               </span>
-                            </div>
-                            <span className="bg-muted text-muted-foreground rounded px-2 py-1 text-xs sm:text-sm">
-                              {status === 'On Sale' ? saleCount : notSaleCount}
-                            </span>
-                          </label>
-                        ))}
+                            </label>
+                          );
+                        })}
                       </div>
                     </AccordionContent>
                   </AccordionItem>
@@ -3702,6 +3706,8 @@ const KalifindSearch: React.FC<{
                     <div className="space-y-1">
                       {['On Sale', 'Not On Sale'].map((status) => {
                         const isActive = filters.saleStatus.includes(status);
+                        const count = status === 'On Sale' ? saleCount : notSaleCount;
+                        console.log(`📊 [RENDER-DESKTOP] Displaying ${status}: ${count}`);
                         return (
                           <label
                             key={status}
@@ -3747,7 +3753,7 @@ const KalifindSearch: React.FC<{
                                   : 'bg-gray-100 text-gray-600'
                               }`}
                             >
-                              {status === 'On Sale' ? saleCount : notSaleCount}
+                              {count}
                             </span>
                           </label>
                         );
