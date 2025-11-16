@@ -21,20 +21,47 @@ export interface BooleanFacetBucket {
   doc_count: number;
 }
 
+export interface PriceRangeBucket {
+  from?: number;
+  to?: number;
+  doc_count: number;
+  key?: string;
+}
+
 export interface SearchSuggestion {
   text: string;
   score?: number;
 }
 
+// Backend facet structure: Each facet is wrapped in a filter aggregation
+// with nested terms/ranges aggregation for disjunctive faceting
 export interface SearchFacets {
-  [key: string]: {
-    // Support both direct buckets (legacy) and nested values structure (disjunctive faceting)
-    buckets?: FacetBucket[] | StringFacetBucket[] | BooleanFacetBucket[];
-    values?: {
-      buckets?: FacetBucket[] | StringFacetBucket[] | BooleanFacetBucket[];
-      doc_count?: number;
-    };
-    doc_count?: number;
+  category?: {
+    buckets?: FacetBucket[];
+  };
+  brand?: {
+    buckets?: FacetBucket[];
+  };
+  color?: {
+    buckets?: FacetBucket[];
+  };
+  size?: {
+    buckets?: FacetBucket[];
+  };
+  tag?: {
+    buckets?: FacetBucket[];
+  };
+  instock?: {
+    buckets?: FacetBucket[];
+  };
+  featured?: {
+    buckets?: BooleanFacetBucket[];
+  };
+  insale?: {
+    buckets?: BooleanFacetBucket[];
+  };
+  price?: {
+    buckets?: PriceRangeBucket[];
   };
 }
 

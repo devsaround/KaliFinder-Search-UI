@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState, useTransition
 import { getUBIClient } from '@/analytics/ubiClient';
 import { normalizeStoreUrl } from '@/lib/normalize';
 import { searchService, type SearchParams } from '@/services/search.service';
+import { parsePriceToNumber } from '@/utils/price';
 import { uiDebugger } from '@/utils/ui-debug';
 
 import {
@@ -106,49 +107,16 @@ function extractCurrencyInfoFromProduct(product: Product): CurrencyInfo {
   return info;
 }
 
-function parsePriceToNumber(value?: string | null): number | undefined {
-  if (value === undefined || value === null) return undefined;
-  const trimmed = String(value).trim();
-  if (!trimmed) return undefined;
+// parsePriceToNumber is now imported from @/utils/price
 
-  const sanitized = trimmed.replace(/[^0-9.,-]/g, '');
-  if (!sanitized) return undefined;
-
-  const commaCount = (sanitized.match(/,/g) || []).length;
-  const dotCount = (sanitized.match(/\./g) || []).length;
-  let normalized = sanitized;
-
-  if (commaCount > 0 && dotCount === 0) {
-    normalized = sanitized.replace(/,/g, '.');
-  } else if (commaCount > 0 && dotCount > 0) {
-    if (sanitized.lastIndexOf(',') > sanitized.lastIndexOf('.')) {
-      normalized = sanitized.replace(/\./g, '').replace(/,/g, '.');
-    } else {
-      normalized = sanitized.replace(/,/g, '');
-    }
-  } else {
-    normalized = sanitized.replace(/,/g, '');
-  }
-
-  const parsed = Number(normalized);
-  return Number.isFinite(parsed) ? parsed : undefined;
-}
-
+// Extract facet buckets from backend facet response
+// Backend returns: { buckets: [...] } directly for each facet
 const extractFacetBuckets = (facet: unknown): FacetBucket[] => {
   if (!facet || typeof facet !== 'object') {
     return [];
   }
 
-  // Handle disjunctive faceting structure: facet.values.buckets
-  // Backend wraps each facet in a filter aggregation with nested "values"
-  let actualFacet = facet;
-  const maybeValues = (facet as { values?: unknown }).values;
-  if (maybeValues && typeof maybeValues === 'object') {
-    actualFacet = maybeValues;
-    // Disjunctive faceting detected - this means reactive facets are working!
-  }
-
-  const maybeBuckets = (actualFacet as { buckets?: unknown }).buckets;
+  const maybeBuckets = (facet as { buckets?: unknown }).buckets;
   if (!Array.isArray(maybeBuckets)) {
     return [];
   }
@@ -558,8 +526,8 @@ const KalifindSearch: React.FC<{
   const { addingToCart, cartMessage, addToCart: addToCartHandler } = useCart();
 
   // Helper function to get the appropriate facet count
-  // Always uses backend facet counts from search API
-  // The backend provides reactive facet counts with disjunctive faceting
+  // Categories, brands, tags: Use reactive counts from backend (disjunctive faceting)
+  // Stock status, featured, sale: Use global static counts (never change after init)
   const getFacetCount = useCallback(
     (
       facetType:
@@ -573,13 +541,14 @@ const KalifindSearch: React.FC<{
         | 'notSale',
       key?: string
     ) => {
-      // Always use backend facet counts from search API
-      // The backend provides reactive facet counts with disjunctive faceting
-      // This ensures counts update correctly when filters are applied
+      // ✅ Backend provides reactive disjunctive faceting for ALL filters
+      // All counts update based on current filter selections (AND logic)
       if (facetType === 'category' && key) return categoryCounts[key] || 0;
       if (facetType === 'brand' && key) return brandCounts[key] || 0;
-      if (facetType === 'stockStatus' && key) return stockStatusCounts[key] || 0;
       if (facetType === 'tag' && key) return tagCounts[key] || 0;
+
+      // ✅ Use reactive counts (not global static) for proper AND logic
+      if (facetType === 'stockStatus' && key) return stockStatusCounts[key] || 0;
       if (facetType === 'featured') return featuredCount;
       if (facetType === 'notFeatured') return notFeaturedCount;
       if (facetType === 'sale') return saleCount;
@@ -589,8 +558,8 @@ const KalifindSearch: React.FC<{
     [
       categoryCounts,
       brandCounts,
-      stockStatusCounts,
       tagCounts,
+      stockStatusCounts,
       featuredCount,
       notFeaturedCount,
       saleCount,
@@ -1068,29 +1037,30 @@ const KalifindSearch: React.FC<{
           setAvailableTags(Object.keys(tagCounts));
           setGlobalTagCounts(tagCounts); // Store global counts
         }
-      }
 
-      // Note: We no longer track global total separately
-      // totalProducts will reflect the current filtered count
+        // ✅ Get max price from actual product prices, not facet buckets
+        if (result.products && Array.isArray(result.products) && result.products.length > 0) {
+          const productPrices = result.products
+            .map((p: Product) => p.currentPrice ?? p.originalPrice)
+            .filter((price): price is number => typeof price === 'number' && price > 0);
 
-      // Extract max price from products in global facets
+          if (productPrices.length > 0) {
+            const maxPriceFromProducts = Math.max(...productPrices);
+            // Round up to nearest 50 for cleaner UI
+            const roundedMaxPrice = Math.ceil(maxPriceFromProducts / 50) * 50;
+            setMaxPrice(roundedMaxPrice);
+            setFilteredMaxPrice(roundedMaxPrice);
+            console.log(
+              '📊 Max price from products:',
+              maxPriceFromProducts,
+              '→ rounded:',
+              roundedMaxPrice
+            );
+          }
+        }
+      } // Update currency from products
       if (result.products && Array.isArray(result.products) && result.products.length > 0) {
         updateCurrencyFromProducts(result.products as Product[]);
-        const prices = result.products
-          .map(
-            (p: Product) =>
-              parsePriceToNumber(p.price) ??
-              parsePriceToNumber(p.regularPrice) ??
-              parsePriceToNumber(p.salePrice)
-          )
-          .filter((price): price is number => price !== undefined && price > 0);
-
-        if (prices.length > 0) {
-          const calculatedMaxPrice = Math.ceil(Math.max(...prices));
-          const roundedMaxPrice = Math.ceil(calculatedMaxPrice / 50) * 50;
-          setMaxPrice(roundedMaxPrice);
-          setFilteredMaxPrice(roundedMaxPrice); // Initially, filtered max = global max
-        }
       }
 
       setGlobalFacetsFetched(true);
@@ -1476,11 +1446,14 @@ const KalifindSearch: React.FC<{
               tags: debouncedFilters.tags.length > 0 ? debouncedFilters.tags : undefined,
               stockStatus:
                 debouncedFilters.stockStatus.length > 0 ? debouncedFilters.stockStatus : undefined,
-              priceRange: debouncedFilters.priceRange,
+              // Only send priceRange if user has actually modified it
+              priceRange:
+                debouncedFilters.priceRange[0] > 0 || debouncedFilters.priceRange[1] < maxPrice
+                  ? debouncedFilters.priceRange
+                  : undefined,
               insale: inSale, // ✅ Pass sale status filter to API
               featured: featured, // ✅ Pass featured filter to API
             };
-
             const result = await searchService.searchProducts(searchParams);
 
             // If the request was superseded by a newer one, discard the results
@@ -1511,82 +1484,19 @@ const KalifindSearch: React.FC<{
                 products.length
               );
 
-              // ✅ SIMPLIFIED: Backend handles reactive faceting correctly
-              // Always use facets from backend - they're already reactive
+              // Process facets from backend (already reactive with disjunctive faceting)
               if (result.facets) {
-                const facets = result.facets as Record<string, unknown>;
-                console.log('✨ Using reactive facets from backend');
+                const facets = result.facets;
 
-                // Update stock status counts
-                const stockBuckets = extractFacetBuckets(facets.instock);
-                if (stockBuckets.length > 0) {
-                  const stockStatusCountsLocal: { [key: string]: number } = {};
-                  stockBuckets.forEach((bucket) => {
-                    const key = getFacetBucketKey(bucket);
-                    const normalized = String(key).toLowerCase();
-                    const displayName =
-                      normalized === 'instock' || normalized === 'true'
-                        ? 'In Stock'
-                        : normalized === 'outofstock' || normalized === 'false'
-                          ? 'Out of Stock'
-                          : normalized === 'onbackorder'
-                            ? 'On Backorder'
-                            : String(key);
-                    stockStatusCountsLocal[displayName] = bucket.doc_count;
-                  });
-                  setStockStatusCounts(stockStatusCountsLocal);
-                }
+                // ❌ DO NOT update stock status counts from filtered results
+                // Stock counts should remain static (global) - always showing total available products
 
-                // Update featured status counts
-                const featuredBuckets = extractFacetBuckets(facets.featured);
-                if (featuredBuckets.length > 0) {
-                  let featuredCountLocal = 0;
-                  let notFeaturedCountLocal = 0;
-                  featuredBuckets.forEach((bucket) => {
-                    const key = getFacetBucketKey(bucket);
-                    if (key === null || key === undefined) return;
-                    // Check if key represents true value (could be string, boolean, or number)
-                    const keyStr = String(key).toLowerCase();
-                    const isOne = typeof key === 'number' && key === 1;
-                    const value = keyStr === 'true' || isOne;
-                    if (value === true) {
-                      featuredCountLocal = bucket.doc_count;
-                    } else if (value === false) {
-                      notFeaturedCountLocal = bucket.doc_count;
-                    }
-                  });
-                  setFeaturedCount(featuredCountLocal);
-                  setNotFeaturedCount(notFeaturedCountLocal);
-                }
-
-                // Update sale status counts
-                const saleBuckets = extractFacetBuckets(facets.insale);
-                if (saleBuckets.length > 0) {
-                  let saleCountLocal = 0;
-                  let notSaleCountLocal = 0;
-                  saleBuckets.forEach((bucket) => {
-                    const key = getFacetBucketKey(bucket);
-                    if (key === null || key === undefined) return;
-                    // Check if key represents true value (could be string, boolean, or number)
-                    const keyStr = String(key).toLowerCase();
-                    const isOne = typeof key === 'number' && key === 1;
-                    const value = keyStr === 'true' || isOne;
-                    if (value === true) {
-                      saleCountLocal = bucket.doc_count;
-                    } else if (value === false) {
-                      notSaleCountLocal = bucket.doc_count;
-                    }
-                  });
-
-                  console.log(
-                    '🔢 [FACETS] Sale facets updated: On Sale =',
-                    saleCountLocal,
-                    ', Not On Sale =',
-                    notSaleCountLocal
-                  );
-                  setSaleCount(saleCountLocal);
-                  setNotSaleCount(notSaleCountLocal);
-                }
+                // ❌ DO NOT update featured status counts from filtered results
+                // Featured counts should remain static (global) - always showing total available products                  // ❌ DO NOT update sale status counts from filtered results
+                // Sale counts should remain static (global) - always showing total available products
+                // The backend returns filtered facet counts, but we want to keep showing the global counts
+                // This prevents the UI from showing confusing counts like "On Sale: 24, Not On Sale: 25" (total 49)
+                // when the actual total is 50 products
 
                 // Update category counts
                 const categoryBuckets = extractFacetBuckets(facets.category);
@@ -1650,9 +1560,27 @@ const KalifindSearch: React.FC<{
                   setTagCounts(tagCounts);
                   setAvailableTags(Object.keys(tagCounts));
                 }
-              }
 
-              // Detect store type from first product if available
+                // ✅ Get filtered max price from actual filtered product prices
+                if (products.length > 0) {
+                  const productPrices = products
+                    .map((p: Product) => p.currentPrice ?? p.originalPrice)
+                    .filter((price): price is number => typeof price === 'number' && price > 0);
+
+                  if (productPrices.length > 0) {
+                    const maxPriceFromProducts = Math.max(...productPrices);
+                    // Round up to nearest 50 for cleaner UI
+                    const roundedMaxPrice = Math.ceil(maxPriceFromProducts / 50) * 50;
+                    setFilteredMaxPrice(roundedMaxPrice);
+                    console.log(
+                      '📊 Filtered max price from products:',
+                      maxPriceFromProducts,
+                      '→ rounded:',
+                      roundedMaxPrice
+                    );
+                  }
+                }
+              } // Detect store type from first product if available
               if (products.length > 0) {
                 const firstProductStoreType = products[0]?.storeType;
                 if (
@@ -1663,29 +1591,6 @@ const KalifindSearch: React.FC<{
                 ) {
                   setStoreType(firstProductStoreType);
                 }
-
-                // Calculate filtered max price from current filtered products
-                const prices = products
-                  .map(
-                    (p) =>
-                      parsePriceToNumber(p.price) ??
-                      parsePriceToNumber(p.regularPrice) ??
-                      parsePriceToNumber(p.salePrice)
-                  )
-                  .filter((price): price is number => price !== undefined && price > 0);
-
-                if (prices.length > 0) {
-                  const calculatedMaxPrice = Math.ceil(Math.max(...prices));
-                  // Round up to nearest 50 for cleaner UI
-                  const roundedMaxPrice = Math.ceil(calculatedMaxPrice / 50) * 50;
-                  // Update filtered max price (this is reactive to current filters)
-                  setFilteredMaxPrice(roundedMaxPrice);
-                  console.log('📊 Filtered max price updated to:', roundedMaxPrice);
-                }
-              } else {
-                // No products in filtered results, keep global max price as fallback
-                setFilteredMaxPrice(maxPrice);
-                console.log('⚠️ No products in results, using global max price:', maxPrice);
               }
             } else {
               console.error('Kalifind Search: Unexpected search response format:', result);
@@ -1789,17 +1694,6 @@ const KalifindSearch: React.FC<{
             setHasMoreProducts(hasMore);
             setSearchMessage(message);
             setIsShowingRecommended(showingRecommended);
-
-            // Backend now provides reactive facets, no need for frontend calculation
-            console.log('✨ Using reactive facets from backend');
-
-            // Debug: Log the state updates
-            console.log(
-              'KaliFinder Search: Setting totalProducts =',
-              total,
-              'displayedProducts =',
-              products.length
-            );
           } catch (error) {
             if (error instanceof Error && error.name === 'AbortError') {
               return;
@@ -2850,18 +2744,43 @@ const KalifindSearch: React.FC<{
               </span>
             </button>
           </DrawerTrigger>
-          <DrawerContent
-            className="z-[100000] flex max-h-[90vh] flex-col overflow-hidden"
-            style={{ height: '90vh' }}
-          >
-            {/* Mobile Filter Header */}
-            <div className="border-border flex-shrink-0 border-b bg-white px-4 py-4 sm:px-6">
-              <h2 className="text-foreground text-lg font-semibold">Filters</h2>
-              <p className="text-muted-foreground mt-1 text-sm">Refine your search results</p>
+          <DrawerContent className="z-[100000] flex h-[92vh] max-h-[92vh] flex-col">
+            {/* Mobile Filter Header - Compact with actions */}
+            <div className="flex flex-shrink-0 items-center justify-between border-b border-gray-200 bg-white px-4 py-3">
+              <div className="flex items-center gap-3">
+                <h2 className="text-lg font-semibold text-gray-900">Filters</h2>
+                <span className="rounded-full bg-purple-100 px-2.5 py-0.5 text-xs font-semibold text-purple-700">
+                  {totalProducts}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                {isAnyFilterActive && (
+                  <button
+                    onClick={handleClearAll}
+                    className="rounded-md px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-100 active:bg-gray-200"
+                  >
+                    Reset
+                  </button>
+                )}
+                <DrawerClose asChild>
+                  <button
+                    className="rounded-full p-1.5 hover:bg-gray-100 active:bg-gray-200"
+                    aria-label="Close filters"
+                  >
+                    <X className="h-5 w-5 text-gray-600" />
+                  </button>
+                </DrawerClose>
+              </div>
             </div>
+
+            {/* Scrollable Filter Content */}
             <div
-              className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 sm:px-6"
-              style={{ WebkitOverflowScrolling: 'touch' }}
+              className="flex-1 overflow-y-scroll overscroll-contain px-4 py-4"
+              style={{
+                WebkitOverflowScrolling: 'touch',
+                scrollbarWidth: 'thin',
+                scrollbarColor: 'rgba(0, 0, 0, 0.3) transparent',
+              }}
             >
               <Accordion
                 type="multiple"
@@ -3202,42 +3121,16 @@ const KalifindSearch: React.FC<{
               </Accordion>
             </div>
 
-            <div className="bg-background border-border mt-auto flex-shrink-0 border-t bg-white">
-              <div className="flex items-center justify-between border-b border-gray-200 bg-white px-4 py-3">
-                <div className="text-foreground text-sm">
-                  <span className="font-semibold">{totalProducts}</span> products found
-                </div>
-                <DrawerClose asChild>
-                  <button
-                    className="rounded-full p-1.5 transition-colors hover:bg-gray-100"
-                    aria-label="Close filters"
-                    title="Close filters"
-                  >
-                    <X className="h-5 w-5 text-gray-600" />
-                  </button>
-                </DrawerClose>
-              </div>
-              <div className="flex gap-3 p-4">
-                {isAnyFilterActive && (
-                  <button
-                    onClick={handleClearAll}
-                    aria-label="Reset all filters"
-                    className="min-h-[48px] flex-1 rounded-lg border-2 border-gray-300 bg-white py-3 text-sm font-semibold text-gray-700 transition-colors hover:border-gray-400 hover:bg-gray-50 active:bg-gray-100"
-                  >
-                    Reset
-                  </button>
-                )}
-                <DrawerClose asChild>
-                  <button
-                    aria-label="Done - close filter drawer"
-                    className={`bg-primary text-primary-foreground hover:bg-primary-hover min-h-[48px] rounded-lg py-3 text-sm font-semibold transition-colors active:scale-[0.98] ${
-                      isAnyFilterActive ? 'flex-1' : 'w-full'
-                    }`}
-                  >
-                    Done
-                  </button>
-                </DrawerClose>
-              </div>
+            {/* Done Button Footer - Simple and clean */}
+            <div className="pb-safe flex-shrink-0 border-t border-gray-200 bg-white p-4">
+              <DrawerClose asChild>
+                <button
+                  aria-label="Done - apply filters"
+                  className="min-h-[48px] w-full rounded-lg bg-purple-600 py-3 text-base font-semibold text-white shadow-sm active:scale-[0.98] active:bg-purple-700"
+                >
+                  Show {totalProducts} {totalProducts === 1 ? 'Product' : 'Products'}
+                </button>
+              </DrawerClose>
             </div>
           </DrawerContent>
         </Drawer>
@@ -3841,90 +3734,69 @@ const KalifindSearch: React.FC<{
               </>
             )}
             {!showRecommendations && (
-              <div className="text-muted-foreground mb-4 flex flex-col gap-2 text-sm sm:flex-row sm:items-center sm:justify-between">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-foreground text-sm font-medium lg:text-base">
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                {/* Results count - Compact mobile */}
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-semibold text-gray-900 sm:text-base">
                     {isLoading || isPending ? (
-                      <div className="flex items-center gap-2">
-                        <div className="flex space-x-1">
-                          <div className="animate-bounce-delay-0 bg-primary h-1.5 w-1.5 animate-bounce rounded-full"></div>
-                          <div className="animate-bounce-delay-150 bg-primary h-1.5 w-1.5 animate-bounce rounded-full"></div>
-                          <div className="animate-bounce-delay-300 bg-primary h-1.5 w-1.5 animate-bounce rounded-full"></div>
+                      <span className="flex items-center gap-1.5">
+                        <div className="flex space-x-0.5">
+                          <div className="h-1 w-1 animate-bounce rounded-full bg-purple-600"></div>
+                          <div className="animation-delay-150 h-1 w-1 animate-bounce rounded-full bg-purple-600"></div>
+                          <div className="animation-delay-300 h-1 w-1 animate-bounce rounded-full bg-purple-600"></div>
                         </div>
-                        <b className="text-foreground font-bold">Loading results...</b>
-                      </div>
-                    ) : isShowingRecommended ? (
-                      <>
-                        <b className="text-foreground font-bold">{displayedProducts}</b>{' '}
-                        <span className="text-muted-foreground">recommended products</span>
-                      </>
-                    ) : totalProducts > 0 && globalTotalProducts > 0 ? (
-                      <>
-                        {displayedProducts < totalProducts ? (
-                          <>
-                            <b className="text-foreground font-bold">{displayedProducts}</b>{' '}
-                            <span className="text-muted-foreground">of</span>{' '}
-                            <b className="text-foreground font-bold">{totalProducts}</b>{' '}
-                            <span className="text-muted-foreground">
-                              ({globalTotalProducts} total)
-                            </span>
-                          </>
-                        ) : (
-                          <>
-                            <b className="text-foreground font-bold">{totalProducts}</b>{' '}
-                            <span className="text-muted-foreground">of</span>{' '}
-                            <b className="text-foreground font-bold">{globalTotalProducts}</b>{' '}
-                            <span className="text-muted-foreground">products</span>
-                          </>
-                        )}
-                      </>
-                    ) : totalProducts > 0 ? (
-                      <>
-                        <b className="text-foreground font-bold">{displayedProducts}</b>{' '}
-                        <span className="text-muted-foreground">of</span>{' '}
-                        <b className="text-foreground font-bold">{totalProducts}</b>{' '}
-                        <span className="text-muted-foreground">results</span>
-                      </>
+                        <span className="text-gray-600">Loading...</span>
+                      </span>
                     ) : (
                       <>
-                        <b className="text-foreground font-bold">{displayedProducts}</b>{' '}
-                        <span className="text-muted-foreground">products</span>
+                        <span className="text-purple-600">
+                          {isShowingRecommended
+                            ? displayedProducts
+                            : displayedProducts < totalProducts
+                              ? displayedProducts
+                              : totalProducts}
+                        </span>
+                        <span className="text-gray-600">
+                          {' '}
+                          {isShowingRecommended
+                            ? 'recommended'
+                            : displayedProducts < totalProducts
+                              ? `of ${totalProducts}`
+                              : totalProducts < globalTotalProducts
+                                ? `of ${globalTotalProducts}`
+                                : ''}
+                        </span>
                       </>
                     )}
                   </span>
-                  {/* Active filters indicator */}
+                  {/* Filters badge - Mobile hidden */}
                   {isAnyFilterActive && !isLoading && !isPending && (
-                    <span className="text-primary inline-flex items-center gap-1 rounded-full bg-purple-50 px-2.5 py-0.5 text-xs font-medium">
+                    <span className="hidden items-center gap-1 rounded-full bg-purple-100 px-2 py-0.5 text-xs font-medium text-purple-700 sm:inline-flex">
                       <Filter className="h-3 w-3" />
-                      Filters active
+                      <span>Filters</span>
                     </span>
                   )}
                 </div>
-                <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-                  {/* Autocomplete Toggle Button - Visible on all devices */}
+
+                {/* Buttons - Icon-only on mobile */}
+                <div
+                  className="flex items-center gap-1.5 sm:gap-2"
+                  onClick={(e) => e.stopPropagation()}
+                >
                   <button
                     onClick={() => {
                       setSuggestionsEnabled(!suggestionsEnabled);
                       if (!suggestionsEnabled) {
-                        // Clear suggestions when disabling
                         setAutocompleteSuggestions([]);
                         setShowAutocomplete(false);
                       }
                     }}
-                    className="group flex items-center gap-1.5 rounded-xl border-2 border-gray-200 bg-white px-3 py-2.5 text-sm leading-normal font-medium text-gray-900 shadow-sm transition-all hover:border-purple-400 hover:bg-purple-50 hover:shadow-md focus:border-purple-500 focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:outline-none"
-                    title={
-                      suggestionsEnabled
-                        ? 'Hide autocomplete suggestions'
-                        : 'Show autocomplete suggestions'
-                    }
-                    aria-label={
-                      suggestionsEnabled
-                        ? 'Hide autocomplete suggestions'
-                        : 'Show autocomplete suggestions'
-                    }
+                    className="group flex min-h-[40px] items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-2.5 py-2 text-sm font-medium text-gray-700 shadow-sm transition-all hover:bg-purple-50 active:scale-95 sm:px-3"
+                    title={suggestionsEnabled ? 'Hide suggestions' : 'Show suggestions'}
+                    aria-label={suggestionsEnabled ? 'Hide suggestions' : 'Show suggestions'}
                   >
                     <svg
-                      className="h-4 w-4 text-gray-500 transition-colors group-hover:text-purple-600"
+                      className="h-4 w-4 text-gray-500 group-hover:text-purple-600"
                       fill="none"
                       viewBox="0 0 24 24"
                       stroke="currentColor"
@@ -3939,21 +3811,18 @@ const KalifindSearch: React.FC<{
                         </>
                       )}
                     </svg>
-                    <span className="font-semibold">Suggest</span>
+                    <span className="hidden sm:inline">Suggest</span>
                   </button>
 
-                  {/* Sorting Dropdown */}
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <button
                         data-sort-button
                         aria-label="Sort results"
-                        aria-haspopup="true"
-                        aria-expanded="false"
-                        className="group flex items-center gap-1.5 rounded-xl border-2 border-gray-200 bg-white px-3 py-2.5 text-sm leading-normal font-medium text-gray-900 shadow-sm transition-all hover:border-purple-400 hover:bg-purple-50 hover:shadow-md focus:border-purple-500 focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:outline-none"
+                        className="group flex min-h-[40px] items-center gap-1 rounded-lg border border-gray-300 bg-white px-2.5 py-2 text-sm font-medium text-gray-700 shadow-sm transition-all hover:bg-purple-50 active:scale-95 sm:gap-1.5 sm:px-3"
                       >
                         <svg
-                          className="h-4 w-4 text-gray-500 transition-colors group-hover:text-purple-600"
+                          className="h-4 w-4 text-gray-500 group-hover:text-purple-600"
                           fill="none"
                           viewBox="0 0 24 24"
                           stroke="currentColor"
@@ -3965,8 +3834,8 @@ const KalifindSearch: React.FC<{
                             d="M3 4h13M3 8h9m-9 4h9m5-4v12m0 0l-4-4m4 4l4-4"
                           />
                         </svg>
-                        <span className="font-semibold">Sort</span>
-                        <ChevronDown className="h-4 w-4 text-gray-500 transition-all group-hover:text-purple-600 group-data-[state=open]:rotate-180" />
+                        <span className="hidden sm:inline">Sort</span>
+                        <ChevronDown className="h-3.5 w-3.5 text-gray-500 group-hover:text-purple-600" />
                       </button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent

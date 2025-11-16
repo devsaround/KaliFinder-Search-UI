@@ -123,6 +123,7 @@ class SearchService {
       urlParams.append('stockStatus', params.stockStatus.join(','));
     }
 
+    // Add price range parameters
     if (params.priceRange) {
       urlParams.append('minPrice', params.priceRange[0].toString());
       urlParams.append('maxPrice', params.priceRange[1].toString());

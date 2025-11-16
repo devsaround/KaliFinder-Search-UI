@@ -5,6 +5,7 @@
 
 import { ShoppingCart, X } from '@/components/icons';
 import type { Product } from '@/types';
+import { parsePriceToNumber } from '@/utils/price';
 import React, { useEffect } from 'react';
 
 interface ProductQuickViewProps {
@@ -17,34 +18,6 @@ interface ProductQuickViewProps {
   formatPrice?: (value?: string | null) => string;
   calculateDiscountPercentage?: (regularPrice: string, salePrice: string) => number | null;
 }
-
-const parsePriceToNumber = (value?: string | null): number | undefined => {
-  if (value === undefined || value === null) return undefined;
-  const trimmed = String(value).trim();
-  if (!trimmed) return undefined;
-
-  const sanitized = trimmed.replace(/[^0-9.,-]/g, '');
-  if (!sanitized) return undefined;
-
-  const commaCount = (sanitized.match(/,/g) || []).length;
-  const dotCount = (sanitized.match(/\./g) || []).length;
-  let normalized = sanitized;
-
-  if (commaCount > 0 && dotCount === 0) {
-    normalized = sanitized.replace(/,/g, '.');
-  } else if (commaCount > 0 && dotCount > 0) {
-    if (sanitized.lastIndexOf(',') > sanitized.lastIndexOf('.')) {
-      normalized = sanitized.replace(/\./g, '').replace(/,/g, '.');
-    } else {
-      normalized = sanitized.replace(/,/g, '');
-    }
-  } else {
-    normalized = sanitized.replace(/,/g, '');
-  }
-
-  const parsed = Number(normalized);
-  return Number.isFinite(parsed) ? parsed : undefined;
-};
 
 export const ProductQuickView: React.FC<ProductQuickViewProps> = ({
   product,

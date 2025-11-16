@@ -3,19 +3,40 @@
  * Comprehensive fixes for mobile responsiveness and cross-browser support
  * 
  * Covers:
- * - Touch target sizes (minimum 44x44px)
+ * - Touch target sizes (minimum 44x44px for accessibility)
  * - iOS zoom prevention (font-size >= 16px)
  * - Safe area insets (notches, home indicators)
- * - Cross-browser prefixes
- * - Overflow handling
+ * - Cross-browser prefixes (-webkit, -moz, -ms)
+ * - Overflow handling and momentum scrolling
  * - Touch action optimization
+ * - Viewport fixes for mobile browsers
  */
 
 /* ========================================
-   TOUCH TARGET SIZES (Mobile)
+   TOUCH TARGET SIZES (Mobile Accessibility)
    ======================================== */
 
-/* Touch target sizes removed - using default Tailwind responsive classes */
+/* Ensure all interactive elements meet minimum 44x44px touch target */
+@media (max-width: 768px) {
+  .kalifinder-widget-content button,
+  .kalifinder-widget-content a,
+  .kalifinder-widget-content input[type='checkbox'],
+  .kalifinder-widget-content input[type='radio'],
+  .kalifinder-widget-content [role='button'] {
+    min-height: 44px;
+    min-width: 44px;
+    touch-action: manipulation;
+  }
+
+  /* Checkbox and radio labels - clickable area */
+  .kalifinder-widget-content label {
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
+  }
+}
 
 /* ========================================
    iOS ZOOM PREVENTION
@@ -34,6 +55,12 @@
   -webkit-text-size-adjust: 100% !important;
   -moz-text-size-adjust: 100% !important;
   text-size-adjust: 100% !important;
+  /* Prevent iOS from adding default styling */
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  /* Better touch handling */
+  touch-action: manipulation;
 }
 
 /* Override for larger screens where smaller font is acceptable */
@@ -79,11 +106,15 @@
     /* On mobile, ensure full viewport coverage */
     height: 100vh !important;
     min-height: 100vh !important;
+    min-height: -webkit-fill-available !important; /* iOS Safari fix */
     width: 100% !important;
     max-width: 100% !important;
     max-height: 100vh !important;
     /* Start from top to avoid being hidden by address bar */
     margin-top: 0 !important;
+    /* Prevent pull-to-refresh on mobile */
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
   }
 
   /* Use dynamic viewport height when supported */
@@ -455,4 +486,213 @@ body.kalifinder-open {
   display: -webkit-box !important;
   -webkit-line-clamp: inherit !important;
   -webkit-box-orient: vertical !important;
+}
+
+/* ========================================
+   MOBILE DRAWER IMPROVEMENTS
+   ======================================== */
+
+/* Ensure drawer content is fully scrollable on mobile */
+@media (max-width: 768px) {
+  [data-radix-drawer-content] {
+    touch-action: pan-y !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  /* Drawer scrollable area - force scrollbars to be visible */
+  [data-radix-drawer-content] .overflow-y-scroll,
+  [data-radix-drawer-content] [class*='overflow-y-scroll'] {
+    overflow-y: scroll !important; /* Force scroll instead of auto */
+    -webkit-overflow-scrolling: touch !important;
+    overscroll-behavior: contain !important;
+
+    /* Make scrollbar always visible on mobile */
+    scrollbar-width: thin !important;
+    scrollbar-color: rgba(0, 0, 0, 0.3) transparent !important;
+  }
+
+  /* Webkit scrollbar styling for mobile */
+  [data-radix-drawer-content] .overflow-y-scroll::-webkit-scrollbar,
+  [data-radix-drawer-content] [class*='overflow-y-scroll']::-webkit-scrollbar {
+    width: 6px !important;
+    height: 6px !important;
+  }
+
+  [data-radix-drawer-content] .overflow-y-scroll::-webkit-scrollbar-track,
+  [data-radix-drawer-content] [class*='overflow-y-scroll']::-webkit-scrollbar-track {
+    background: transparent !important;
+  }
+
+  [data-radix-drawer-content] .overflow-y-scroll::-webkit-scrollbar-thumb,
+  [data-radix-drawer-content] [class*='overflow-y-scroll']::-webkit-scrollbar-thumb {
+    background-color: rgba(0, 0, 0, 0.3) !important;
+    border-radius: 3px !important;
+  }
+
+  [data-radix-drawer-content] .overflow-y-scroll::-webkit-scrollbar-thumb:hover,
+  [data-radix-drawer-content] [class*='overflow-y-scroll']::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(0, 0, 0, 0.4) !important;
+  }
+}
+
+/* ========================================
+   ACCORDION & COLLAPSIBLE IMPROVEMENTS
+   ======================================== */
+
+/* Ensure accordion content is accessible and scrollable */
+.kalifinder-widget-content [data-radix-accordion-content] {
+  overflow: hidden !important;
+  transition: height 200ms cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+@media (max-width: 768px) {
+  .kalifinder-widget-content [data-radix-accordion-content][data-state='open'] {
+    /* Allow scrolling if content is long */
+    overflow-y: auto !important;
+    max-height: 400px !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+}
+
+/* ========================================
+   BUTTON & INTERACTIVE ELEMENT FIXES
+   ======================================== */
+
+/* Ensure buttons are properly sized and spaced on mobile */
+@media (max-width: 640px) {
+  .kalifinder-widget-content button {
+    font-size: 14px !important;
+    padding: 10px 16px !important;
+    border-radius: 8px !important;
+  }
+
+  /* Large primary buttons */
+  .kalifinder-widget-content button[class*='w-full'],
+  .kalifinder-widget-content button[class*='flex-1'] {
+    min-height: 48px !important;
+    font-size: 15px !important;
+    font-weight: 600 !important;
+  }
+}
+
+/* ========================================
+   MODAL & DIALOG IMPROVEMENTS
+   ======================================== */
+
+/* Ensure modals are properly centered and sized on mobile */
+@media (max-width: 768px) {
+  [data-radix-dialog-content],
+  [data-radix-dialog-overlay] {
+    position: fixed !important;
+    inset: 0 !important;
+  }
+
+  [data-radix-dialog-content] {
+    max-width: 100% !important;
+    max-height: 100% !important;
+    border-radius: 0 !important;
+    margin: 0 !important;
+  }
+}
+
+/* ========================================
+   SLIDER & RANGE INPUT IMPROVEMENTS
+   ======================================== */
+
+/* Ensure slider touch targets are large enough */
+.kalifinder-widget-content input[type='range'] {
+  -webkit-appearance: none !important;
+  appearance: none !important;
+  width: 100% !important;
+  height: 40px !important; /* Large enough for touch */
+  cursor: pointer !important;
+  touch-action: pan-x !important;
+}
+
+.kalifinder-widget-content input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none !important;
+  appearance: none !important;
+  width: 24px !important;
+  height: 24px !important;
+  border-radius: 50% !important;
+  cursor: pointer !important;
+}
+
+.kalifinder-widget-content input[type='range']::-moz-range-thumb {
+  width: 24px !important;
+  height: 24px !important;
+  border-radius: 50% !important;
+  cursor: pointer !important;
+  border: none !important;
+}
+
+/* ========================================
+   CHECKBOX & RADIO IMPROVEMENTS
+   ======================================== */
+
+/* Larger touch targets for checkboxes and radios */
+@media (max-width: 768px) {
+  .kalifinder-widget-content input[type='checkbox'],
+  .kalifinder-widget-content input[type='radio'] {
+    width: 20px !important;
+    height: 20px !important;
+    min-width: 20px !important;
+    min-height: 20px !important;
+  }
+
+  /* Ensure label has enough padding for touch */
+  .kalifinder-widget-content input[type='checkbox'] + label,
+  .kalifinder-widget-content input[type='radio'] + label {
+    padding: 12px 8px !important;
+    min-height: 44px !important;
+  }
+}
+
+/* ========================================
+   PERFORMANCE OPTIMIZATIONS
+   ======================================== */
+
+/* Hardware acceleration for smooth animations */
+.kalifinder-widget-content [class*='transition'],
+.kalifinder-widget-content [class*='animate'] {
+  -webkit-transform: translateZ(0) !important;
+  transform: translateZ(0) !important;
+  will-change: transform, opacity !important;
+}
+
+/* Optimize scrolling performance */
+.kalifinder-widget-content [class*='overflow-y-auto'],
+.kalifinder-widget-content [class*='overflow-auto'] {
+  -webkit-overflow-scrolling: touch !important;
+  scroll-behavior: smooth !important;
+}
+
+/* ========================================
+   SAFARI-SPECIFIC FIXES
+   ======================================== */
+
+/* Fix for Safari's 100vh issue */
+@supports (-webkit-touch-callout: none) {
+  .kalifinder-widget-modal-content {
+    min-height: -webkit-fill-available !important;
+  }
+
+  @media (max-width: 768px) {
+    .kalifinder-widget-modal-content {
+      height: -webkit-fill-available !important;
+    }
+  }
+}
+
+/* ========================================
+   FIREFOX-SPECIFIC FIXES
+   ======================================== */
+
+/* Ensure proper scrollbar styling in Firefox */
+@-moz-document url-prefix() {
+  .kalifinder-widget-content [class*='overflow-y-auto'],
+  .kalifinder-widget-content [class*='overflow-auto'] {
+    scrollbar-width: thin !important;
+    scrollbar-color: rgba(0, 0, 0, 0.2) transparent !important;
+  }
 }
