@@ -1244,30 +1244,6 @@ const KalifindSearch: React.FC<{
     }
   }, [searchQuery, storeUrl, setHasSearched, hasSearched]);
 
-  // ✅ FIX: Transition out of initial state when filters are applied
-  // This ensures filters work even without a search query
-  useEffect(() => {
-    // Check if any filter is actually applied
-    const hasActiveFilters =
-      filters.categories.length > 0 ||
-      filters.brands.length > 0 ||
-      filters.colors.length > 0 ||
-      filters.sizes.length > 0 ||
-      filters.tags.length > 0 ||
-      filters.stockStatus.length > 0 ||
-      filters.featuredProducts.length > 0 ||
-      filters.saleStatus.length > 0 ||
-      (filters.priceRange && (filters.priceRange[0] > 0 || filters.priceRange[1] < maxPrice));
-
-    // If filters are applied while in initial state, transition out
-    if (hasActiveFilters && isInitialState && !searchQuery) {
-      console.log('🔧 Filters applied without search query - transitioning out of initial state');
-      setShowRecommendations(false);
-      setIsInitialState(false);
-      setHasSearched(true); // Mark as searched so filters apply
-    }
-  }, [filters, isInitialState, searchQuery, maxPrice, setHasSearched]);
-
   // Consolidated initial data loading with Promise.all for better performance
   useEffect(() => {
     if (!storeUrl) return;
@@ -1879,6 +1855,25 @@ const KalifindSearch: React.FC<{
     // Update the last searched query and filters
     lastSearchedQueryRef.current = currentQuery;
     lastSearchedFiltersRef.current = currentFilters;
+
+    // Check if we need to transition out of initial state (using DEBOUNCED filters)
+    const hasActiveDebouncedFilters =
+      debouncedFilters.categories.length > 0 ||
+      debouncedFilters.stockStatus.length > 0 ||
+      debouncedFilters.featuredProducts.length > 0 ||
+      debouncedFilters.saleStatus.length > 0 ||
+      (debouncedFilters.priceRange &&
+        (debouncedFilters.priceRange[0] > 0 || debouncedFilters.priceRange[1] < maxPrice));
+
+    // Transition out of initial state when executing search with filters
+    if (hasActiveDebouncedFilters && isInitialState && !currentQuery) {
+      console.log(
+        '🔧 [SEARCH EFFECT] Transitioning out of initial state (debounced filters ready)'
+      );
+      setShowRecommendations(false);
+      setIsInitialState(false);
+      setHasSearched(true);
+    }
 
     console.log('✅ [SEARCH EFFECT] Executing search with filters:', {
       saleStatus: debouncedFilters.saleStatus,
