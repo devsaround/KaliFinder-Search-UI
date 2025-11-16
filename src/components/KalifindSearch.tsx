@@ -2689,21 +2689,19 @@ const KalifindSearch: React.FC<{
                       <span>to focus</span>
                     </div>
                   )}
-                  <div className="flex items-center gap-1">
-                    {searchQuery && (
-                      <button
-                        onClick={() => {
-                          setSearchQuery('');
-                          inputRef.current?.focus();
-                        }}
-                        className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-gray-100 transition-colors hover:bg-gray-200 active:scale-95"
-                        aria-label="Clear search"
-                        type="button"
-                      >
-                        <X className="h-3.5 w-3.5 text-gray-600" />
-                      </button>
-                    )}
-                  </div>
+                  {searchQuery && (
+                    <button
+                      onClick={() => {
+                        setSearchQuery('');
+                        inputRef.current?.focus();
+                      }}
+                      className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-gray-100 transition-colors hover:bg-gray-200 active:scale-95"
+                      aria-label="Clear search"
+                      type="button"
+                    >
+                      <X className="h-3.5 w-3.5 text-gray-600" />
+                    </button>
+                  )}
                 </div>
 
                 {/* Autocomplete Dropdown */}

@@ -170,21 +170,21 @@ const ProductCardComponent: React.FC<ProductCardProps> = ({
         </button>
 
         {/* Price and Add to Cart */}
-        <div className="mt-auto flex items-center justify-between gap-2">
+        <div className="mt-auto flex flex-wrap items-center justify-between gap-2">
           {/* Price */}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:gap-2">
+          <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1 sm:gap-2">
             {hasDiscount && prices.primary ? (
               <>
                 {prices.secondary && (
                   <span
-                    className="text-xs text-gray-400 line-through"
+                    className="text-xs text-gray-400 line-through sm:text-sm"
                     aria-label={`Original price ${prices.secondary}`}
                   >
                     {prices.secondary}
                   </span>
                 )}
                 <span
-                  className="text-base font-bold text-purple-600 sm:text-lg"
+                  className="text-sm font-bold text-purple-600 sm:text-base md:text-lg"
                   aria-label={`Sale price ${prices.primary}`}
                 >
                   {prices.primary}
@@ -192,7 +192,7 @@ const ProductCardComponent: React.FC<ProductCardProps> = ({
               </>
             ) : (
               <span
-                className="text-base font-bold text-gray-900 sm:text-lg"
+                className="text-sm font-bold text-gray-900 sm:text-base md:text-lg"
                 aria-label={`Price ${prices.primary}`}
               >
                 {prices.primary}
@@ -204,17 +204,17 @@ const ProductCardComponent: React.FC<ProductCardProps> = ({
           <button
             onClick={handleAddToCart}
             disabled={isAddingToCart || stockStatus.isOutOfStock}
-            className="relative z-10 flex h-11 min-h-[44px] w-11 min-w-[44px] shrink-0 cursor-pointer touch-manipulation items-center justify-center rounded-full bg-purple-600 text-white shadow-[0_4px_12px_rgba(124,58,237,0.5)] transition-all duration-300 hover:scale-110 hover:bg-purple-700 hover:shadow-[0_8px_20px_rgba(124,58,237,0.6)] focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100"
+            className="relative z-10 flex h-10 min-h-[44px] w-10 min-w-[44px] shrink-0 cursor-pointer touch-manipulation items-center justify-center rounded-full bg-purple-600 text-white shadow-[0_4px_12px_rgba(124,58,237,0.5)] transition-all duration-300 hover:scale-110 hover:bg-purple-700 hover:shadow-[0_8px_20px_rgba(124,58,237,0.6)] focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100 sm:h-11 sm:w-11"
             aria-label={`Add ${product.title} to cart`}
             title={stockStatus.isOutOfStock ? 'Out of stock' : `Add ${product.title} to cart`}
           >
             {isAddingToCart ? (
               <div
-                className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"
+                className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent sm:h-5 sm:w-5"
                 aria-label="Adding to cart"
               />
             ) : (
-              <ShoppingCart className="h-5 w-5" aria-hidden="true" />
+              <ShoppingCart className="h-4 w-4 sm:h-5 sm:w-5" aria-hidden="true" />
             )}
           </button>
         </div>

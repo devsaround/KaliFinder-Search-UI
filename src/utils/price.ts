@@ -85,7 +85,8 @@ export function getPrimaryPrice(product: {
     return product.salePrice;
   }
 
-  return product.price || product.regularPrice || product.salePrice || '';
+  // Use ?? instead of || to handle "0" correctly
+  return product.price ?? product.regularPrice ?? product.salePrice ?? '';
 }
 
 /**
