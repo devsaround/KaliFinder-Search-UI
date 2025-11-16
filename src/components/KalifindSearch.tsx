@@ -767,8 +767,27 @@ const KalifindSearch: React.FC<{
   }, [recentSearches]);
 
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
-  const debouncedPriceRange = useDebounce<[number, number]>(filters.priceRange, 500);
   const debouncedFilters = useDebounce(filters, 500);
+
+  // 🔍 DEBUG: Log when RAW filters change (before debounce)
+  useEffect(() => {
+    console.log('📝 [RAW FILTERS] Changed:', {
+      saleStatus: filters.saleStatus,
+      stockStatus: filters.stockStatus,
+      categories: filters.categories,
+      priceRange: filters.priceRange,
+    });
+  }, [filters]);
+
+  // 🔍 DEBUG: Log when debounced filters change
+  useEffect(() => {
+    console.log('🔄 [DEBOUNCE] Filters debounced:', {
+      saleStatus: debouncedFilters.saleStatus,
+      stockStatus: debouncedFilters.stockStatus,
+      categories: debouncedFilters.categories,
+      priceRange: debouncedFilters.priceRange,
+    });
+  }, [debouncedFilters]);
 
   // Fuzzy matching function for better autocomplete
   const fuzzyMatch = useCallback((query: string, suggestion: string): boolean => {
@@ -1417,7 +1436,7 @@ const KalifindSearch: React.FC<{
         // Debug: Log pagination reset with ACTUAL filter values
         console.log('🔄 [Pagination] Reset to page 1 - New search with filters:', {
           categories: debouncedFilters.categories,
-          priceRange: debouncedPriceRange,
+          priceRange: debouncedFilters.priceRange,
           stockStatus: debouncedFilters.stockStatus,
           saleStatus: debouncedFilters.saleStatus,
           requestId: searchRequestIdRef.current + 1,
@@ -1426,8 +1445,8 @@ const KalifindSearch: React.FC<{
         const fetchProducts = async () => {
           const currentRequestId = ++searchRequestIdRef.current; // Generate unique ID
           if (
-            typeof debouncedPriceRange[0] === 'undefined' ||
-            typeof debouncedPriceRange[1] === 'undefined'
+            typeof debouncedFilters.priceRange[0] === 'undefined' ||
+            typeof debouncedFilters.priceRange[1] === 'undefined'
           ) {
             setFilteredProducts([]);
             setIsLoading(false);
@@ -1481,7 +1500,7 @@ const KalifindSearch: React.FC<{
               tags: debouncedFilters.tags.length > 0 ? debouncedFilters.tags : undefined,
               stockStatus:
                 debouncedFilters.stockStatus.length > 0 ? debouncedFilters.stockStatus : undefined,
-              priceRange: debouncedPriceRange,
+              priceRange: debouncedFilters.priceRange,
               insale: inSale, // ✅ Pass sale status filter to API
               featured: featured, // ✅ Pass featured filter to API
             };
@@ -1815,7 +1834,6 @@ const KalifindSearch: React.FC<{
     },
     [
       storeUrl,
-      debouncedPriceRange,
       debouncedFilters,
       searchAbortController,
       storeType,
@@ -1826,8 +1844,17 @@ const KalifindSearch: React.FC<{
 
   // search products
   useEffect(() => {
+    console.log('🎯 [SEARCH EFFECT] Triggered with:', {
+      saleStatus: debouncedFilters.saleStatus,
+      stockStatus: debouncedFilters.stockStatus,
+      categories: debouncedFilters.categories,
+      priceRange: debouncedFilters.priceRange,
+      query: debouncedSearchQuery,
+    });
+
     // Skip search if we're in initial state showing recommendations
     if (!storeUrl || showRecommendations || isInitialState) {
+      console.log('⏭️  [SEARCH EFFECT] Skipping - initial state or recommendations');
       return; // Wait for the initial price to be loaded or skip if showing recommendations or in initial state
     }
 
@@ -1845,12 +1872,21 @@ const KalifindSearch: React.FC<{
       lastSearchedQueryRef.current === currentQuery &&
       lastSearchedFiltersRef.current === currentFilters
     ) {
+      console.log('⏭️  [SEARCH EFFECT] Skipping - duplicate search detected');
       return; // Skip if we've already searched for this query and filters combination
     }
 
     // Update the last searched query and filters
     lastSearchedQueryRef.current = currentQuery;
     lastSearchedFiltersRef.current = currentFilters;
+
+    console.log('✅ [SEARCH EFFECT] Executing search with filters:', {
+      saleStatus: debouncedFilters.saleStatus,
+      stockStatus: debouncedFilters.stockStatus,
+      categories: debouncedFilters.categories,
+      priceRange: debouncedFilters.priceRange,
+      query: currentQuery,
+    });
 
     // Fetch all products when search query is empty, or perform search with query
     if (!debouncedSearchQuery?.trim()) {
@@ -1860,7 +1896,6 @@ const KalifindSearch: React.FC<{
     }
   }, [
     debouncedSearchQuery,
-    debouncedPriceRange,
     debouncedFilters,
     storeUrl,
     showRecommendations,
@@ -2209,8 +2244,10 @@ const KalifindSearch: React.FC<{
   };
 
   const handleSaleStatusChange = (status: string) => {
-    console.log('🛍️ Sale status filter toggled:', status, '→ Current filters:', filters.saleStatus);
+    console.log('🛍️ [TOGGLE] Sale status clicked:', status);
+    console.log('🛍️ [TOGGLE] Current saleStatus BEFORE toggle:', filters.saleStatus);
     toggleFilterItem('saleStatus', status);
+    // Note: The state update is async, so we won't see the new value immediately here
   };
 
   // Load more products function (uses centralized searchService to keep normalization and pagination consistent)
@@ -2219,7 +2256,7 @@ const KalifindSearch: React.FC<{
 
     console.log('📄 [Load More] Fetching page', currentPage + 1, 'with current filters:', {
       categories: debouncedFilters.categories.length,
-      priceRange: debouncedPriceRange,
+      priceRange: debouncedFilters.priceRange,
       stockStatus: debouncedFilters.stockStatus.length,
       saleStatus: debouncedFilters.saleStatus.length,
     });
@@ -2270,7 +2307,7 @@ const KalifindSearch: React.FC<{
         ...(debouncedFilters.stockStatus.length > 0 && {
           stockStatus: debouncedFilters.stockStatus,
         }),
-        ...(debouncedPriceRange && { priceRange: debouncedPriceRange }),
+        ...(debouncedFilters.priceRange && { priceRange: debouncedFilters.priceRange }),
         ...(typeof inSale !== 'undefined' && { insale: inSale }),
         ...(typeof featured !== 'undefined' && { featured }),
       };
@@ -2324,7 +2361,6 @@ const KalifindSearch: React.FC<{
     currentPage,
     displayedProducts,
     debouncedFilters,
-    debouncedPriceRange,
     updateCurrencyFromProducts,
   ]);
 
