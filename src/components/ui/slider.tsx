@@ -92,8 +92,10 @@ const Slider = React.forwardRef<HTMLDivElement, SliderProps>(
           width: '100%',
           touchAction: 'none',
           alignItems: 'center',
-          paddingTop: '8px',
-          paddingBottom: '8px',
+          paddingTop: '12px',
+          paddingBottom: '12px',
+          paddingLeft: '4px',
+          paddingRight: '4px',
           userSelect: 'none',
           ...style,
         }}
@@ -103,13 +105,13 @@ const Slider = React.forwardRef<HTMLDivElement, SliderProps>(
           ref={trackRef}
           style={{
             position: 'relative',
-            height: '10px',
+            height: '8px',
             width: '100%',
             flexGrow: 1,
-            overflow: 'hidden',
+            overflow: 'visible',
             borderRadius: '9999px',
             backgroundColor: '#e5e7eb',
-            boxShadow: 'inset 0 2px 4px 0 rgba(0, 0, 0, 0.05)',
+            boxShadow: 'inset 0 1px 2px 0 rgba(0, 0, 0, 0.05)',
           }}
         >
           <div
@@ -129,22 +131,24 @@ const Slider = React.forwardRef<HTMLDivElement, SliderProps>(
             style={{
               position: 'absolute',
               display: 'block',
-              height: '24px',
-              width: '24px',
-              marginLeft: '-12px',
+              height: '28px',
+              width: '28px',
+              marginLeft: '-14px',
               borderRadius: '9999px',
-              border: '2px solid #7c3aed',
+              border: '3px solid #7c3aed',
               backgroundColor: '#ffffff',
               boxShadow:
                 isDragging === index
-                  ? '0 10px 15px -3px rgba(124, 58, 237, 0.3), 0 4px 6px -2px rgba(124, 58, 237, 0.2)'
+                  ? '0 10px 15px -3px rgba(124, 58, 237, 0.4), 0 4px 6px -2px rgba(124, 58, 237, 0.3)'
                   : '0 4px 6px -1px rgba(124, 58, 237, 0.3), 0 2px 4px -1px rgba(124, 58, 237, 0.2)',
               cursor: disabled ? 'not-allowed' : isDragging === index ? 'grabbing' : 'grab',
-              transform: isDragging === index ? 'scale(0.95)' : 'scale(1)',
+              transform: isDragging === index ? 'scale(1.1)' : 'scale(1)',
               transition: 'all 150ms cubic-bezier(0.4, 0, 0.2, 1)',
               opacity: disabled ? 0.5 : 1,
               pointerEvents: disabled ? 'none' : 'auto',
               left: getThumbPosition(val),
+              top: '50%',
+              marginTop: '-14px',
             }}
             onPointerDown={handlePointerDown(index)}
             onPointerMove={handlePointerMove}

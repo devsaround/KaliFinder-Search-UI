@@ -161,7 +161,7 @@
    ======================================== */
 
 /* Ensure watermark appears above all content */
-.kalifinder-widget-content > div > div[class*='fixed'][class*='bottom'] {
+.kalifinder-widget-content > div > div[class*='absolute'][class*='bottom'] {
   z-index: 10001 !important;
-  position: fixed !important;
+  position: absolute !important;
 }
