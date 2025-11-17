@@ -52,7 +52,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
                 <button
                   key={index}
                   onClick={() => onSuggestionClick?.(suggestion)}
-                  className="bg-muted hover:bg-primary/10 text-foreground hover:ring-primary/20 focus-visible:ring-primary min-h-[44px] rounded-full px-4 py-2 text-sm font-medium transition-colors hover:ring-2 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+                  className="bg-muted hover:bg-primary/10 text-foreground hover:ring-primary/20 focus-visible:ring-primary min-h-[44px] cursor-pointer touch-manipulation rounded-full px-4 py-2 text-sm font-medium transition-all hover:ring-2 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none active:scale-95"
                   aria-label={`Search for ${suggestion}`}
                 >
                   {suggestion}
@@ -66,7 +66,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
         {action && (
           <button
             onClick={action.onClick}
-            className="bg-primary text-primary-foreground hover:bg-primary-hover focus-visible:ring-primary inline-flex min-h-[44px] items-center gap-2 rounded-lg px-6 py-3 text-base font-semibold transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+            className="bg-primary text-primary-foreground hover:bg-primary-hover focus-visible:ring-primary inline-flex min-h-[44px] cursor-pointer touch-manipulation items-center gap-2 rounded-lg px-6 py-3 text-base font-semibold transition-all focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none active:scale-95"
             aria-label={action.label}
           >
             {action.label}

@@ -54,10 +54,10 @@ export const ColorFilter: React.FC<ColorFilterProps> = ({
                   if (!disabled) onColorChange(color);
                 }}
                 disabled={disabled}
-                className={`h-8 min-h-[44px] w-8 min-w-[44px] rounded-full border-2 transition-all disabled:cursor-not-allowed disabled:opacity-50 lg:h-10 lg:w-10 ${
+                className={`h-8 min-h-[44px] w-8 min-w-[44px] cursor-pointer touch-manipulation rounded-full border-2 transition-all disabled:cursor-not-allowed disabled:opacity-50 lg:h-10 lg:w-10 ${
                   selectedColors.includes(color)
                     ? 'border-primary scale-110'
-                    : 'border-border hover:scale-105'
+                    : 'border-border hover:scale-105 active:scale-95'
                 }`}
                 data-color={color.toLowerCase()}
                 title={`Filter by ${color} color`}

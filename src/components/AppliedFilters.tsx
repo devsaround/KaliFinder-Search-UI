@@ -46,7 +46,7 @@ export const AppliedFilters: React.FC<AppliedFiltersProps> = ({
       <span>{label}</span>
       <button
         onClick={onRemove}
-        className="hover:bg-primary/20 focus-visible:ring-primary min-h-[32px] min-w-[32px] touch-manipulation rounded-full p-0.5 transition-colors focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:outline-none"
+        className="hover:bg-primary/20 focus-visible:ring-primary min-h-[32px] min-w-[32px] cursor-pointer touch-manipulation rounded-full p-0.5 transition-all hover:scale-110 focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:outline-none active:scale-95"
         aria-label={`Remove ${label} filter`}
         type="button"
       >
@@ -61,7 +61,7 @@ export const AppliedFilters: React.FC<AppliedFiltersProps> = ({
         <h3 className="text-foreground text-sm font-semibold">Active Filters</h3>
         <button
           onClick={onClearAll}
-          className="text-primary hover:text-primary-hover focus-visible:ring-primary min-h-[44px] touch-manipulation px-3 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+          className="text-primary hover:text-primary-hover focus-visible:ring-primary min-h-[44px] min-w-[44px] cursor-pointer touch-manipulation rounded-lg px-3 py-2 text-sm font-medium transition-all hover:bg-purple-50 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none active:scale-95 active:bg-purple-100"
           aria-label="Clear all filters"
         >
           Clear all

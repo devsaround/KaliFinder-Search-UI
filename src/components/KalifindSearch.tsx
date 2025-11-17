@@ -2774,7 +2774,7 @@ const KalifindSearch: React.FC<{
           transition: 'opacity 0.2s ease-out, transform 0.2s ease-out',
           opacity: isDrawerOpen ? 0 : 1,
           transform: isDrawerOpen ? 'translateY(100%)' : 'translateY(0)',
-          pointerEvents: isDrawerOpen ? 'none' : 'auto',
+          pointerEvents: 'none', // Container itself should not block clicks
         }}
       >
         {/* Mobile Filter Button - Left Side */}
@@ -2789,6 +2789,7 @@ const KalifindSearch: React.FC<{
             <button
               className="group inline-flex h-[48px] min-h-[48px] cursor-pointer touch-manipulation items-center gap-2 rounded-full border border-purple-600 bg-purple-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg transition-all hover:border-purple-700 hover:shadow-xl active:scale-95"
               title="Open filters"
+              style={{ pointerEvents: 'auto' }} // Only button should receive clicks
             >
               <Filter className="h-5 w-5" />
               Filters
@@ -3370,7 +3371,60 @@ const KalifindSearch: React.FC<{
           </DrawerContent>
         </Drawer>
 
-        {/* KaliFinder Watermark - Right Side */}
+        {/* KaliFinder Watermark - Right Side - MOBILE ONLY */}
+        <a
+          href="https://kalifinder.com"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="group inline-flex h-[48px] min-h-[48px] items-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2.5 shadow-lg transition-all hover:border-purple-300 hover:shadow-xl active:scale-95 lg:hidden"
+          style={{
+            backdropFilter: 'blur(8px)',
+            backgroundColor: 'rgba(255, 255, 255, 0.95)',
+            pointerEvents: 'auto', // Only link should receive clicks
+          }}
+        >
+          <span className="hidden text-xs font-medium text-gray-500 transition-colors group-hover:text-gray-700 sm:inline">
+            Powered by
+          </span>
+          <div className="flex items-center gap-1.5">
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              className="transition-transform group-hover:scale-110"
+            >
+              <path
+                d="M12 2L2 7L12 12L22 7L12 2Z"
+                fill="#7c3aed"
+                className="transition-colors group-hover:fill-purple-600"
+              />
+              <path
+                d="M2 17L12 22L22 17"
+                stroke="#7c3aed"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="transition-colors group-hover:stroke-purple-600"
+              />
+              <path
+                d="M2 12L12 17L22 12"
+                stroke="#7c3aed"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="transition-colors group-hover:stroke-purple-600"
+              />
+            </svg>
+            <span className="text-sm font-semibold text-gray-900 transition-colors group-hover:text-purple-600">
+              KaliFinder
+            </span>
+          </div>
+        </a>
+      </div>
+
+      {/* Desktop Floating Watermark - Right Side Only */}
+      <div className="pb-safe fixed right-6 bottom-6 z-[99999] hidden lg:block">
         <a
           href="https://kalifinder.com"
           target="_blank"
@@ -3379,9 +3433,10 @@ const KalifindSearch: React.FC<{
           style={{
             backdropFilter: 'blur(8px)',
             backgroundColor: 'rgba(255, 255, 255, 0.95)',
+            pointerEvents: 'auto',
           }}
         >
-          <span className="hidden text-xs font-medium text-gray-500 transition-colors group-hover:text-gray-700 sm:inline">
+          <span className="text-xs font-medium text-gray-500 transition-colors group-hover:text-gray-700">
             Powered by
           </span>
           <div className="flex items-center gap-1.5">
@@ -3948,30 +4003,88 @@ const KalifindSearch: React.FC<{
                 Reset
               </button>
             )}
+
+            {/* Desktop Watermark - Inside sidebar at bottom */}
+            <a
+              href="https://kalifinder.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group mt-6 inline-flex w-full items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-3 transition-all hover:border-purple-300 hover:shadow-md"
+              style={{
+                backdropFilter: 'blur(8px)',
+                backgroundColor: 'rgba(255, 255, 255, 0.95)',
+              }}
+            >
+              <span className="text-xs font-medium text-gray-500 transition-colors group-hover:text-gray-700">
+                Powered by
+              </span>
+              <div className="flex items-center gap-1.5">
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  className="transition-transform group-hover:scale-110"
+                >
+                  <path
+                    d="M12 2L2 7L12 12L22 7L12 2Z"
+                    fill="#7c3aed"
+                    className="transition-colors group-hover:fill-purple-600"
+                  />
+                  <path
+                    d="M2 17L12 22L22 17"
+                    stroke="#7c3aed"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="transition-colors group-hover:stroke-purple-600"
+                  />
+                  <path
+                    d="M2 12L12 17L22 12"
+                    stroke="#7c3aed"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="transition-colors group-hover:stroke-purple-600"
+                  />
+                </svg>
+                <span className="text-sm font-semibold text-gray-900 transition-colors group-hover:text-purple-600">
+                  KaliFinder
+                </span>
+              </div>
+            </a>
           </aside>{' '}
           <main ref={mainContentRef} className="kalifinder-results flex-1">
             {recentSearches.length > 0 && (
               <div className="mb-6">
-                <div className="mb-3 flex items-center justify-between">
+                <div className="mb-4 flex items-center justify-between">
                   <h3 className="text-foreground text-base font-semibold">Recent Searches</h3>
                   <button
                     onClick={handleClearRecentSearches}
                     aria-label="Clear all recent searches"
-                    className="text-muted-foreground hover:text-foreground min-h-[44px] px-2 text-sm transition-colors"
+                    className="text-muted-foreground hover:text-foreground min-h-[44px] min-w-[44px] cursor-pointer touch-manipulation rounded-lg px-3 py-2 text-sm font-medium transition-all hover:bg-gray-100 active:scale-95 active:bg-gray-200"
                   >
                     Clear Recent
                   </button>
                 </div>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-2.5">
                   {recentSearches.map((search, index) => (
                     <div
                       key={index}
-                      className="bg-muted flex items-center gap-1 rounded-full px-3 py-1.5"
+                      className="bg-muted hover:bg-muted/80 group flex items-center gap-2 rounded-full border border-gray-200 px-4 py-2 transition-all hover:border-gray-300 hover:shadow-sm"
                     >
                       <span
-                        className="text-foreground cursor-pointer text-sm"
+                        className="text-foreground cursor-pointer text-sm font-medium transition-colors group-hover:text-purple-600"
                         onClick={() => {
                           handleSearch(search);
+                        }}
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            handleSearch(search);
+                          }
                         }}
                       >
                         {search}
@@ -3983,9 +4096,9 @@ const KalifindSearch: React.FC<{
                         }}
                         aria-label={`Remove recent search ${search}`}
                         title={`Remove recent search ${search}`}
-                        className="hover:bg-background rounded-full p-0.5"
+                        className="text-muted-foreground flex min-h-[24px] min-w-[24px] cursor-pointer touch-manipulation items-center justify-center rounded-full p-1 transition-all hover:scale-110 hover:bg-red-100 hover:text-red-600 active:scale-95"
                       >
-                        <X className="text-muted-foreground h-3 w-3" />
+                        <X className="h-3.5 w-3.5" />
                       </button>
                     </div>
                   ))}
@@ -4371,6 +4484,7 @@ const KalifindSearch: React.FC<{
                       addingToCart={addingToCart}
                       handleAddToCart={handleAddToCart}
                       formatPrice={formatPrice}
+                      currencyCode={storeCurrencyCode}
                     />
                   ) : (
                     // Show skeleton loaders while recommendations are loading
@@ -4427,6 +4541,7 @@ const KalifindSearch: React.FC<{
                       isAddingToCart={addingToCart === product.id}
                       calculateDiscountPercentage={calculateDiscountPercentage}
                       formatPrice={formatPrice}
+                      currencyCode={storeCurrencyCode}
                     />
                   ))}
                 </div>

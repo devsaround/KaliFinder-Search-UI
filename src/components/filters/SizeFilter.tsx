@@ -57,7 +57,7 @@ export const SizeFilter: React.FC<SizeFilterProps> = ({
                   if (!disabled) onSizeChange(size);
                 }}
                 disabled={disabled}
-                className={`my-border rounded py-2 text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 lg:text-sm ${
+                className={`my-border min-h-[44px] cursor-pointer touch-manipulation rounded py-2 text-xs font-medium transition-all active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 lg:text-sm ${
                   selectedSizes.includes(size)
                     ? 'bg-primary text-primary-foreground'
                     : 'bg-background hover:bg-accent'

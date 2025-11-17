@@ -4,6 +4,7 @@ import {
   getPrimaryPrice,
   getSecondaryPrice,
   hasValidDiscount,
+  isValidPrice,
 } from '@/utils/price';
 import { memo, useCallback, useMemo } from 'react';
 import type { Product } from '../../types';
@@ -15,6 +16,7 @@ interface ProductCardProps {
   isAddingToCart: boolean;
   calculateDiscountPercentage?: (regularPrice: string, salePrice: string) => number | null;
   formatPrice: (value?: string | null) => string;
+  currencyCode?: string; // Currency code from backend
 }
 
 const ProductCardComponent: React.FC<ProductCardProps> = ({
@@ -24,6 +26,7 @@ const ProductCardComponent: React.FC<ProductCardProps> = ({
   isAddingToCart,
   calculateDiscountPercentage,
   formatPrice,
+  currencyCode, // Currency from backend
 }) => {
   // Memoize expensive calculations
   const hasDiscount = useMemo(
@@ -42,12 +45,15 @@ const ProductCardComponent: React.FC<ProductCardProps> = ({
   const prices = useMemo(() => {
     const primary = getPrimaryPrice(product);
     const secondary = getSecondaryPrice(product);
+    const hasPrimaryPrice = isValidPrice(primary);
 
     return {
-      primary: formatPrice(primary) || primary || '—',
+      primary: hasPrimaryPrice ? formatPrice(primary) || primary : 'No Price',
       secondary: secondary ? formatPrice(secondary) || secondary : null,
+      isValid: hasPrimaryPrice,
+      currencyCode: currencyCode, // Use currency from backend
     };
-  }, [product, formatPrice]);
+  }, [product, formatPrice, currencyCode]);
 
   // Stock status
   const stockStatus = useMemo(() => {
@@ -57,6 +63,19 @@ const ProductCardComponent: React.FC<ProductCardProps> = ({
       isOnBackorder: status === 'onbackorder',
     };
   }, [product.stockStatus]);
+
+  // Check if product requires variant selection
+  // WordPress: variable products need variant selection
+  // Shopify: bundle products cannot be added directly
+  const requiresSelection = useMemo(() => {
+    const type = product.productType?.toLowerCase();
+    return (
+      type === 'variable' || // WordPress variable products
+      type === 'bundle' || // Shopify bundle products
+      type === 'grouped' || // WordPress grouped products
+      type === 'external' // External/affiliate products
+    );
+  }, [product.productType]);
 
   // Memoize event handlers to prevent recreating on every render
   const handleProductClick = useCallback(() => {
@@ -109,12 +128,12 @@ const ProductCardComponent: React.FC<ProductCardProps> = ({
           )}
 
           {/* Discount Badge */}
-          {hasDiscount && discountPercentage && (
+          {hasDiscount && discountPercentage && discountPercentage > 0 && (
             <div
               className="rounded-full border border-white/30 bg-[rgba(124,58,237,0.95)] px-2 py-0.5 text-xs font-bold tracking-wide text-white uppercase shadow-md backdrop-blur-sm sm:text-sm"
-              aria-label={`${discountPercentage}% discount`}
+              aria-label={`${Math.abs(discountPercentage)}% discount`}
             >
-              -{discountPercentage}%
+              {Math.abs(discountPercentage)}% OFF
             </div>
           )}
 
@@ -141,7 +160,7 @@ const ProductCardComponent: React.FC<ProductCardProps> = ({
 
         {/* View Product Overlay - Shown on hover */}
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity duration-300 group-focus-within:opacity-100 group-hover:opacity-100">
-          <span className="rounded-lg bg-white px-4 py-2 text-sm font-semibold text-purple-600 shadow-lg transition-all duration-200 hover:bg-purple-600 hover:text-white active:scale-95 sm:px-6 sm:py-2.5 sm:text-base">
+          <span className="text-black-600 rounded-lg bg-white px-4 py-2 text-sm font-semibold shadow-lg transition-all duration-200 hover:bg-purple-600 hover:text-white active:scale-95 sm:px-6 sm:py-2.5 sm:text-base">
             View Product
           </span>
         </div>
@@ -161,7 +180,7 @@ const ProductCardComponent: React.FC<ProductCardProps> = ({
         {/* Price and Add to Cart */}
         <div className="flex flex-wrap items-center justify-between gap-2">
           {/* Price */}
-          <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1 sm:gap-2">
+          <div className="flex min-w-0 flex-1 flex-wrap items-baseline gap-1">
             {hasDiscount && prices.primary ? (
               <>
                 {prices.secondary && (
@@ -187,12 +206,20 @@ const ProductCardComponent: React.FC<ProductCardProps> = ({
                 {prices.primary}
               </span>
             )}
+            {/* Currency Code - Inline after price */}
+            {prices.currencyCode && (
+              <span className="text-[11px] font-semibold text-gray-500 uppercase sm:text-xs">
+                {prices.currencyCode}
+              </span>
+            )}
           </div>
 
           {/* Add to Cart Button - Industry Standard */}
           <button
             onClick={handleAddToCart}
-            disabled={isAddingToCart || stockStatus.isOutOfStock}
+            disabled={
+              isAddingToCart || stockStatus.isOutOfStock || !prices.isValid || requiresSelection
+            }
             className="group/cart relative z-10 flex h-10 min-h-[44px] w-10 min-w-[44px] shrink-0 cursor-pointer touch-manipulation items-center justify-center rounded-lg bg-purple-600 p-2 text-white shadow-md transition-all duration-200 hover:bg-purple-700 hover:shadow-lg focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2 focus-visible:outline-none active:scale-95 disabled:cursor-not-allowed disabled:bg-gray-400 disabled:opacity-60 disabled:shadow-none sm:h-11 sm:w-11"
             aria-label={`Add ${product.title} to cart`}
             title={
@@ -200,7 +227,11 @@ const ProductCardComponent: React.FC<ProductCardProps> = ({
                 ? 'Adding to cart...'
                 : stockStatus.isOutOfStock
                   ? 'Out of stock'
-                  : `Add ${product.title} to cart`
+                  : !prices.isValid
+                    ? 'No price available'
+                    : requiresSelection
+                      ? 'Select options to purchase'
+                      : `Add ${product.title} to cart`
             }
           >
             {isAddingToCart ? (

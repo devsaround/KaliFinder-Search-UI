@@ -58,7 +58,7 @@ export function calculateDiscountPercentage(
   if (!regular || !sale || regular <= sale) return null;
 
   const discount = ((regular - sale) / regular) * 100;
-  return Math.round(discount);
+  return Math.round(Math.abs(discount)); // Ensure always positive
 }
 
 /**
@@ -69,6 +69,24 @@ export function hasValidDiscount(regularPrice?: string | null, salePrice?: strin
   const sale = parsePriceToNumber(salePrice);
 
   return !!(regular !== undefined && sale !== undefined && sale < regular && sale > 0);
+}
+
+/**
+ * Check if a price is valid and purchasable
+ */
+export function isValidPrice(price?: string | number | null): boolean {
+  if (price === null || price === undefined) return false;
+
+  // Handle number type
+  if (typeof price === 'number') {
+    return Number.isFinite(price) && price > 0;
+  }
+
+  // Handle string type
+  if (typeof price !== 'string' || price.trim() === '') return false;
+
+  const parsed = parsePriceToNumber(price);
+  return parsed !== undefined && parsed > 0;
 }
 
 /**
