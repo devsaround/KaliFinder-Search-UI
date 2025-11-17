@@ -82,7 +82,7 @@
   align-items: center;
   justify-content: center;
   animation: kf-fade-in 300ms ease-out;
-  overflow-y: auto;
+  /* overflow-y: auto; */
   pointer-events: auto;
   padding: var(--space-4);
   /* Ensure modal starts from top of visible viewport */

@@ -551,6 +551,36 @@ const KalifindSearch: React.FC<{
     return () => window.removeEventListener('resize', checkIsMobile);
   }, []);
 
+  // Lock body scroll when drawer is open (prevent background scrolling)
+  useEffect(() => {
+    if (isDrawerOpen) {
+      // Save current scroll position
+      const scrollY = window.scrollY;
+      document.body.style.position = 'fixed';
+      document.body.style.top = `-${scrollY}px`;
+      document.body.style.width = '100%';
+      document.body.style.overflow = 'hidden';
+    } else {
+      // Restore scroll position
+      const scrollY = document.body.style.top;
+      document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.width = '';
+      document.body.style.overflow = '';
+      if (scrollY) {
+        window.scrollTo(0, parseInt(scrollY || '0') * -1);
+      }
+    }
+
+    return () => {
+      // Cleanup on unmount
+      document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.width = '';
+      document.body.style.overflow = '';
+    };
+  }, [isDrawerOpen]);
+
   // ✅ iOS 26 Virtual Keyboard Bug Fix + Safe Area Handling
   // Workaround for position:fixed bugs with virtual keyboard on iOS 26
   // Combined with standard env() safe-area-inset for cross-browser compatibility
@@ -2473,7 +2503,10 @@ const KalifindSearch: React.FC<{
   );
 
   return (
-    <div className="bg-background box-border w-full overflow-y-auto font-sans antialiased">
+    <div
+      className="bg-background box-border w-full overflow-y-auto font-sans antialiased"
+      style={{ minHeight: '100vh' }}
+    >
       {!hideHeader && (
         <div className="bg-background border-border/40 sticky top-0 z-50 border-b py-3 shadow-sm backdrop-blur-sm lg:py-4">
           <div className="mx-auto flex items-center justify-between gap-2 px-2 sm:gap-4 sm:px-4 lg:gap-6 lg:px-5">
@@ -2735,11 +2768,12 @@ const KalifindSearch: React.FC<{
 
       {/* Mobile Floating Container - Filter Button + Watermark */}
       <div
-        className="fixed inset-x-0 z-[10001] flex items-end justify-between px-4"
+        className="pb-safe fixed inset-x-0 z-[99999] flex items-end justify-between gap-3 px-4 lg:hidden"
         style={{
-          bottom: `calc(2rem + env(safe-area-inset-bottom))`,
-          transition: 'opacity 0.2s ease-out',
+          bottom: 'max(1.5rem, env(safe-area-inset-bottom, 1.5rem))',
+          transition: 'opacity 0.2s ease-out, transform 0.2s ease-out',
           opacity: isDrawerOpen ? 0 : 1,
+          transform: isDrawerOpen ? 'translateY(100%)' : 'translateY(0)',
           pointerEvents: isDrawerOpen ? 'none' : 'auto',
         }}
       >
@@ -2766,7 +2800,8 @@ const KalifindSearch: React.FC<{
                   filters.tags.length +
                   filters.stockStatus.length +
                   filters.featuredProducts.length +
-                  filters.saleStatus.length}
+                  filters.saleStatus.length +
+                  (filters.priceRange[1] < filteredMaxPrice ? 1 : 0)}
               </span>
             </button>
           </DrawerTrigger>
@@ -2776,8 +2811,8 @@ const KalifindSearch: React.FC<{
               <div className="mx-auto h-1 w-12 rounded-full bg-gray-300" />
             </div>
 
-            {/* Mobile Filter Header - Industry standard with close button */}
-            <div className="sticky top-0 z-10 flex flex-shrink-0 items-center justify-between border-b border-gray-200 bg-white px-5 py-4 shadow-sm">
+            {/* Mobile Filter Header - Shows active filters */}
+            <div className="sticky top-0 z-10 flex flex-shrink-0 flex-col border-b border-gray-200 bg-white px-5 py-4 shadow-sm">
               <div className="flex items-center gap-2.5">
                 <Filter className="h-5 w-5 text-purple-600" />
                 <h2 className="text-xl font-bold text-gray-900">Filters</h2>
@@ -2788,7 +2823,8 @@ const KalifindSearch: React.FC<{
                   filters.tags.length +
                   filters.stockStatus.length +
                   filters.featuredProducts.length +
-                  filters.saleStatus.length >
+                  filters.saleStatus.length +
+                  (filters.priceRange[1] < filteredMaxPrice ? 1 : 0) >
                   0 && (
                   <span className="rounded-full bg-purple-600 px-2.5 py-1 text-xs font-bold text-white">
                     {filters.categories.length +
@@ -2798,19 +2834,98 @@ const KalifindSearch: React.FC<{
                       filters.tags.length +
                       filters.stockStatus.length +
                       filters.featuredProducts.length +
-                      filters.saleStatus.length}
+                      filters.saleStatus.length +
+                      (filters.priceRange[1] < filteredMaxPrice ? 1 : 0)}
                   </span>
                 )}
               </div>
-              <DrawerClose asChild>
-                <button
-                  className="flex h-9 w-9 cursor-pointer touch-manipulation items-center justify-center rounded-full bg-gray-100 text-gray-600 transition-colors hover:bg-gray-200 active:bg-gray-300"
-                  aria-label="Close filters"
-                  title="Close filters"
+
+              {/* Active Filters Display */}
+              {(filters.categories.length > 0 ||
+                filters.colors.length > 0 ||
+                filters.sizes.length > 0 ||
+                filters.brands.length > 0 ||
+                filters.tags.length > 0 ||
+                filters.stockStatus.length > 0 ||
+                filters.featuredProducts.length > 0 ||
+                filters.saleStatus.length > 0 ||
+                filters.priceRange[1] < filteredMaxPrice) && (
+                <div
+                  className="mt-3 flex flex-nowrap gap-2 overflow-x-auto overflow-y-hidden pb-2"
+                  style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
                 >
-                  <X className="h-5 w-5" />
-                </button>
-              </DrawerClose>
+                  <style>{`.mt-3::-webkit-scrollbar { display: none; }`}</style>
+                  {filters.categories.map((category) => (
+                    <span
+                      key={category}
+                      className="inline-flex flex-shrink-0 items-center gap-1 rounded-full bg-purple-100 px-2.5 py-1 text-xs font-medium whitespace-nowrap text-purple-700"
+                    >
+                      {category.split(' > ').pop()}
+                    </span>
+                  ))}
+                  {filters.brands.map((brand) => (
+                    <span
+                      key={brand}
+                      className="inline-flex flex-shrink-0 items-center gap-1 rounded-full bg-blue-100 px-2.5 py-1 text-xs font-medium whitespace-nowrap text-blue-700"
+                    >
+                      {brand}
+                    </span>
+                  ))}
+                  {filters.sizes.map((size) => (
+                    <span
+                      key={size}
+                      className="inline-flex flex-shrink-0 items-center gap-1 rounded-full bg-green-100 px-2.5 py-1 text-xs font-medium whitespace-nowrap text-green-700"
+                    >
+                      {size}
+                    </span>
+                  ))}
+                  {filters.colors.map((color) => (
+                    <span
+                      key={color}
+                      className="inline-flex flex-shrink-0 items-center gap-1 rounded-full bg-pink-100 px-2.5 py-1 text-xs font-medium whitespace-nowrap text-pink-700"
+                    >
+                      {color}
+                    </span>
+                  ))}
+                  {filters.tags.map((tag) => (
+                    <span
+                      key={tag}
+                      className="inline-flex flex-shrink-0 items-center gap-1 rounded-full bg-amber-100 px-2.5 py-1 text-xs font-medium whitespace-nowrap text-amber-700"
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                  {filters.stockStatus.map((status) => (
+                    <span
+                      key={status}
+                      className="inline-flex flex-shrink-0 items-center gap-1 rounded-full bg-teal-100 px-2.5 py-1 text-xs font-medium whitespace-nowrap text-teal-700"
+                    >
+                      {status}
+                    </span>
+                  ))}
+                  {filters.featuredProducts.map((status) => (
+                    <span
+                      key={status}
+                      className="inline-flex flex-shrink-0 items-center gap-1 rounded-full bg-yellow-100 px-2.5 py-1 text-xs font-medium whitespace-nowrap text-yellow-700"
+                    >
+                      {status}
+                    </span>
+                  ))}
+                  {filters.saleStatus.map((status) => (
+                    <span
+                      key={status}
+                      className="inline-flex flex-shrink-0 items-center gap-1 rounded-full bg-red-100 px-2.5 py-1 text-xs font-medium whitespace-nowrap text-red-700"
+                    >
+                      {status}
+                    </span>
+                  ))}
+                  {filters.priceRange[1] < filteredMaxPrice && (
+                    <span className="inline-flex flex-shrink-0 items-center gap-1 rounded-full bg-indigo-100 px-2.5 py-1 text-xs font-medium whitespace-nowrap text-indigo-700">
+                      Max: {filters.priceRange[1]}€
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Scrollable Filter Content - Proper scrolling with industry standard styling */}
@@ -2821,6 +2936,12 @@ const KalifindSearch: React.FC<{
                 e.stopPropagation();
               }}
               onTouchMove={(e) => {
+                e.stopPropagation();
+              }}
+              onWheel={(e) => {
+                e.stopPropagation();
+              }}
+              onMouseDown={(e) => {
                 e.stopPropagation();
               }}
               style={{
@@ -3204,7 +3325,7 @@ const KalifindSearch: React.FC<{
                 <button
                   onClick={handleClearAll}
                   disabled={!isAnyFilterActive}
-                  className="flex h-[52px] min-w-[52px] cursor-pointer touch-manipulation items-center justify-center rounded-xl px-4 text-base font-semibold text-gray-700 transition-all hover:bg-gray-50 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40"
+                  className="flex h-[52px] min-w-[52px] cursor-pointer touch-manipulation items-center justify-center rounded-xl border-2 border-gray-300 bg-white px-4 text-base font-semibold text-gray-500 transition-all hover:bg-gray-50 active:scale-[0.98] disabled:cursor-not-allowed disabled:text-gray-300"
                   aria-label="Reset all filters"
                   title="Reset all filters"
                 >
@@ -3300,7 +3421,7 @@ const KalifindSearch: React.FC<{
         </a>
       </div>
 
-      <div className="mx-auto w-full px-2 lg:px-4">
+      <div className="mx-auto w-full px-2 pb-32 lg:px-4 lg:pb-0">
         <div className="flex w-full gap-6 py-4">
           <aside className="sticky top-24 hidden w-72 flex-shrink-0 rounded-xl border border-gray-200 bg-white px-4 shadow-sm lg:block">
             <Accordion
