@@ -141,7 +141,7 @@ const ProductCardComponent: React.FC<ProductCardProps> = ({
 
         {/* View Product Overlay - Shown on hover */}
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity duration-300 group-focus-within:opacity-100 group-hover:opacity-100">
-          <span className="min-h-[44px] rounded-lg bg-white px-4 py-2 text-sm font-semibold text-purple-600 shadow-lg transition-all duration-200 hover:bg-purple-600 hover:text-white active:scale-95 sm:px-6 sm:py-2.5 sm:text-base">
+          <span className="rounded-lg bg-white px-4 py-2 text-sm font-semibold text-purple-600 shadow-lg transition-all duration-200 hover:bg-purple-600 hover:text-white active:scale-95 sm:px-6 sm:py-2.5 sm:text-base">
             View Product
           </span>
         </div>
