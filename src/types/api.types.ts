@@ -81,6 +81,8 @@ export interface SearchResponse {
   // ✅ NEW: Zero-results handling fields
   message?: string; // User-friendly message (e.g., "No results found for 'pants'")
   showingRecommended?: boolean; // Flag indicating recommended products are shown instead of search results
+  // ✅ NEW: Store currency from backend (e.g., "USD", "EUR")
+  currency?: string | null; // Store currency for price display
 }
 
 export interface AutocompleteSuggestion {

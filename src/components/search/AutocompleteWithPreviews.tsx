@@ -5,7 +5,6 @@
 
 import { Search } from '@/components/icons';
 import type { Product } from '@/types';
-import React from 'react';
 
 interface AutocompleteWithPreviewsProps {
   suggestions: string[];

@@ -166,8 +166,5 @@
   .kalifinder-widget-content > div > div[class*='fixed'][class*='z-\\[10001\\]'] {
     position: fixed !important;
     z-index: 10001 !important;
-    /* Ensure they're positioned relative to viewport, not scrollable container */
-    transform: translateZ(0) !important;
-    will-change: transform !important;
   }
 }

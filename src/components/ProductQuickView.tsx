@@ -6,7 +6,7 @@
 import { ShoppingCart, X } from '@/components/icons';
 import type { Product } from '@/types';
 import { parsePriceToNumber } from '@/utils/price';
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 
 interface ProductQuickViewProps {
   product: Product | null;

@@ -7,10 +7,6 @@
    WIDGET ROOT
    ======================================== */
 
-/* ========================================
-   WIDGET ROOT
-   ======================================== */
-
 .kalifinder-widget-root {
   /* CRITICAL: Reset all transforms and zoom to fix WordPress scaling issues */
   /* These must come FIRST and with !important to override any external styles */
@@ -111,7 +107,7 @@
   position: relative;
   background: var(--background) !important;
   background-color: var(--background) !important;
-  border-radius: var(--radius-xl);
+  /* border-radius: var(--radius-xl); */
   box-shadow: var(--shadow-xl);
   animation: kf-slide-up 300ms var(--easing-out);
   width: 95%;

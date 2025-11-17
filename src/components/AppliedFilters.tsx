@@ -5,7 +5,6 @@
 
 import { X } from '@/components/icons';
 import type { FilterState } from '@/types';
-import React from 'react';
 
 interface AppliedFiltersProps {
   filters: FilterState;

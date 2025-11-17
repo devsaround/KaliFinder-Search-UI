@@ -4,8 +4,7 @@
  * Used for: Featured, Sale, etc.
  */
 
-import React from 'react';
-import { AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion';
+import { AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 export interface ToggleFilterProps {
   // Identification
@@ -31,7 +30,7 @@ export const ToggleFilter: React.FC<ToggleFilterProps> = ({
 }) => {
   return (
     <AccordionItem value={id}>
-      <AccordionTrigger className="text-foreground text-[16px] lg:text-[18px]">
+      <AccordionTrigger className="text-foreground text-[14px] lg:text-[15px]">
         <b>{title}</b>
       </AccordionTrigger>
       <AccordionContent>

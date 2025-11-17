@@ -1,5 +1,5 @@
 import { ChevronUp } from '@/components/icons';
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 interface ScrollToTopProps {
   containerRef?: React.RefObject<HTMLElement | null>;

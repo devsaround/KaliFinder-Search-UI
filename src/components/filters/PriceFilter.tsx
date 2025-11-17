@@ -5,7 +5,6 @@
 
 import { AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Slider } from '@/components/ui/slider';
-import React from 'react';
 
 export interface PriceFilterProps {
   // Range
@@ -51,12 +50,12 @@ export const PriceFilter: React.FC<PriceFilterProps> = ({
 
   return (
     <AccordionItem value="price">
-      <AccordionTrigger className="text-foreground text-base font-semibold lg:text-lg">
+      <AccordionTrigger className="text-foreground text-[14px] font-semibold lg:text-[15px]">
         Price Range
       </AccordionTrigger>
-      <AccordionContent className="space-y-4 pt-2">
+      <AccordionContent className="space-y-3 pt-1">
         {/* Price Input Fields */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           <div className="flex-1">
             <label
               htmlFor="min-price"
@@ -78,7 +77,7 @@ export const PriceFilter: React.FC<PriceFilterProps> = ({
                 max={priceRange[1]}
                 title={`Minimum price in ${currency}`}
                 placeholder={`Enter minimum price (${currency})`}
-                className="border-border text-foreground focus:border-primary focus:ring-primary/20 w-full rounded-md border bg-white py-2 pr-3 pl-8 text-sm transition-colors focus:ring-2 focus:outline-none disabled:opacity-50"
+                className="border-border text-foreground focus:border-primary focus:ring-primary/20 w-full rounded-md border bg-white py-1.5 pr-2 pl-7 text-xs transition-colors focus:ring-2 focus:outline-none disabled:opacity-50"
               />
             </div>
           </div>
@@ -103,14 +102,14 @@ export const PriceFilter: React.FC<PriceFilterProps> = ({
                 max={maxPrice}
                 title={`Maximum price in ${currency}`}
                 placeholder={`Enter maximum price (${currency})`}
-                className="border-border text-foreground focus:border-primary focus:ring-primary/20 w-full rounded-md border bg-white py-2 pr-3 pl-8 text-sm transition-colors focus:ring-2 focus:outline-none disabled:opacity-50"
+                className="border-border text-foreground focus:border-primary focus:ring-primary/20 w-full rounded-md border bg-white py-1.5 pr-2 pl-7 text-xs transition-colors focus:ring-2 focus:outline-none disabled:opacity-50"
               />
             </div>
           </div>
         </div>
 
         {/* Slider */}
-        <div className="px-1 py-2">
+        <div className="px-1 py-1">
           <Slider
             value={[priceRange[0], priceRange[1]]}
             onValueChange={handleSliderChange}
@@ -123,9 +122,9 @@ export const PriceFilter: React.FC<PriceFilterProps> = ({
         </div>
 
         {/* Price Range Display */}
-        <div className="bg-muted/30 rounded-md p-3">
-          <div className="text-muted-foreground mb-1 text-xs font-medium">Selected Range</div>
-          <div className="text-foreground text-sm font-semibold">
+        <div className="bg-muted/30 rounded-md p-2">
+          <div className="text-muted-foreground mb-0.5 text-[10px] font-medium">Selected Range</div>
+          <div className="text-foreground text-xs font-semibold">
             {priceRange[0]} {currency} — {priceRange[1]} {currency}
           </div>
         </div>

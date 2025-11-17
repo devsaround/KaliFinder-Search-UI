@@ -5,7 +5,6 @@
 
 import { AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Skeleton } from '@/components/ui/skeleton';
-import React from 'react';
 
 export interface ColorFilterProps {
   // Data
@@ -33,7 +32,7 @@ export const ColorFilter: React.FC<ColorFilterProps> = ({
 }) => {
   return (
     <AccordionItem value="color">
-      <AccordionTrigger className="text-foreground text-[16px] lg:text-[18px]">
+      <AccordionTrigger className="text-foreground text-[14px] lg:text-[15px]">
         <b>Color</b>
       </AccordionTrigger>
       <AccordionContent>
@@ -46,7 +45,7 @@ export const ColorFilter: React.FC<ColorFilterProps> = ({
           </div>
         ) : colors.length > 0 ? (
           // Color circles
-          <div className="flex flex-wrap gap-[8px]">
+          <div className="flex flex-wrap gap-[6px]">
             {colors.map((color) => (
               <button
                 type="button"
@@ -61,13 +60,9 @@ export const ColorFilter: React.FC<ColorFilterProps> = ({
                     : 'border-border hover:scale-105'
                 }`}
                 data-color={color.toLowerCase()}
-                title={`Filter by color`}
-                aria-label={`Filter by color`}
-                // This is the updated line
-                aria-pressed={selectedColors.includes(color)}
-                style={{
-                  backgroundColor: color.toLowerCase(),
-                }}
+                title={`Filter by ${color} color`}
+                aria-label={`Filter by ${color} color`}
+                aria-pressed={selectedColors.includes(color) ? 'true' : 'false'}
               />
             ))}
           </div>

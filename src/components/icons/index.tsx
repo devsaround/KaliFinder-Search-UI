@@ -4,13 +4,13 @@
  * Each icon is an inline SVG component
  */
 
-import React from 'react';
+import type { SVGProps } from 'react';
 
-interface IconProps extends React.SVGProps<SVGSVGElement> {
+interface IconProps extends SVGProps<SVGSVGElement> {
   className?: string;
 }
 
-export const Search: React.FC<IconProps> = ({ className, ...props }) => (
+export const Search = ({ className, ...props }: IconProps) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
     width="24"
@@ -29,7 +29,7 @@ export const Search: React.FC<IconProps> = ({ className, ...props }) => (
   </svg>
 );
 
-export const X: React.FC<IconProps> = ({ className, ...props }) => (
+export const X = ({ className, ...props }: IconProps) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
     width="24"
@@ -48,7 +48,7 @@ export const X: React.FC<IconProps> = ({ className, ...props }) => (
   </svg>
 );
 
-export const ChevronDown: React.FC<IconProps> = ({ className, ...props }) => (
+export const ChevronDown = ({ className, ...props }: IconProps) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
     width="24"
@@ -66,7 +66,7 @@ export const ChevronDown: React.FC<IconProps> = ({ className, ...props }) => (
   </svg>
 );
 
-export const ChevronUp: React.FC<IconProps> = ({ className, ...props }) => (
+export const ChevronUp = ({ className, ...props }: IconProps) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
     width="24"
@@ -84,7 +84,7 @@ export const ChevronUp: React.FC<IconProps> = ({ className, ...props }) => (
   </svg>
 );
 
-export const ChevronRight: React.FC<IconProps> = ({ className, ...props }) => (
+export const ChevronRight = ({ className, ...props }: IconProps) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
     width="24"
@@ -102,7 +102,7 @@ export const ChevronRight: React.FC<IconProps> = ({ className, ...props }) => (
   </svg>
 );
 
-export const ShoppingCart: React.FC<IconProps> = ({ className, ...props }) => (
+export const ShoppingCart = ({ className, ...props }: IconProps) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
     width="24"
@@ -122,7 +122,7 @@ export const ShoppingCart: React.FC<IconProps> = ({ className, ...props }) => (
   </svg>
 );
 
-export const Filter: React.FC<IconProps> = ({ className, ...props }) => (
+export const Filter = ({ className, ...props }: IconProps) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
     width="24"
@@ -140,7 +140,7 @@ export const Filter: React.FC<IconProps> = ({ className, ...props }) => (
   </svg>
 );
 
-export const Check: React.FC<IconProps> = ({ className, ...props }) => (
+export const Check = ({ className, ...props }: IconProps) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
     width="24"
@@ -158,7 +158,7 @@ export const Check: React.FC<IconProps> = ({ className, ...props }) => (
   </svg>
 );
 
-export const Circle: React.FC<IconProps> = ({ className, ...props }) => (
+export const Circle = ({ className, ...props }: IconProps) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
     width="24"

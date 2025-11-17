@@ -4,6 +4,151 @@
  */
 
 /* ========================================
+   COLOR FILTER STYLES
+   ======================================== */
+
+/**
+ * Color Filter Swatches
+ * Dynamic background colors based on data-color attribute
+ * Supports all standard CSS color names
+ */
+[data-color='red'] {
+  background-color: red;
+}
+[data-color='blue'] {
+  background-color: blue;
+}
+[data-color='green'] {
+  background-color: green;
+}
+[data-color='yellow'] {
+  background-color: yellow;
+}
+[data-color='orange'] {
+  background-color: orange;
+}
+[data-color='purple'] {
+  background-color: purple;
+}
+[data-color='pink'] {
+  background-color: pink;
+}
+[data-color='brown'] {
+  background-color: brown;
+}
+[data-color='black'] {
+  background-color: black;
+}
+[data-color='white'] {
+  background-color: white;
+}
+[data-color='gray'] {
+  background-color: gray;
+}
+[data-color='grey'] {
+  background-color: grey;
+}
+[data-color='silver'] {
+  background-color: silver;
+}
+[data-color='gold'] {
+  background-color: gold;
+}
+[data-color='navy'] {
+  background-color: navy;
+}
+[data-color='teal'] {
+  background-color: teal;
+}
+[data-color='cyan'] {
+  background-color: cyan;
+}
+[data-color='lime'] {
+  background-color: lime;
+}
+[data-color='maroon'] {
+  background-color: maroon;
+}
+[data-color='olive'] {
+  background-color: olive;
+}
+[data-color='beige'] {
+  background-color: beige;
+}
+[data-color='tan'] {
+  background-color: tan;
+}
+[data-color='khaki'] {
+  background-color: khaki;
+}
+[data-color='ivory'] {
+  background-color: ivory;
+}
+[data-color='lavender'] {
+  background-color: lavender;
+}
+[data-color='mint'] {
+  background-color: #98ff98;
+}
+[data-color='coral'] {
+  background-color: coral;
+}
+[data-color='salmon'] {
+  background-color: salmon;
+}
+[data-color='peach'] {
+  background-color: #ffe5b4;
+}
+[data-color='crimson'] {
+  background-color: crimson;
+}
+[data-color='indigo'] {
+  background-color: indigo;
+}
+[data-color='violet'] {
+  background-color: violet;
+}
+[data-color='magenta'] {
+  background-color: magenta;
+}
+[data-color='turquoise'] {
+  background-color: turquoise;
+}
+[data-color='aqua'] {
+  background-color: aqua;
+}
+[data-color='plum'] {
+  background-color: plum;
+}
+[data-color='burgundy'] {
+  background-color: #800020;
+}
+[data-color='mustard'] {
+  background-color: #ffdb58;
+}
+[data-color='charcoal'] {
+  background-color: #36454f;
+}
+[data-color='cream'] {
+  background-color: #fffdd0;
+}
+[data-color='mauve'] {
+  background-color: #e0b0ff;
+}
+[data-color='rose'] {
+  background-color: #ff007f;
+}
+[data-color='rust'] {
+  background-color: #b7410e;
+}
+[data-color='sage'] {
+  background-color: #bcb88a;
+}
+[data-color='taupe'] {
+  background-color: #483c32;
+}
+
+/* ========================================
    FILTER SIDEBAR CONTAINER
    ======================================== */
 
@@ -180,9 +325,9 @@
   flex: 1 1 0%;
   align-items: center;
   justify-content: space-between;
-  padding: var(--space-4) 0;
+  padding: var(--space-2) 0;
   font-weight: var(--font-weight-bold);
-  font-size: var(--font-size-base);
+  font-size: var(--font-size-sm);
   cursor: pointer;
   transition: all var(--transition-base);
   width: 100%;
@@ -231,7 +376,7 @@
 
 .kalifinder-widget-content [data-radix-accordion-content] > div {
   padding-top: 0;
-  padding-bottom: var(--space-4);
+  padding-bottom: var(--space-2);
   width: 100%;
   box-sizing: border-box;
 }
@@ -433,4 +578,38 @@
 
 .kalifinder-widget-content .gap-4 {
   gap: var(--space-4);
+}
+
+/* ========================================
+   MOBILE DRAWER SCROLLBAR
+   ======================================== */
+
+/* Ensure vaul allows scrolling in this area */
+.vaul-scrollable {
+  touch-action: pan-y !important;
+  -webkit-overflow-scrolling: touch !important;
+  overscroll-behavior: contain !important;
+}
+
+/* Scrollbar for mobile filter drawer */
+[data-vaul-no-drag]::-webkit-scrollbar,
+.vaul-scrollable::-webkit-scrollbar {
+  width: 8px;
+}
+
+[data-vaul-no-drag]::-webkit-scrollbar-track,
+.vaul-scrollable::-webkit-scrollbar-track {
+  background: #f3f4f6;
+  border-radius: 4px;
+}
+
+[data-vaul-no-drag]::-webkit-scrollbar-thumb,
+.vaul-scrollable::-webkit-scrollbar-thumb {
+  background: #9333ea;
+  border-radius: 4px;
+}
+
+[data-vaul-no-drag]::-webkit-scrollbar-thumb:hover,
+.vaul-scrollable::-webkit-scrollbar-thumb:hover {
+  background: #7e22ce;
 }

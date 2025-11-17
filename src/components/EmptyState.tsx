@@ -4,7 +4,6 @@
  */
 
 import { Search } from '@/components/icons';
-import React from 'react';
 
 interface EmptyStateProps {
   title?: string;

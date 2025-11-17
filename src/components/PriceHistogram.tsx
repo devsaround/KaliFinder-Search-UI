@@ -3,7 +3,7 @@
  * Visual representation of price distribution
  */
 
-import React, { useMemo } from 'react';
+import { useMemo } from 'react';
 import type { Product } from '../types';
 
 interface PriceHistogramProps {

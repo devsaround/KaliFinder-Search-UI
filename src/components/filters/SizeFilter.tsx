@@ -3,9 +3,8 @@
  * Size selection with button grid
  */
 
-import React from 'react';
+import { AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Skeleton } from '@/components/ui/skeleton';
-import { AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion';
 
 export interface SizeFilterProps {
   // Data
@@ -37,7 +36,7 @@ export const SizeFilter: React.FC<SizeFilterProps> = ({
 
   return (
     <AccordionItem value="size">
-      <AccordionTrigger className="text-foreground text-[16px] lg:text-[18px]">
+      <AccordionTrigger className="text-foreground text-[14px] lg:text-[15px]">
         <b>Size</b>
       </AccordionTrigger>
       <AccordionContent>

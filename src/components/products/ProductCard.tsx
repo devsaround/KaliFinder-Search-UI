@@ -5,7 +5,7 @@ import {
   getSecondaryPrice,
   hasValidDiscount,
 } from '@/utils/price';
-import React, { memo, useCallback, useMemo } from 'react';
+import { memo, useCallback, useMemo } from 'react';
 import type { Product } from '../../types';
 
 interface ProductCardProps {
@@ -79,8 +79,7 @@ const ProductCardComponent: React.FC<ProductCardProps> = ({
     >
       {/* Product Image */}
       <div
-        className="relative aspect-square cursor-pointer overflow-hidden"
-        style={{ backgroundColor: 'oklch(82.7% 0.119 306.383)' }}
+        className="relative aspect-square cursor-pointer touch-manipulation overflow-hidden bg-[oklch(82.7%_0.119_306.383)]"
         onClick={handleProductClick}
         role="button"
         tabIndex={0}
@@ -104,10 +103,7 @@ const ProductCardComponent: React.FC<ProductCardProps> = ({
         <div className="absolute top-2 right-2 left-2 flex flex-wrap gap-1" aria-live="polite">
           {/* Featured Badge */}
           {product.featured && (
-            <div
-              className="rounded-full border border-white/30 px-2 py-0.5 text-xs font-bold tracking-wide text-white uppercase shadow-md backdrop-blur-sm sm:text-sm"
-              style={{ backgroundColor: 'rgba(124, 58, 237, 0.95)' }}
-            >
+            <div className="rounded-full border border-white/30 bg-[rgba(124,58,237,0.95)] px-2 py-0.5 text-xs font-bold tracking-wide text-white uppercase shadow-md backdrop-blur-sm sm:text-sm">
               ⭐ Featured
             </div>
           )}
@@ -115,8 +111,7 @@ const ProductCardComponent: React.FC<ProductCardProps> = ({
           {/* Discount Badge */}
           {hasDiscount && discountPercentage && (
             <div
-              className="rounded-full border border-white/30 px-2 py-0.5 text-xs font-bold tracking-wide text-white uppercase shadow-md backdrop-blur-sm sm:text-sm"
-              style={{ backgroundColor: 'rgba(124, 58, 237, 0.95)' }}
+              className="rounded-full border border-white/30 bg-[rgba(124,58,237,0.95)] px-2 py-0.5 text-xs font-bold tracking-wide text-white uppercase shadow-md backdrop-blur-sm sm:text-sm"
               aria-label={`${discountPercentage}% discount`}
             >
               -{discountPercentage}%
@@ -126,8 +121,7 @@ const ProductCardComponent: React.FC<ProductCardProps> = ({
           {/* Out of Stock Badge */}
           {stockStatus.isOutOfStock && (
             <div
-              className="rounded-full border border-white/30 px-2 py-0.5 text-xs font-bold tracking-wide text-white uppercase shadow-md backdrop-blur-sm sm:text-sm"
-              style={{ backgroundColor: 'rgba(220, 38, 38, 0.95)' }}
+              className="rounded-full border border-white/30 bg-[rgba(220,38,38,0.95)] px-2 py-0.5 text-xs font-bold tracking-wide text-white uppercase shadow-md backdrop-blur-sm sm:text-sm"
               aria-label="Out of stock"
             >
               Out of Stock
@@ -137,8 +131,7 @@ const ProductCardComponent: React.FC<ProductCardProps> = ({
           {/* On Backorder Badge */}
           {stockStatus.isOnBackorder && (
             <div
-              className="rounded-full border border-white/30 px-2 py-0.5 text-xs font-bold tracking-wide text-white uppercase shadow-md backdrop-blur-sm sm:text-sm"
-              style={{ backgroundColor: 'rgba(251, 146, 60, 0.95)' }}
+              className="rounded-full border border-white/30 bg-[rgba(251,146,60,0.95)] px-2 py-0.5 text-xs font-bold tracking-wide text-white uppercase shadow-md backdrop-blur-sm sm:text-sm"
               aria-label="On backorder"
             >
               On Backorder
@@ -146,45 +139,41 @@ const ProductCardComponent: React.FC<ProductCardProps> = ({
           )}
         </div>
 
-        {/* View Product Button - Shown on hover, accessible via keyboard */}
-        <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity duration-300 group-focus-within:opacity-100 group-hover:opacity-100">
-          <button
-            onClick={handleProductClick}
-            aria-label={`View details for ${product.title}`}
-            className="min-h-[44px] cursor-pointer rounded-lg bg-white px-4 py-2 text-sm font-semibold text-purple-600 shadow-lg transition-all duration-200 hover:bg-purple-600 hover:text-white focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:outline-none active:scale-95 sm:px-6 sm:py-2.5 sm:text-base"
-          >
+        {/* View Product Overlay - Shown on hover */}
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity duration-300 group-focus-within:opacity-100 group-hover:opacity-100">
+          <span className="min-h-[44px] rounded-lg bg-white px-4 py-2 text-sm font-semibold text-purple-600 shadow-lg transition-all duration-200 hover:bg-purple-600 hover:text-white active:scale-95 sm:px-6 sm:py-2.5 sm:text-base">
             View Product
-          </button>
+          </span>
         </div>
       </div>
 
       {/* Product Info */}
-      <div className="flex flex-1 flex-col p-2 sm:p-3">
+      <div className="flex flex-1 flex-col gap-1.5 p-3 sm:gap-2">
         {/* Product Title - Now a clickable link */}
         <button
           onClick={handleProductClick}
-          className="mb-1 line-clamp-2 text-left text-sm font-semibold text-gray-900 transition-colors duration-200 hover:text-purple-600 focus:underline focus:outline-none sm:text-base"
+          className="line-clamp-2 w-full cursor-pointer touch-manipulation p-0 text-left text-sm leading-tight font-semibold text-gray-900 transition-colors duration-200 hover:text-purple-600 focus:underline focus:outline-none active:text-purple-700 sm:text-base sm:leading-snug"
           aria-label={`View ${product.title}`}
         >
           {product.title}
         </button>
 
         {/* Price and Add to Cart */}
-        <div className="mt-auto flex flex-wrap items-center justify-between gap-2">
+        <div className="flex flex-wrap items-center justify-between gap-2">
           {/* Price */}
           <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1 sm:gap-2">
             {hasDiscount && prices.primary ? (
               <>
                 {prices.secondary && (
                   <span
-                    className="text-xs text-gray-400 line-through sm:text-sm"
+                    className="text-sm font-bold text-gray-400 line-through sm:text-base"
                     aria-label={`Original price ${prices.secondary}`}
                   >
                     {prices.secondary}
                   </span>
                 )}
                 <span
-                  className="text-sm font-bold text-purple-600 sm:text-base md:text-lg"
+                  className="text-sm font-bold text-purple-600 sm:text-base"
                   aria-label={`Sale price ${prices.primary}`}
                 >
                   {prices.primary}
@@ -192,7 +181,7 @@ const ProductCardComponent: React.FC<ProductCardProps> = ({
               </>
             ) : (
               <span
-                className="text-sm font-bold text-gray-900 sm:text-base md:text-lg"
+                className="text-sm font-bold text-gray-900 sm:text-base"
                 aria-label={`Price ${prices.primary}`}
               >
                 {prices.primary}
@@ -200,21 +189,30 @@ const ProductCardComponent: React.FC<ProductCardProps> = ({
             )}
           </div>
 
-          {/* Add to Cart Button */}
+          {/* Add to Cart Button - Industry Standard */}
           <button
             onClick={handleAddToCart}
             disabled={isAddingToCart || stockStatus.isOutOfStock}
-            className="relative z-10 flex h-10 min-h-[44px] w-10 min-w-[44px] shrink-0 cursor-pointer touch-manipulation items-center justify-center rounded-full bg-purple-600 text-white shadow-[0_4px_12px_rgba(124,58,237,0.5)] transition-all duration-300 hover:scale-110 hover:bg-purple-700 hover:shadow-[0_8px_20px_rgba(124,58,237,0.6)] focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100 sm:h-11 sm:w-11"
+            className="group/cart relative z-10 flex h-10 min-h-[44px] w-10 min-w-[44px] shrink-0 cursor-pointer touch-manipulation items-center justify-center rounded-lg bg-purple-600 p-2 text-white shadow-md transition-all duration-200 hover:bg-purple-700 hover:shadow-lg focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2 focus-visible:outline-none active:scale-95 disabled:cursor-not-allowed disabled:bg-gray-400 disabled:opacity-60 disabled:shadow-none sm:h-11 sm:w-11"
             aria-label={`Add ${product.title} to cart`}
-            title={stockStatus.isOutOfStock ? 'Out of stock' : `Add ${product.title} to cart`}
+            title={
+              isAddingToCart
+                ? 'Adding to cart...'
+                : stockStatus.isOutOfStock
+                  ? 'Out of stock'
+                  : `Add ${product.title} to cart`
+            }
           >
             {isAddingToCart ? (
               <div
-                className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent sm:h-5 sm:w-5"
+                className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent"
                 aria-label="Adding to cart"
               />
             ) : (
-              <ShoppingCart className="h-4 w-4 sm:h-5 sm:w-5" aria-hidden="true" />
+              <ShoppingCart
+                className="h-5 w-5 transition-transform duration-200 group-hover/cart:scale-110"
+                aria-hidden="true"
+              />
             )}
           </button>
         </div>

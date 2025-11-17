@@ -4,9 +4,8 @@
  * Used for: Categories, Brands, Tags, Stock Status, etc.
  */
 
-import React from 'react';
+import { AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Skeleton } from '@/components/ui/skeleton';
-import { AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion';
 
 export interface CheckboxFilterProps {
   // Identification
@@ -44,11 +43,11 @@ export const CheckboxFilter: React.FC<CheckboxFilterProps> = ({
 }) => {
   return (
     <AccordionItem value={id}>
-      <AccordionTrigger className="text-foreground text-[16px] lg:text-[18px]">
+      <AccordionTrigger className="text-foreground text-[14px] lg:text-[15px]">
         <b>{title}</b>
       </AccordionTrigger>
       <AccordionContent>
-        <div className="space-y-[8px]">
+        <div className="space-y-[4px]">
           {isLoading ? (
             // Loading skeleton
             <>
@@ -65,19 +64,19 @@ export const CheckboxFilter: React.FC<CheckboxFilterProps> = ({
           ) : items.length > 0 ? (
             // Items list
             items.map((item) => (
-              <label key={item} className="flex cursor-pointer items-center justify-between">
-                <div className="flex items-center gap-[10px]">
+              <label key={item} className="flex cursor-pointer items-center justify-between py-0.5">
+                <div className="flex items-center gap-[6px]">
                   <input
                     type="checkbox"
                     checked={selectedItems.includes(item)}
                     onChange={() => onItemChange(item)}
                     disabled={disabled}
-                    className="text-primary bg-background border-border h-4 w-4 rounded disabled:cursor-not-allowed disabled:opacity-50 lg:h-5 lg:w-5"
+                    className="text-primary bg-background border-border h-3.5 w-3.5 rounded disabled:cursor-not-allowed disabled:opacity-50 lg:h-4 lg:w-4"
                   />
-                  <span className="text-foreground text-[14px] lg:text-[16px]">{item}</span>
+                  <span className="text-foreground text-[13px] lg:text-[14px]">{item}</span>
                 </div>
                 {showCounts && (
-                  <span className="text-muted-foreground mr-[8px] text-[12px] lg:text-[14px]">
+                  <span className="text-muted-foreground mr-[4px] text-[11px] lg:text-[12px]">
                     {itemCounts[item] || 0}
                   </span>
                 )}

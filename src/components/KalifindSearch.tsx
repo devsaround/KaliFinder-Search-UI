@@ -5,7 +5,6 @@ import { getUBIClient } from '@/analytics/ubiClient';
 import { normalizeStoreUrl } from '@/lib/normalize';
 import { searchService, type SearchParams } from '@/services/search.service';
 import { parsePriceToNumber } from '@/utils/price';
-import { uiDebugger } from '@/utils/ui-debug';
 
 import {
   Accordion,
@@ -33,7 +32,6 @@ import { isSearchResponse, type FacetBucket } from '../types/api.types';
 import { ProductCard } from './products/ProductCard';
 import Recommendations from './Recommendations';
 import ScrollToTop from './ScrollToTop';
-import ThemeToggle from './ThemeToggle';
 
 const CURRENCY_SYMBOL_REGEX = /[\p{Sc}]/u;
 const ISO_CURRENCY_CODE_REGEX = /^[A-Z]{3}$/;
@@ -370,29 +368,7 @@ const KalifindSearch: React.FC<{
 
   // Log component mount
   useEffect(() => {
-    console.log('🎨 KalifindSearch component mounted');
-    console.log('📦 Store URL:', storeUrl);
-    console.log('🔍 Initial search query:', searchQuery);
-    console.log('📊 Has searched:', hasSearched);
-
-    // Log UI measurements after a short delay to ensure rendering
-    setTimeout(() => {
-      const widgetRoot = document.querySelector('.kalifinder-widget-root') as HTMLElement;
-      if (widgetRoot) {
-        uiDebugger.logWidgetMount(widgetRoot);
-      }
-
-      const sidebar = document.querySelector('aside') as HTMLElement;
-      if (sidebar) {
-        uiDebugger.logFilterSidebar(sidebar);
-      }
-
-      const productCard = document.querySelector('[class*="ProductCard"]') as HTMLElement;
-      if (productCard) {
-        uiDebugger.logProductCard(productCard);
-      }
-    }, 1000);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // Component mounted - ready for interaction
   }, []);
 
   // Determine if this is a Shopify store
@@ -418,9 +394,6 @@ const KalifindSearch: React.FC<{
     }
     return false;
   });
-
-  // Dynamic bottom position for mobile floating buttons (accounts for browser UI bars)
-  const [bottomOffset, setBottomOffset] = useState<number>(32); // Default 2rem (32px)
 
   // Control drawer open state to hide Filter Button when drawer is open
   const [isDrawerOpen, setIsDrawerOpen] = useState<boolean>(false);
@@ -578,86 +551,70 @@ const KalifindSearch: React.FC<{
     return () => window.removeEventListener('resize', checkIsMobile);
   }, []);
 
-  // Dynamically calculate bottom offset for floating buttons (accounts for browser UI bars and safe areas)
+  // ✅ iOS 26 Virtual Keyboard Bug Fix + Safe Area Handling
+  // Workaround for position:fixed bugs with virtual keyboard on iOS 26
+  // Combined with standard env() safe-area-inset for cross-browser compatibility
   useEffect(() => {
-    if (!isMobile) return;
+    // Only apply fix on iOS devices
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    if (!isIOS) return;
 
-    const calculateBottomOffset = () => {
-      // Base offset (2rem = 32px)
-      let offset = 32;
+    const initialViewportHeight = window.visualViewport?.height || window.innerHeight;
+    let isKeyboardVisible = false;
 
-      // Use Visual Viewport API if available (best for detecting browser UI bars)
-      if (window.visualViewport) {
-        const viewportHeight = window.visualViewport.height;
-        const windowHeight = window.innerHeight;
-        const browserBarHeight = windowHeight - viewportHeight;
+    const handleViewportChange = () => {
+      const currentHeight = window.visualViewport?.height || window.innerHeight;
+      const heightDifference = initialViewportHeight - currentHeight;
 
-        // Browser bar height (typically 0 when hidden, ~50-60px when visible)
-        // We add this to ensure buttons aren't hidden behind the browser bar
-        if (browserBarHeight > 0) {
-          offset += browserBarHeight;
-        }
+      // Detect if keyboard is visible (viewport shrinks by more than 150px)
+      const keyboardNowVisible = heightDifference > 150;
 
-        // For devices with home indicators (iPhone X+), add extra padding
-        // Visual viewport height is smaller on these devices
-        const isLikelyHomeIndicator = viewportHeight < windowHeight * 0.9;
-        if (isLikelyHomeIndicator) {
-          offset += 8; // Extra padding for home indicator area
-        }
-      } else {
-        // Fallback: detect browser bar by comparing innerHeight with clientHeight
-        const windowHeight = window.innerHeight;
-        const documentHeight = document.documentElement.clientHeight;
-        const browserBarHeight = windowHeight - documentHeight;
+      if (keyboardNowVisible !== isKeyboardVisible) {
+        isKeyboardVisible = keyboardNowVisible;
 
-        if (browserBarHeight > 0) {
-          offset += browserBarHeight;
-        }
-
-        // Estimate safe area for devices with home indicators
-        // On iPhone X+, innerHeight is typically smaller
-        const screenHeight = window.screen.height;
-        const isLikelyHomeIndicator = windowHeight < screenHeight * 0.85;
-        if (isLikelyHomeIndicator) {
-          offset += 8; // Extra padding for home indicator area
+        if (isKeyboardVisible) {
+          // Keyboard opened - fix body overflow to prevent position:fixed bugs
+          document.body.style.overflow = 'hidden';
+          document.body.style.position = 'fixed';
+          document.body.style.width = '100%';
+          document.body.style.height = '100%';
+        } else {
+          // Keyboard closed - restore normal scrolling
+          document.body.style.overflow = '';
+          document.body.style.position = '';
+          document.body.style.width = '';
+          document.body.style.height = '';
         }
       }
-
-      // Ensure minimum offset (at least 2rem)
-      offset = Math.max(offset, 32);
-
-      setBottomOffset(offset);
     };
 
-    // Calculate on mount
-    calculateBottomOffset();
-
-    // Update on resize (browser bar show/hide)
-    window.addEventListener('resize', calculateBottomOffset);
-
-    // Use Visual Viewport API if available (better for mobile browser UI)
+    // Listen to visual viewport changes (handles keyboard show/hide)
     if (window.visualViewport) {
-      window.visualViewport.addEventListener('resize', calculateBottomOffset);
-      window.visualViewport.addEventListener('scroll', calculateBottomOffset);
+      window.visualViewport.addEventListener('resize', handleViewportChange);
+      window.visualViewport.addEventListener('scroll', handleViewportChange);
     }
 
-    // Update on scroll (some browsers change UI on scroll)
-    let scrollTimeout: NodeJS.Timeout;
-    const handleScroll = () => {
-      clearTimeout(scrollTimeout);
-      scrollTimeout = setTimeout(calculateBottomOffset, 100);
-    };
-    window.addEventListener('scroll', handleScroll, { passive: true });
+    // Fallback for older iOS versions
+    window.addEventListener('resize', handleViewportChange);
+
+    // Initial check
+    handleViewportChange();
 
     return () => {
-      window.removeEventListener('resize', calculateBottomOffset);
-      window.removeEventListener('scroll', handleScroll);
+      // Cleanup
       if (window.visualViewport) {
-        window.visualViewport.removeEventListener('resize', calculateBottomOffset);
-        window.visualViewport.removeEventListener('scroll', calculateBottomOffset);
+        window.visualViewport.removeEventListener('resize', handleViewportChange);
+        window.visualViewport.removeEventListener('scroll', handleViewportChange);
       }
+      window.removeEventListener('resize', handleViewportChange);
+
+      // Restore body styles
+      document.body.style.overflow = '';
+      document.body.style.position = '';
+      document.body.style.width = '';
+      document.body.style.height = '';
     };
-  }, [isMobile]);
+  }, []);
 
   // Global keyboard shortcut: "/" to focus search input
   useEffect(() => {
@@ -737,26 +694,6 @@ const KalifindSearch: React.FC<{
 
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
   const debouncedFilters = useDebounce(filters, 500);
-
-  // 🔍 DEBUG: Log when RAW filters change (before debounce)
-  useEffect(() => {
-    console.log('📝 [RAW FILTERS] Changed:', {
-      saleStatus: filters.saleStatus,
-      stockStatus: filters.stockStatus,
-      categories: filters.categories,
-      priceRange: filters.priceRange,
-    });
-  }, [filters]);
-
-  // 🔍 DEBUG: Log when debounced filters change
-  useEffect(() => {
-    console.log('🔄 [DEBOUNCE] Filters debounced:', {
-      saleStatus: debouncedFilters.saleStatus,
-      stockStatus: debouncedFilters.stockStatus,
-      categories: debouncedFilters.categories,
-      priceRange: debouncedFilters.priceRange,
-    });
-  }, [debouncedFilters]);
 
   // Fuzzy matching function for better autocomplete
   const fuzzyMatch = useCallback((query: string, suggestion: string): boolean => {
@@ -901,12 +838,13 @@ const KalifindSearch: React.FC<{
     if (!storeUrl || globalFacetsFetched) return;
 
     try {
-      // Use the search service to fetch facets with minimal product data
+      // Use the search service to fetch facets with enough product data to calculate accurate price range
+      // Backend doesn't provide price stats aggregation, so we need actual products to get max price
       const result = await searchService.searchProducts({
         q: '',
         storeUrl,
         page: 1,
-        limit: 1, // Minimal products, we mainly need facets
+        limit: 100, // Need sufficient products to get accurate max price
       });
 
       setGlobalFacetsFetched(true);
@@ -1038,29 +976,82 @@ const KalifindSearch: React.FC<{
           setGlobalTagCounts(tagCounts); // Store global counts
         }
 
-        // ✅ Get max price from actual product prices, not facet buckets
-        if (result.products && Array.isArray(result.products) && result.products.length > 0) {
-          const productPrices = result.products
-            .map((p: Product) => p.currentPrice ?? p.originalPrice)
-            .filter((price): price is number => typeof price === 'number' && price > 0);
-
-          if (productPrices.length > 0) {
-            const maxPriceFromProducts = Math.max(...productPrices);
-            // Round up to nearest 50 for cleaner UI
-            const roundedMaxPrice = Math.ceil(maxPriceFromProducts / 50) * 50;
+        // ✅ Get max price from backend price stats aggregation
+        // Backend provides price.stats.max from OpenSearch aggregations
+        if (result.facets?.price) {
+          const priceFacet = result.facets.price as {
+            stats?: { min?: number; max?: number; avg?: number };
+          };
+          if (priceFacet.stats?.max) {
+            const maxPriceFromStats = priceFacet.stats.max;
+            // Round up to nearest 100 for cleaner UI
+            const roundedMaxPrice = Math.ceil(maxPriceFromStats / 100) * 100;
             setMaxPrice(roundedMaxPrice);
             setFilteredMaxPrice(roundedMaxPrice);
             console.log(
-              '📊 Max price from products:',
-              maxPriceFromProducts,
+              `📊 Max price from backend stats:`,
+              maxPriceFromStats,
               '→ rounded:',
               roundedMaxPrice
             );
+          } else {
+            console.warn('⚠️ Backend price stats not available, calculating from products');
+            // Fallback: Calculate max price from actual product prices
+            if (result.products && Array.isArray(result.products) && result.products.length > 0) {
+              const productPrices = result.products
+                .map((p: Product) => p.currentPrice ?? p.originalPrice ?? p.price)
+                .filter((price): price is number => typeof price === 'number' && price > 0);
+
+              if (productPrices.length > 0) {
+                const maxPriceFromProducts = Math.max(...productPrices);
+                // Round up to nearest 100 for cleaner UI
+                const roundedMaxPrice = Math.ceil(maxPriceFromProducts / 100) * 100;
+                setMaxPrice(roundedMaxPrice);
+                setFilteredMaxPrice(roundedMaxPrice);
+                console.log(
+                  `📊 Max price calculated from products:`,
+                  maxPriceFromProducts,
+                  '→ rounded:',
+                  roundedMaxPrice
+                );
+              }
+            }
+          }
+        } else {
+          console.warn('⚠️ Backend price facet not available, calculating from products');
+          // Fallback: Calculate max price from actual product prices
+          if (result.products && Array.isArray(result.products) && result.products.length > 0) {
+            const productPrices = result.products
+              .map((p: Product) => p.currentPrice ?? p.originalPrice ?? p.price)
+              .filter((price): price is number => typeof price === 'number' && price > 0);
+
+            if (productPrices.length > 0) {
+              const maxPriceFromProducts = Math.max(...productPrices);
+              // Round up to nearest 100 for cleaner UI
+              const roundedMaxPrice = Math.ceil(maxPriceFromProducts / 100) * 100;
+              setMaxPrice(roundedMaxPrice);
+              setFilteredMaxPrice(roundedMaxPrice);
+              console.log(
+                `📊 Max price calculated from products:`,
+                maxPriceFromProducts,
+                '→ rounded:',
+                roundedMaxPrice
+              );
+            }
           }
         }
-      } // Update currency from products
-      if (result.products && Array.isArray(result.products) && result.products.length > 0) {
-        updateCurrencyFromProducts(result.products as Product[]);
+
+        // ✅ Get currency from backend response (store-level metadata)
+        if (result.currency) {
+          setStoreCurrencyCode(result.currency);
+          console.log(`💱 Currency from backend: ${result.currency}`);
+        } else {
+          console.warn('⚠️ Backend currency not available, will extract from products');
+          // Fallback: Extract currency from products if backend doesn't provide it
+          if (result.products && Array.isArray(result.products) && result.products.length > 0) {
+            updateCurrencyFromProducts(result.products as Product[]);
+          }
+        }
       }
 
       setGlobalFacetsFetched(true);
@@ -1176,7 +1167,17 @@ const KalifindSearch: React.FC<{
       }));
 
       setRecommendations(productsWithStoreUrl); // Show all recommendations
-      updateCurrencyFromProducts(productsWithStoreUrl);
+
+      // ✅ Get currency from backend response if available
+      if (isSearchResponse(result) && result.currency) {
+        setStoreCurrencyCode(result.currency);
+        console.log(`💱 Currency from backend (recommendations): ${result.currency}`);
+      } else if (productsWithStoreUrl.length > 0) {
+        // Fallback: Extract from products if backend doesn't provide currency
+        console.warn('⚠️ Backend currency not available, extracting from products');
+        updateCurrencyFromProducts(productsWithStoreUrl);
+      }
+
       setRecommendationsFetched(true);
     } catch (error) {
       console.error('Failed to fetch recommendations:', error);
@@ -1488,6 +1489,12 @@ const KalifindSearch: React.FC<{
               if (result.facets) {
                 const facets = result.facets;
 
+                // ✅ Get currency from backend response (store-level metadata)
+                if (result.currency) {
+                  setStoreCurrencyCode(result.currency);
+                  console.log(`💱 Currency from backend: ${result.currency}`);
+                }
+
                 // ❌ DO NOT update stock status counts from filtered results
                 // Stock counts should remain static (global) - always showing total available products
 
@@ -1680,7 +1687,12 @@ const KalifindSearch: React.FC<{
               }
             }
 
-            updateCurrencyFromProducts(products);
+            // ✅ Currency is now provided by backend in the response
+            // Only extract from products if backend didn't provide currency (fallback)
+            if (!result.currency && products.length > 0) {
+              console.warn('⚠️ Backend currency not available, extracting from products');
+              updateCurrencyFromProducts(products);
+            }
 
             // Ensure all products have storeUrl for cart operations
             const productsWithStoreUrl = products.map((product) => ({
@@ -1809,6 +1821,8 @@ const KalifindSearch: React.FC<{
     isSearchingFromSuggestion,
     forceSearch,
     performSearch,
+    maxPrice,
+    setHasSearched,
   ]);
 
   const sortedProducts = useMemo(() => {
@@ -2234,7 +2248,15 @@ const KalifindSearch: React.FC<{
       if (products.length === 0) {
         setHasMoreProducts(false);
       } else {
-        updateCurrencyFromProducts(products);
+        // ✅ Get currency from backend response if available
+        if (isSearchResponse(result) && result.currency) {
+          setStoreCurrencyCode(result.currency);
+          console.log(`💱 Currency from backend (load more): ${result.currency}`);
+        } else if (products.length > 0) {
+          // Fallback: Extract from products if backend doesn't provide currency
+          console.warn('⚠️ Backend currency not available, extracting from products');
+          updateCurrencyFromProducts(products);
+        }
 
         // Ensure all products have storeUrl for cart operations
         const productsWithStoreUrl = products.map((product) => ({
@@ -2454,7 +2476,7 @@ const KalifindSearch: React.FC<{
     <div className="bg-background box-border w-full overflow-y-auto font-sans antialiased">
       {!hideHeader && (
         <div className="bg-background border-border/40 sticky top-0 z-50 border-b py-3 shadow-sm backdrop-blur-sm lg:py-4">
-          <div className="mx-auto flex max-w-7xl items-center justify-between gap-2 px-3 sm:gap-4 sm:px-4 lg:gap-6 lg:px-6">
+          <div className="mx-auto flex items-center justify-between gap-2 px-2 sm:gap-4 sm:px-4 lg:gap-6 lg:px-5">
             <div className="hidden items-center lg:flex lg:w-auto">
               <a href="/" className="w-70">
                 <img
@@ -2511,11 +2533,6 @@ const KalifindSearch: React.FC<{
                   {suggestionsEnabled ? 'Suggestions ON' : 'Suggestions OFF'}
                 </span>
               </button>
-
-              {/* Theme Toggle */}
-              <div className="hidden sm:flex">
-                <ThemeToggle />
-              </div>
 
               <div className="relative flex-1" ref={searchRef}>
                 <div
@@ -2716,23 +2733,32 @@ const KalifindSearch: React.FC<{
         </div>
       )}
 
-      {/* Mobile Filter Button */}
+      {/* Mobile Floating Container - Filter Button + Watermark */}
       <div
-        className="fixed left-3 z-[10001] block lg:hidden"
+        className="fixed inset-x-0 z-[10001] flex items-end justify-between px-4"
         style={{
-          bottom: `max(${bottomOffset}px, calc(${bottomOffset}px + env(safe-area-inset-bottom)))`,
-          left: 'max(0.75rem, calc(0.75rem + env(safe-area-inset-left)))',
-          transition: 'bottom 0.2s ease-out, opacity 0.2s ease-out',
+          bottom: `calc(2rem + env(safe-area-inset-bottom))`,
+          transition: 'opacity 0.2s ease-out',
           opacity: isDrawerOpen ? 0 : 1,
           pointerEvents: isDrawerOpen ? 'none' : 'auto',
         }}
       >
-        <Drawer open={isDrawerOpen} onOpenChange={setIsDrawerOpen}>
-          <DrawerTrigger asChild>
-            <button className="group inline-flex min-h-[44px] items-center gap-1.5 rounded-full border border-purple-600 bg-purple-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg transition-all hover:border-purple-700 hover:shadow-xl sm:min-h-[40px] sm:gap-2 sm:px-3 sm:py-2">
-              <Filter className="h-4 w-4" />
+        {/* Mobile Filter Button - Left Side */}
+        <Drawer
+          open={isDrawerOpen}
+          onOpenChange={setIsDrawerOpen}
+          shouldScaleBackground={false}
+          dismissible={true}
+          modal={true}
+        >
+          <DrawerTrigger asChild className="lg:hidden">
+            <button
+              className="group inline-flex h-[48px] min-h-[48px] cursor-pointer touch-manipulation items-center gap-2 rounded-full border border-purple-600 bg-purple-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg transition-all hover:border-purple-700 hover:shadow-xl active:scale-95"
+              title="Open filters"
+            >
+              <Filter className="h-5 w-5" />
               Filters
-              <span className="rounded-full bg-white px-1.5 py-0.5 text-[10px] font-bold text-purple-600">
+              <span className="rounded-full bg-white px-2 py-0.5 text-xs font-bold text-purple-600">
                 {filters.categories.length +
                   filters.colors.length +
                   filters.sizes.length +
@@ -2744,401 +2770,539 @@ const KalifindSearch: React.FC<{
               </span>
             </button>
           </DrawerTrigger>
-          <DrawerContent className="z-[100000] flex h-[92vh] max-h-[92vh] flex-col">
-            {/* Mobile Filter Header - Compact with actions */}
-            <div className="flex flex-shrink-0 items-center justify-between border-b border-gray-200 bg-white px-4 py-3">
-              <div className="flex items-center gap-3">
-                <h2 className="text-lg font-semibold text-gray-900">Filters</h2>
-                <span className="rounded-full bg-purple-100 px-2.5 py-0.5 text-xs font-semibold text-purple-700">
-                  {totalProducts}
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                {isAnyFilterActive && (
-                  <button
-                    onClick={handleClearAll}
-                    className="rounded-md px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-100 active:bg-gray-200"
-                  >
-                    Reset
-                  </button>
+          <DrawerContent className="z-[100000] flex h-[85vh] max-h-[85vh] flex-col overflow-hidden rounded-t-[24px] bg-white">
+            {/* Drag Handle - Industry standard */}
+            <div className="flex-shrink-0 rounded-t-[24px] bg-white px-4 pt-3 pb-2">
+              <div className="mx-auto h-1 w-12 rounded-full bg-gray-300" />
+            </div>
+
+            {/* Mobile Filter Header - Industry standard with close button */}
+            <div className="sticky top-0 z-10 flex flex-shrink-0 items-center justify-between border-b border-gray-200 bg-white px-5 py-4 shadow-sm">
+              <div className="flex items-center gap-2.5">
+                <Filter className="h-5 w-5 text-purple-600" />
+                <h2 className="text-xl font-bold text-gray-900">Filters</h2>
+                {filters.categories.length +
+                  filters.colors.length +
+                  filters.sizes.length +
+                  filters.brands.length +
+                  filters.tags.length +
+                  filters.stockStatus.length +
+                  filters.featuredProducts.length +
+                  filters.saleStatus.length >
+                  0 && (
+                  <span className="rounded-full bg-purple-600 px-2.5 py-1 text-xs font-bold text-white">
+                    {filters.categories.length +
+                      filters.colors.length +
+                      filters.sizes.length +
+                      filters.brands.length +
+                      filters.tags.length +
+                      filters.stockStatus.length +
+                      filters.featuredProducts.length +
+                      filters.saleStatus.length}
+                  </span>
                 )}
+              </div>
+              <DrawerClose asChild>
+                <button
+                  className="flex h-9 w-9 cursor-pointer touch-manipulation items-center justify-center rounded-full bg-gray-100 text-gray-600 transition-colors hover:bg-gray-200 active:bg-gray-300"
+                  aria-label="Close filters"
+                  title="Close filters"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </DrawerClose>
+            </div>
+
+            {/* Scrollable Filter Content - Proper scrolling with industry standard styling */}
+            <div
+              data-vaul-no-drag
+              className="vaul-scrollable flex-1 overflow-y-scroll overscroll-contain bg-gray-50"
+              onTouchStart={(e) => {
+                e.stopPropagation();
+              }}
+              onTouchMove={(e) => {
+                e.stopPropagation();
+              }}
+              style={{
+                minHeight: 0,
+                maxHeight: '100%',
+                WebkitOverflowScrolling: 'touch',
+                overscrollBehavior: 'contain',
+                touchAction: 'pan-y',
+                scrollbarWidth: 'thin',
+                scrollbarColor: '#9333ea #f3f4f6',
+                pointerEvents: 'auto',
+              }}
+            >
+              <div className="space-y-1 px-5 py-5 pb-4">
+                <Accordion
+                  type="multiple"
+                  defaultValue={[
+                    ...(showMandatoryFilters.categories ? ['category'] : []),
+                    ...(showMandatoryFilters.price ? ['price'] : []),
+                    ...(showMandatoryFilters.stockStatus ? ['stockStatus'] : []),
+                    ...(!isShopifyStore && showMandatoryFilters.featured ? ['featured'] : []),
+                    ...(showMandatoryFilters.sale ? ['sale'] : []),
+                    ...(showOptionalFilters.sizes ? ['size'] : []),
+                    ...(showOptionalFilters.colors ? ['color'] : []),
+                    ...(showOptionalFilters.brands ? ['brand'] : []),
+                    ...(showOptionalFilters.tags ? ['tags'] : []),
+                  ]}
+                  className="space-y-3"
+                >
+                  {showMandatoryFilters.categories && (
+                    <AccordionItem
+                      value="category"
+                      className="overflow-hidden rounded-xl border border-gray-200 bg-white px-4"
+                    >
+                      <AccordionTrigger className="py-4 text-base font-bold text-gray-900 hover:no-underline">
+                        Categories
+                      </AccordionTrigger>
+                      <AccordionContent className="pt-3">
+                        <div className="space-y-1">
+                          {availableCategories.length > 0 ? (
+                            (() => {
+                              const categoryTree = buildCategoryTree(
+                                availableCategories,
+                                categoryCounts
+                              );
+                              return Array.from(categoryTree.children.values()).map((rootNode) => (
+                                <CategoryTreeNode
+                                  key={rootNode.fullPath}
+                                  node={rootNode}
+                                  selectedCategories={filters.categories}
+                                  expandedCategories={expandedCategories}
+                                  onToggle={handleCategoryChange}
+                                  onExpand={handleCategoryExpand}
+                                  level={0}
+                                  getFacetCount={getFacetCount}
+                                />
+                              ));
+                            })()
+                          ) : (
+                            <p className="text-muted-foreground p-2 text-sm">
+                              No categories available
+                            </p>
+                          )}
+                        </div>
+                      </AccordionContent>
+                    </AccordionItem>
+                  )}
+                  {showOptionalFilters.brands && (
+                    <AccordionItem
+                      value="brand"
+                      className="overflow-hidden rounded-xl border border-gray-200 bg-white px-4"
+                    >
+                      <AccordionTrigger className="py-4 text-base font-bold text-gray-900 hover:no-underline">
+                        Brand
+                      </AccordionTrigger>
+                      <AccordionContent className="pt-3">
+                        <div className="space-y-1">
+                          {availableBrands.map((brand) => (
+                            <label
+                              key={brand}
+                              className={`flex min-h-[48px] cursor-pointer items-center justify-between rounded-lg p-3 transition-all ${
+                                filters.brands.includes(brand)
+                                  ? 'bg-purple-50 ring-2 ring-purple-600 ring-inset'
+                                  : 'hover:bg-gray-50 active:bg-gray-100'
+                              }`}
+                            >
+                              <div className="flex flex-1 items-center gap-3">
+                                <div className="relative flex min-h-[44px] min-w-[44px] items-center justify-center">
+                                  <input
+                                    type="checkbox"
+                                    checked={filters.brands.includes(brand)}
+                                    onChange={() => handleBrandChange(brand)}
+                                    className="text-primary bg-background border-border h-5 w-5 rounded"
+                                  />
+                                </div>
+                                <span className="text-foreground flex-1 text-sm">{brand}</span>
+                              </div>
+                              <span className="text-muted-foreground bg-muted rounded-full px-2.5 py-1 text-xs font-medium">
+                                {getFacetCount('brand', brand)}
+                              </span>
+                            </label>
+                          ))}
+                        </div>
+                      </AccordionContent>
+                    </AccordionItem>
+                  )}
+                  {showMandatoryFilters.price && (
+                    <AccordionItem
+                      value="price"
+                      className="overflow-hidden rounded-xl border border-gray-200 bg-white px-4"
+                    >
+                      <AccordionTrigger className="py-4 text-base font-bold text-gray-900 hover:no-underline">
+                        Price
+                      </AccordionTrigger>
+                      <AccordionContent className="pt-3">
+                        <div className="space-y-4">
+                          <div className="px-2">
+                            <Slider
+                              value={[Math.min(filters.priceRange[1], filteredMaxPrice)]}
+                              onValueChange={(value: number[]) =>
+                                updateFilter('priceRange', [
+                                  filters.priceRange[0],
+                                  value[0] ?? filteredMaxPrice,
+                                ])
+                              }
+                              max={filteredMaxPrice}
+                              step={1}
+                              style={{
+                                paddingTop: '16px',
+                                paddingBottom: '16px',
+                              }}
+                            />
+                          </div>
+                          <div className="text-foreground flex items-center justify-between rounded-lg bg-gray-50 px-4 py-3 text-base font-medium">
+                            <span className="text-muted-foreground text-sm">From</span>
+                            <span className="text-lg font-semibold">{filters.priceRange[0]} €</span>
+                            <span className="text-muted-foreground mx-2">-</span>
+                            <span className="text-muted-foreground text-sm">To</span>
+                            <span className="text-lg font-semibold">
+                              {Math.min(filters.priceRange[1], filteredMaxPrice)} €
+                            </span>
+                          </div>
+                        </div>
+                      </AccordionContent>
+                    </AccordionItem>
+                  )}
+                  {showOptionalFilters.sizes && (
+                    <AccordionItem
+                      value="size"
+                      className="overflow-hidden rounded-xl border border-gray-200 bg-white px-4"
+                    >
+                      <AccordionTrigger className="py-4 text-base font-bold text-gray-900 hover:no-underline">
+                        Size
+                      </AccordionTrigger>
+                      <AccordionContent className="pt-3">
+                        <div className="grid grid-cols-4 gap-2">
+                          {availableSizes.map((size) => (
+                            <button
+                              key={size}
+                              onClick={() => handleSizeChange(size)}
+                              className={`my-border min-h-[48px] rounded-lg py-2 text-center text-sm font-medium transition-all active:scale-95 ${
+                                filters.sizes.includes(size)
+                                  ? 'bg-primary text-primary-foreground shadow-md'
+                                  : 'hover:bg-gray-100'
+                              }`}
+                            >
+                              {size}
+                            </button>
+                          ))}
+                        </div>
+                      </AccordionContent>
+                    </AccordionItem>
+                  )}
+                  {showOptionalFilters.colors && (
+                    <AccordionItem
+                      value="color"
+                      className="overflow-hidden rounded-xl border border-gray-200 bg-white px-4"
+                    >
+                      <AccordionTrigger className="py-4 text-base font-bold text-gray-900 hover:no-underline">
+                        Color
+                      </AccordionTrigger>
+                      <AccordionContent className="pt-3">
+                        <div className="flex flex-wrap gap-3">
+                          {availableColors.map((color) => (
+                            <button
+                              key={color}
+                              onClick={() => handleColorChange(color)}
+                              className={`min-h-[48px] min-w-[48px] rounded-full border-4 transition-all active:scale-95 ${
+                                filters.colors.includes(color)
+                                  ? 'border-primary scale-110 shadow-lg'
+                                  : 'border-border hover:border-gray-400 hover:shadow-md'
+                              }`}
+                              style={{
+                                backgroundColor: color.toLowerCase(),
+                              }}
+                              title={`Filter by ${color} color`}
+                              aria-label={`Filter by ${color} color${filters.colors.includes(color) ? ' (selected)' : ''}`}
+                            />
+                          ))}
+                        </div>
+                      </AccordionContent>
+                    </AccordionItem>
+                  )}
+                  {showOptionalFilters.tags && (
+                    <AccordionItem
+                      value="tags"
+                      className="overflow-hidden rounded-xl border border-gray-200 bg-white px-4"
+                    >
+                      <AccordionTrigger className="py-4 text-base font-bold text-gray-900 hover:no-underline">
+                        Tags
+                      </AccordionTrigger>
+                      <AccordionContent className="pt-3">
+                        <div className="space-y-1">
+                          {availableTags.map((tag) => (
+                            <label
+                              key={tag}
+                              className={`flex min-h-[48px] cursor-pointer items-center justify-between rounded-lg p-3 transition-all ${
+                                filters.tags.includes(tag)
+                                  ? 'bg-purple-50 ring-2 ring-purple-600 ring-inset'
+                                  : 'hover:bg-gray-50 active:bg-gray-100'
+                              }`}
+                            >
+                              <div className="flex flex-1 items-center gap-3">
+                                <div className="relative flex min-h-[44px] min-w-[44px] items-center justify-center">
+                                  <input
+                                    type="checkbox"
+                                    checked={filters.tags.includes(tag)}
+                                    onChange={() => handleTagChange(tag)}
+                                    className="text-primary bg-background border-border h-5 w-5 rounded"
+                                  />
+                                </div>
+                                <span className="text-foreground flex-1 text-sm">{tag}</span>
+                              </div>
+                              <span className="text-muted-foreground bg-muted rounded-full px-2.5 py-1 text-xs font-medium">
+                                {getFacetCount('tag', tag)}
+                              </span>
+                            </label>
+                          ))}
+                        </div>
+                      </AccordionContent>
+                    </AccordionItem>
+                  )}
+
+                  {/* Mandatory Facets for Mobile */}
+                  {showMandatoryFilters.stockStatus && (
+                    <AccordionItem
+                      value="stockStatus"
+                      className="overflow-hidden rounded-xl border border-gray-200 bg-white px-4"
+                    >
+                      <AccordionTrigger className="py-4 text-base font-bold text-gray-900 hover:no-underline">
+                        Stock Status
+                      </AccordionTrigger>
+                      <AccordionContent className="pt-3">
+                        <div className="space-y-1">
+                          {['In Stock', 'Out of Stock', 'On Backorder'].map((status) => (
+                            <label
+                              key={status}
+                              className={`flex min-h-[48px] cursor-pointer items-center justify-between rounded-lg p-3 transition-all ${
+                                filters.stockStatus.includes(status)
+                                  ? 'bg-purple-50 ring-2 ring-purple-600 ring-inset'
+                                  : 'hover:bg-gray-50 active:bg-gray-100'
+                              }`}
+                            >
+                              <div className="flex flex-1 items-center gap-3">
+                                <div className="relative flex min-h-[44px] min-w-[44px] items-center justify-center">
+                                  <input
+                                    type="checkbox"
+                                    checked={filters.stockStatus.includes(status)}
+                                    onChange={() => handleStockStatusChange(status)}
+                                    className="border-border bg-background text-primary h-5 w-5 rounded"
+                                  />
+                                </div>
+                                <span className="text-foreground flex-1 text-sm">{status}</span>
+                              </div>
+                              <span className="bg-muted text-muted-foreground rounded-full px-2.5 py-1 text-xs font-medium">
+                                {stockStatusCounts[status] ?? 0}
+                              </span>
+                            </label>
+                          ))}
+                        </div>
+                      </AccordionContent>
+                    </AccordionItem>
+                  )}
+
+                  {!isShopifyStore && showMandatoryFilters.featured && (
+                    <AccordionItem
+                      value="featured"
+                      className="overflow-hidden rounded-xl border border-gray-200 bg-white px-4"
+                    >
+                      <AccordionTrigger className="py-4 text-base font-bold text-gray-900 hover:no-underline">
+                        Featured Products
+                      </AccordionTrigger>
+                      <AccordionContent className="pt-3">
+                        <div className="space-y-1">
+                          {['Featured', 'Not Featured'].map((status) => (
+                            <label
+                              key={status}
+                              className={`flex min-h-[48px] cursor-pointer items-center justify-between rounded-lg p-3 transition-all ${
+                                filters.featuredProducts.includes(status)
+                                  ? 'bg-purple-50 ring-2 ring-purple-600 ring-inset'
+                                  : 'hover:bg-gray-50 active:bg-gray-100'
+                              }`}
+                            >
+                              <div className="flex flex-1 items-center gap-3">
+                                <div className="relative flex min-h-[44px] min-w-[44px] items-center justify-center">
+                                  <input
+                                    type="checkbox"
+                                    checked={filters.featuredProducts.includes(status)}
+                                    onChange={() => handleFeaturedProductsChange(status)}
+                                    className="border-border bg-background text-primary h-5 w-5 rounded"
+                                  />
+                                </div>
+                                <span className="text-foreground flex-1 text-sm">{status}</span>
+                              </div>
+                              <span className="bg-muted text-muted-foreground rounded-full px-2.5 py-1 text-xs font-medium">
+                                {status === 'Featured' ? featuredCount : notFeaturedCount}
+                              </span>
+                            </label>
+                          ))}
+                        </div>
+                      </AccordionContent>
+                    </AccordionItem>
+                  )}
+
+                  {showMandatoryFilters.sale && (
+                    <AccordionItem
+                      value="sale"
+                      className="overflow-hidden rounded-xl border border-gray-200 bg-white px-4"
+                    >
+                      <AccordionTrigger className="py-4 text-base font-bold text-gray-900 hover:no-underline">
+                        Sale Status
+                      </AccordionTrigger>
+                      <AccordionContent className="pt-3">
+                        <div className="space-y-1">
+                          {['On Sale', 'Not On Sale'].map((status) => {
+                            const count = status === 'On Sale' ? saleCount : notSaleCount;
+                            console.log(`📊 [RENDER-MOBILE] Displaying ${status}: ${count}`);
+                            return (
+                              <label
+                                key={status}
+                                className={`flex min-h-[48px] cursor-pointer items-center justify-between rounded-lg p-3 transition-all ${
+                                  filters.saleStatus.includes(status)
+                                    ? 'bg-purple-50 ring-2 ring-purple-600 ring-inset'
+                                    : 'hover:bg-gray-50 active:bg-gray-100'
+                                }`}
+                              >
+                                <div className="flex flex-1 items-center gap-3">
+                                  <div className="relative flex min-h-[44px] min-w-[44px] items-center justify-center">
+                                    <input
+                                      type="checkbox"
+                                      checked={filters.saleStatus.includes(status)}
+                                      onChange={() => handleSaleStatusChange(status)}
+                                      className="border-border bg-background text-primary h-5 w-5 rounded"
+                                    />
+                                  </div>
+                                  <span className="text-foreground flex-1 text-sm">{status}</span>
+                                </div>
+                                <span className="bg-muted text-muted-foreground rounded-full px-2.5 py-1 text-xs font-medium">
+                                  {count}
+                                </span>
+                              </label>
+                            );
+                          })}
+                        </div>
+                      </AccordionContent>
+                    </AccordionItem>
+                  )}
+                </Accordion>
+              </div>
+            </div>
+
+            {/* Footer - Three buttons: Show Products, Reset, Close */}
+            <div
+              className="flex-shrink-0 bg-gray-100 px-5 py-4 shadow-[0_-4px_12px_rgba(0,0,0,0.08)]"
+              style={{
+                paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))',
+              }}
+            >
+              <div className="flex gap-3">
+                {/* Reset Button */}
+                <button
+                  onClick={handleClearAll}
+                  disabled={!isAnyFilterActive}
+                  className="flex h-[52px] min-w-[52px] cursor-pointer touch-manipulation items-center justify-center rounded-xl px-4 text-base font-semibold text-gray-700 transition-all hover:bg-gray-50 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40"
+                  aria-label="Reset all filters"
+                  title="Reset all filters"
+                >
+                  <svg
+                    className="h-5 w-5"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={2.5}
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                    />
+                  </svg>
+                </button>
+
+                {/* Show Products Button - Primary */}
                 <DrawerClose asChild>
                   <button
-                    className="rounded-full p-1.5 hover:bg-gray-100 active:bg-gray-200"
-                    aria-label="Close filters"
+                    aria-label="Show filtered products"
+                    title="Show filtered products"
+                    className="h-[52px] flex-1 cursor-pointer touch-manipulation rounded-xl bg-purple-600 px-5 text-base font-bold text-white shadow-lg transition-all hover:bg-purple-700 active:scale-[0.98]"
                   >
-                    <X className="h-5 w-5 text-gray-600" />
+                    Show {totalProducts} {totalProducts === 1 ? 'Product' : 'Products'}
+                  </button>
+                </DrawerClose>
+
+                {/* Close Button */}
+                <DrawerClose asChild>
+                  <button
+                    className="flex h-[52px] min-w-[52px] cursor-pointer touch-manipulation items-center justify-center rounded-xl border-2 border-gray-300 bg-white px-4 text-base font-semibold text-gray-700 transition-all hover:bg-gray-50 active:scale-[0.98]"
+                    aria-label="Close without applying"
+                    title="Close filters"
+                  >
+                    <X className="h-5 w-5" />
                   </button>
                 </DrawerClose>
               </div>
             </div>
-
-            {/* Scrollable Filter Content */}
-            <div
-              className="flex-1 overflow-y-scroll overscroll-contain px-4 py-4"
-              style={{
-                WebkitOverflowScrolling: 'touch',
-                scrollbarWidth: 'thin',
-                scrollbarColor: 'rgba(0, 0, 0, 0.3) transparent',
-              }}
-            >
-              <Accordion
-                type="multiple"
-                defaultValue={[
-                  ...(showMandatoryFilters.categories ? ['category'] : []),
-                  ...(showMandatoryFilters.price ? ['price'] : []),
-                  ...(showMandatoryFilters.stockStatus ? ['stockStatus'] : []),
-                  ...(!isShopifyStore && showMandatoryFilters.featured ? ['featured'] : []),
-                  ...(showMandatoryFilters.sale ? ['sale'] : []),
-                  ...(showOptionalFilters.sizes ? ['size'] : []),
-                  ...(showOptionalFilters.colors ? ['color'] : []),
-                  ...(showOptionalFilters.brands ? ['brand'] : []),
-                  ...(showOptionalFilters.tags ? ['tags'] : []),
-                ]}
-                className="space-y-4"
-              >
-                {showMandatoryFilters.categories && (
-                  <AccordionItem value="category" className="border-b border-gray-200 pb-4">
-                    <AccordionTrigger className="text-base font-bold text-gray-900 hover:no-underline">
-                      Categories
-                    </AccordionTrigger>
-                    <AccordionContent className="pt-3">
-                      <div className="space-y-1">
-                        {availableCategories.length > 0 ? (
-                          (() => {
-                            const categoryTree = buildCategoryTree(
-                              availableCategories,
-                              categoryCounts
-                            );
-                            return Array.from(categoryTree.children.values()).map((rootNode) => (
-                              <CategoryTreeNode
-                                key={rootNode.fullPath}
-                                node={rootNode}
-                                selectedCategories={filters.categories}
-                                expandedCategories={expandedCategories}
-                                onToggle={handleCategoryChange}
-                                onExpand={handleCategoryExpand}
-                                level={0}
-                                getFacetCount={getFacetCount}
-                              />
-                            ));
-                          })()
-                        ) : (
-                          <p className="text-muted-foreground p-2 text-sm">
-                            No categories available
-                          </p>
-                        )}
-                      </div>
-                    </AccordionContent>
-                  </AccordionItem>
-                )}
-                {showOptionalFilters.brands && (
-                  <AccordionItem value="brand" className="border-b border-gray-200 pb-4">
-                    <AccordionTrigger className="text-base font-bold text-gray-900 hover:no-underline">
-                      Brand
-                    </AccordionTrigger>
-                    <AccordionContent className="pt-3">
-                      <div className="space-y-1">
-                        {availableBrands.map((brand) => (
-                          <label
-                            key={brand}
-                            className={`flex cursor-pointer items-center justify-between rounded-lg p-2 transition-all ${
-                              filters.brands.includes(brand)
-                                ? 'bg-purple-50 ring-2 ring-purple-600 ring-inset'
-                                : 'hover:bg-gray-50'
-                            }`}
-                          >
-                            <div className="flex items-center gap-3">
-                              <div className="relative flex items-center">
-                                <input
-                                  type="checkbox"
-                                  checked={filters.brands.includes(brand)}
-                                  onChange={() => handleBrandChange(brand)}
-                                  className="text-primary bg-background border-border h-4 w-4 rounded sm:h-5 sm:w-5"
-                                />
-                              </div>
-                              <span className="text-foreground text-sm sm:text-base lg:leading-4">
-                                {brand}
-                              </span>
-                            </div>
-                            <span className="text-muted-foreground bg-muted rounded px-2 py-1 text-xs sm:text-sm">
-                              {getFacetCount('brand', brand)}
-                            </span>
-                          </label>
-                        ))}
-                      </div>
-                    </AccordionContent>
-                  </AccordionItem>
-                )}
-                {showMandatoryFilters.price && (
-                  <AccordionItem value="price" className="border-b border-gray-200 pb-4">
-                    <AccordionTrigger className="text-base font-bold text-gray-900 hover:no-underline">
-                      Price
-                    </AccordionTrigger>
-                    <AccordionContent className="pt-3">
-                      <div className="space-y-4">
-                        <div className="px-2">
-                          <Slider
-                            value={[Math.min(filters.priceRange[1], filteredMaxPrice)]}
-                            onValueChange={(value: number[]) =>
-                              updateFilter('priceRange', [
-                                filters.priceRange[0],
-                                value[0] ?? filteredMaxPrice,
-                              ])
-                            }
-                            max={filteredMaxPrice}
-                            step={1}
-                            style={{
-                              paddingTop: '16px',
-                              paddingBottom: '16px',
-                            }}
-                          />
-                        </div>
-                        <div className="text-foreground flex items-center justify-between rounded-lg bg-gray-50 px-4 py-3 text-base font-medium">
-                          <span className="text-muted-foreground text-sm">From</span>
-                          <span className="text-lg font-semibold">{filters.priceRange[0]} €</span>
-                          <span className="text-muted-foreground mx-2">-</span>
-                          <span className="text-muted-foreground text-sm">To</span>
-                          <span className="text-lg font-semibold">
-                            {Math.min(filters.priceRange[1], filteredMaxPrice)} €
-                          </span>
-                        </div>
-                      </div>
-                    </AccordionContent>
-                  </AccordionItem>
-                )}
-                {showOptionalFilters.sizes && (
-                  <AccordionItem value="size" className="border-b border-gray-200 pb-4">
-                    <AccordionTrigger className="text-base font-bold text-gray-900 hover:no-underline">
-                      Size
-                    </AccordionTrigger>
-                    <AccordionContent className="pt-3">
-                      <div className="grid grid-cols-4 gap-2">
-                        {availableSizes.map((size) => (
-                          <div
-                            key={size}
-                            onClick={() => handleSizeChange(size)}
-                            className={`my-border rounded-lg py-2 text-center text-xs font-medium sm:py-3 sm:text-sm ${
-                              filters.sizes.includes(size)
-                                ? 'bg-primary text-primary-foreground'
-                                : ''
-                            }`}
-                          >
-                            {size}
-                          </div>
-                        ))}
-                      </div>
-                    </AccordionContent>
-                  </AccordionItem>
-                )}
-                {showOptionalFilters.colors && (
-                  <AccordionItem value="color" className="border-b border-gray-200 pb-4">
-                    <AccordionTrigger className="text-base font-bold text-gray-900 hover:no-underline">
-                      Color
-                    </AccordionTrigger>
-                    <AccordionContent className="pt-3">
-                      <div className="flex flex-wrap gap-2">
-                        {availableColors.map((color) => (
-                          <button
-                            key={color}
-                            onClick={() => handleColorChange(color)}
-                            className={`h-8 w-8 rounded-full border-4 transition-all sm:h-10 sm:w-10 ${
-                              filters.colors.includes(color)
-                                ? 'border-primary scale-110 shadow-lg'
-                                : 'border-border hover:border-muted-foreground'
-                            }`}
-                            style={{
-                              backgroundColor: color.toLowerCase(),
-                            }}
-                            title={`Filter by ${color} color`}
-                            aria-label={`Filter by ${color} color${filters.colors.includes(color) ? ' (selected)' : ''}`}
-                          />
-                        ))}
-                      </div>
-                    </AccordionContent>
-                  </AccordionItem>
-                )}
-                {showOptionalFilters.tags && (
-                  <AccordionItem value="tags" className="border-b border-gray-200 pb-4">
-                    <AccordionTrigger className="text-base font-bold text-gray-900 hover:no-underline">
-                      Tags
-                    </AccordionTrigger>
-                    <AccordionContent className="pt-3">
-                      <div className="space-y-1">
-                        {availableTags.map((tag) => (
-                          <label
-                            key={tag}
-                            className={`flex cursor-pointer items-center justify-between rounded-lg p-2 transition-all ${
-                              filters.tags.includes(tag)
-                                ? 'bg-purple-50 ring-2 ring-purple-600 ring-inset'
-                                : 'hover:bg-gray-50'
-                            }`}
-                          >
-                            <div className="flex items-center gap-3">
-                              <div className="relative flex items-center">
-                                <input
-                                  type="checkbox"
-                                  checked={filters.tags.includes(tag)}
-                                  onChange={() => handleTagChange(tag)}
-                                  className="text-primary bg-background border-border h-4 w-4 rounded sm:h-5 sm:w-5"
-                                />
-                              </div>
-                              <span className="text-foreground text-sm sm:text-base lg:leading-4">
-                                {tag}
-                              </span>
-                            </div>
-                            <span className="text-muted-foreground bg-muted rounded px-2 py-1 text-xs sm:text-sm">
-                              {getFacetCount('tag', tag)}
-                            </span>
-                          </label>
-                        ))}
-                      </div>
-                    </AccordionContent>
-                  </AccordionItem>
-                )}
-
-                {/* Mandatory Facets for Mobile */}
-                {showMandatoryFilters.stockStatus && (
-                  <AccordionItem value="stockStatus" className="border-b border-gray-200 pb-4">
-                    <AccordionTrigger className="text-base font-bold text-gray-900 hover:no-underline">
-                      Stock Status
-                    </AccordionTrigger>
-                    <AccordionContent className="pt-3">
-                      <div className="space-y-1">
-                        {['In Stock', 'Out of Stock', 'On Backorder'].map((status) => (
-                          <label
-                            key={status}
-                            className={`flex cursor-pointer items-center justify-between rounded-lg p-2 transition-all ${
-                              filters.stockStatus.includes(status)
-                                ? 'bg-purple-50 ring-2 ring-purple-600 ring-inset'
-                                : 'hover:bg-gray-50'
-                            }`}
-                          >
-                            <div className="flex items-center gap-3">
-                              <div className="relative flex items-center">
-                                <input
-                                  type="checkbox"
-                                  checked={filters.stockStatus.includes(status)}
-                                  onChange={() => handleStockStatusChange(status)}
-                                  className="border-border bg-background text-primary h-4 w-4 rounded sm:h-5 sm:w-5"
-                                />
-                              </div>
-                              <span className="text-foreground text-sm sm:text-base lg:leading-4">
-                                {status}
-                              </span>
-                            </div>
-                            <span className="bg-muted text-muted-foreground rounded px-2 py-1 text-xs sm:text-sm">
-                              {stockStatusCounts[status] ?? 0}
-                            </span>
-                          </label>
-                        ))}
-                      </div>
-                    </AccordionContent>
-                  </AccordionItem>
-                )}
-
-                {!isShopifyStore && showMandatoryFilters.featured && (
-                  <AccordionItem value="featured" className="border-b border-gray-200 pb-4">
-                    <AccordionTrigger className="text-base font-bold text-gray-900 hover:no-underline">
-                      Featured Products
-                    </AccordionTrigger>
-                    <AccordionContent className="pt-3">
-                      <div className="space-y-1">
-                        {['Featured', 'Not Featured'].map((status) => (
-                          <label
-                            key={status}
-                            className={`flex cursor-pointer items-center justify-between rounded-lg p-2 transition-all ${
-                              filters.featuredProducts.includes(status)
-                                ? 'bg-purple-50 ring-2 ring-purple-600 ring-inset'
-                                : 'hover:bg-gray-50'
-                            }`}
-                          >
-                            <div className="flex items-center gap-3">
-                              <div className="relative flex items-center">
-                                <input
-                                  type="checkbox"
-                                  checked={filters.featuredProducts.includes(status)}
-                                  onChange={() => handleFeaturedProductsChange(status)}
-                                  className="border-border bg-background text-primary h-4 w-4 rounded sm:h-5 sm:w-5"
-                                />
-                              </div>
-                              <span className="text-foreground text-sm sm:text-base lg:leading-4">
-                                {status}
-                              </span>
-                            </div>
-                            <span className="bg-muted text-muted-foreground rounded px-2 py-1 text-xs sm:text-sm">
-                              {status === 'Featured' ? featuredCount : notFeaturedCount}
-                            </span>
-                          </label>
-                        ))}
-                      </div>
-                    </AccordionContent>
-                  </AccordionItem>
-                )}
-
-                {showMandatoryFilters.sale && (
-                  <AccordionItem value="sale" className="border-b border-gray-200 pb-4">
-                    <AccordionTrigger className="text-base font-bold text-gray-900 hover:no-underline">
-                      Sale Status
-                    </AccordionTrigger>
-                    <AccordionContent className="pt-3">
-                      <div className="space-y-1">
-                        {['On Sale', 'Not On Sale'].map((status) => {
-                          const count = status === 'On Sale' ? saleCount : notSaleCount;
-                          console.log(`📊 [RENDER-MOBILE] Displaying ${status}: ${count}`);
-                          return (
-                            <label
-                              key={status}
-                              className={`flex cursor-pointer items-center justify-between rounded-lg p-2 transition-all ${
-                                filters.saleStatus.includes(status)
-                                  ? 'bg-purple-50 ring-2 ring-purple-600 ring-inset'
-                                  : 'hover:bg-gray-50'
-                              }`}
-                            >
-                              <div className="flex items-center gap-3">
-                                <div className="relative flex items-center">
-                                  <input
-                                    type="checkbox"
-                                    checked={filters.saleStatus.includes(status)}
-                                    onChange={() => handleSaleStatusChange(status)}
-                                    className="border-border bg-background text-primary h-4 w-4 rounded sm:h-5 sm:w-5"
-                                  />
-                                </div>
-                                <span className="text-foreground text-sm sm:text-base lg:leading-4">
-                                  {status}
-                                </span>
-                              </div>
-                              <span className="bg-muted text-muted-foreground rounded px-2 py-1 text-xs sm:text-sm">
-                                {count}
-                              </span>
-                            </label>
-                          );
-                        })}
-                      </div>
-                    </AccordionContent>
-                  </AccordionItem>
-                )}
-              </Accordion>
-            </div>
-
-            {/* Done Button Footer - Simple and clean */}
-            <div className="pb-safe flex-shrink-0 border-t border-gray-200 bg-white p-4">
-              <DrawerClose asChild>
-                <button
-                  aria-label="Done - apply filters"
-                  className="min-h-[48px] w-full rounded-lg bg-purple-600 py-3 text-base font-semibold text-white shadow-sm active:scale-[0.98] active:bg-purple-700"
-                >
-                  Show {totalProducts} {totalProducts === 1 ? 'Product' : 'Products'}
-                </button>
-              </DrawerClose>
-            </div>
           </DrawerContent>
         </Drawer>
+
+        {/* KaliFinder Watermark - Right Side */}
+        <a
+          href="https://kalifinder.com"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="group inline-flex h-[48px] min-h-[48px] items-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2.5 shadow-lg transition-all hover:border-purple-300 hover:shadow-xl active:scale-95"
+          style={{
+            backdropFilter: 'blur(8px)',
+            backgroundColor: 'rgba(255, 255, 255, 0.95)',
+          }}
+        >
+          <span className="hidden text-xs font-medium text-gray-500 transition-colors group-hover:text-gray-700 sm:inline">
+            Powered by
+          </span>
+          <div className="flex items-center gap-1.5">
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              className="transition-transform group-hover:scale-110"
+            >
+              <path
+                d="M12 2L2 7L12 12L22 7L12 2Z"
+                fill="#7c3aed"
+                className="transition-colors group-hover:fill-purple-600"
+              />
+              <path
+                d="M2 17L12 22L22 17"
+                stroke="#7c3aed"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="transition-colors group-hover:stroke-purple-600"
+              />
+              <path
+                d="M2 12L12 17L22 12"
+                stroke="#7c3aed"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="transition-colors group-hover:stroke-purple-600"
+              />
+            </svg>
+            <span className="text-sm font-semibold text-gray-900 transition-colors group-hover:text-purple-600">
+              KaliFinder
+            </span>
+          </div>
+        </a>
       </div>
 
-      <div className="mx-auto w-full max-w-[95%]">
-        <div className="flex w-full gap-6 px-2 py-6 lg:px-4">
-          <aside className="sticky top-24 hidden w-72 flex-shrink-0 rounded-xl border border-gray-200 bg-white p-6 shadow-sm lg:block">
+      <div className="mx-auto w-full px-2 lg:px-4">
+        <div className="flex w-full gap-6 py-4">
+          <aside className="sticky top-24 hidden w-72 flex-shrink-0 rounded-xl border border-gray-200 bg-white px-4 shadow-sm lg:block">
             <Accordion
               type="multiple"
               defaultValue={[
@@ -3152,10 +3316,10 @@ const KalifindSearch: React.FC<{
                 'featured',
                 'sale',
               ]}
-              className="space-y-4"
+              className="space-y-2"
             >
               {showMandatoryFilters.categories && (
-                <AccordionItem value="category" className="border-b border-gray-200 pb-4">
+                <AccordionItem value="category" className="border-b border-gray-200">
                   <AccordionTrigger className="text-base font-bold text-gray-900 hover:no-underline">
                     Categories
                   </AccordionTrigger>
@@ -3200,7 +3364,7 @@ const KalifindSearch: React.FC<{
                 </AccordionItem>
               )}
               {showOptionalFilters.brands && (
-                <AccordionItem value="brand" className="border-b border-gray-200 pb-4">
+                <AccordionItem value="brand" className="border-b border-gray-200">
                   <AccordionTrigger className="text-base font-bold text-gray-900 hover:no-underline">
                     Brand
                   </AccordionTrigger>
@@ -3279,7 +3443,7 @@ const KalifindSearch: React.FC<{
                 </AccordionItem>
               )}
               {showMandatoryFilters.price && (
-                <AccordionItem value="price" className="border-b border-gray-200 pb-4">
+                <AccordionItem value="price" className="border-b border-gray-200">
                   <AccordionTrigger className="text-base font-bold text-gray-900 hover:no-underline">
                     Price
                   </AccordionTrigger>
@@ -3383,7 +3547,7 @@ const KalifindSearch: React.FC<{
                 </AccordionItem>
               )}
               {showOptionalFilters.tags && (
-                <AccordionItem value="tags" className="border-b border-gray-200 pb-4">
+                <AccordionItem value="tags" className="border-b border-gray-200">
                   <AccordionTrigger className="text-base font-bold text-gray-900 hover:no-underline">
                     Tags
                   </AccordionTrigger>
@@ -3461,7 +3625,7 @@ const KalifindSearch: React.FC<{
               )}
 
               {showMandatoryFilters.stockStatus && (
-                <AccordionItem value="stockStatus" className="border-b border-gray-200 pb-4">
+                <AccordionItem value="stockStatus" className="border-b border-gray-200">
                   <AccordionTrigger className="text-base font-bold text-gray-900 hover:no-underline">
                     Stock Status
                   </AccordionTrigger>
@@ -3525,7 +3689,7 @@ const KalifindSearch: React.FC<{
               )}
 
               {!isShopifyStore && showMandatoryFilters.featured && (
-                <AccordionItem value="featured" className="border-b border-gray-200 pb-4">
+                <AccordionItem value="featured" className="border-b border-gray-200">
                   <AccordionTrigger className="text-base font-bold text-gray-900 hover:no-underline">
                     Featured Products
                   </AccordionTrigger>
@@ -3589,7 +3753,7 @@ const KalifindSearch: React.FC<{
               )}
 
               {showMandatoryFilters.sale && (
-                <AccordionItem value="sale" className="border-b border-gray-200 pb-4">
+                <AccordionItem value="sale" className="border-b border-gray-200">
                   <AccordionTrigger className="text-base font-bold text-gray-900 hover:no-underline">
                     Sale Status
                   </AccordionTrigger>
@@ -3664,7 +3828,7 @@ const KalifindSearch: React.FC<{
               </button>
             )}
           </aside>{' '}
-          <main ref={mainContentRef} className="kalifinder-results flex-1 px-1.5 lg:px-0">
+          <main ref={mainContentRef} className="kalifinder-results flex-1">
             {recentSearches.length > 0 && (
               <div className="mb-6">
                 <div className="mb-3 flex items-center justify-between">
@@ -3709,7 +3873,7 @@ const KalifindSearch: React.FC<{
             )}
             {!showRecommendations && (
               <>
-                <h2 className="text-foreground border-border mb-3 hidden border-b pb-3 text-lg font-semibold lg:block">
+                <h2 className="text-foreground border-border mb-3 hidden border-b text-lg font-semibold lg:block">
                   Search Results
                 </h2>
                 <div
@@ -4274,68 +4438,6 @@ const KalifindSearch: React.FC<{
               </div>
             )}
           </main>
-          {/* Framer-style Powered by KaliFinder watermark - Bottom Right */}
-          <div
-            className="fixed right-3 z-[10001] sm:right-4 lg:right-6"
-            style={{
-              bottom: isMobile
-                ? `max(${bottomOffset}px, calc(${bottomOffset}px + env(safe-area-inset-bottom)))`
-                : '1.5rem',
-              right: 'max(0.75rem, calc(0.75rem + env(safe-area-inset-right)))',
-              transition: 'bottom 0.2s ease-out, opacity 0.2s ease-out',
-              opacity: isDrawerOpen ? 0 : 1,
-              pointerEvents: isDrawerOpen ? 'none' : 'auto',
-            }}
-          >
-            <a
-              href="https://kalifinder.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="group inline-flex min-h-[44px] items-center gap-1.5 rounded-full border border-gray-200 bg-white px-4 py-2.5 shadow-lg transition-all hover:border-purple-300 hover:shadow-xl sm:min-h-[40px] sm:gap-2 sm:px-3 sm:py-2"
-              style={{
-                backdropFilter: 'blur(8px)',
-                backgroundColor: 'rgba(255, 255, 255, 0.95)',
-              }}
-            >
-              <span className="hidden text-xs font-medium text-gray-500 transition-colors group-hover:text-gray-700 sm:inline">
-                Powered by
-              </span>
-              <div className="flex items-center gap-1.5">
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  className="transition-transform group-hover:scale-110"
-                >
-                  <path
-                    d="M12 2L2 7L12 12L22 7L12 2Z"
-                    fill="#7c3aed"
-                    className="transition-colors group-hover:fill-purple-600"
-                  />
-                  <path
-                    d="M2 17L12 22L22 17"
-                    stroke="#7c3aed"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="transition-colors group-hover:stroke-purple-600"
-                  />
-                  <path
-                    d="M2 12L12 17L22 12"
-                    stroke="#7c3aed"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="transition-colors group-hover:stroke-purple-600"
-                  />
-                </svg>
-                <span className="text-sm font-semibold text-gray-900 transition-colors group-hover:text-purple-600">
-                  KaliFinder
-                </span>
-              </div>
-            </a>
-          </div>
           {/* Scroll to top button - shows after scrolling down 400px */}
           <ScrollToTop containerRef={mainContentRef} showAfter={400} />
         </div>
