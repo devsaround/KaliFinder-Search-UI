@@ -412,28 +412,6 @@ const KalifindSearch: React.FC<{
       'ref:',
       !!drawerScrollRef.current
     );
-    if (isDrawerOpen) {
-      setTimeout(() => {
-        const el = drawerScrollRef.current;
-        console.log('🔧 [DEBUG] After timeout, ref element:', !!el);
-        if (el) {
-          const styles = window.getComputedStyle(el);
-          console.log('🔍 [DEBUG] Scroll container computed styles:', {
-            overflow: styles.overflow,
-            overflowY: styles.overflowY,
-            overflowX: styles.overflowX,
-            height: styles.height,
-            maxHeight: styles.maxHeight,
-            scrollHeight: el.scrollHeight,
-            clientHeight: el.clientHeight,
-            offsetHeight: el.offsetHeight,
-            isScrollable: el.scrollHeight > el.clientHeight,
-            pointerEvents: styles.pointerEvents,
-            touchAction: styles.touchAction,
-          });
-        }
-      }, 300);
-    }
   }, [isDrawerOpen]);
 
   // Track search input focus state for keyboard hint
@@ -2851,7 +2829,6 @@ const KalifindSearch: React.FC<{
       {/* Shadow DOM Fixed Positioning: Host with no transforms, child with true viewport-fixed */}
       <div
         className="lg:hidden"
-        onClick={() => console.log('🔵 [DEBUG] Mobile floating container CLICKED')}
         style={{
           position: 'static',
           contain: 'none',
@@ -2865,7 +2842,6 @@ const KalifindSearch: React.FC<{
           data-floating-container="mobile"
           data-base-offset="1.5rem"
           className="fixed inset-x-0 z-[99999] flex items-end justify-between gap-3 px-4"
-          onClick={() => console.log('🟣 [DEBUG] Fixed floating container CLICKED')}
           style={{
             bottom: 'calc(env(safe-area-inset-bottom, 0px) + 1.5rem)',
             left: 0,
@@ -2874,12 +2850,7 @@ const KalifindSearch: React.FC<{
         >
           {/* Mobile Filter Button - Left Side */}
           <button
-            onClick={() => {
-              console.log('🟢 [DEBUG] Mobile Filter Button CLICKED');
-              console.log('🟢 [DEBUG] Current drawer state:', isDrawerOpen);
-              console.log('🚪 [DRAWER] State changing:', { from: isDrawerOpen, to: !isDrawerOpen });
-              setIsDrawerOpen(!isDrawerOpen);
-            }}
+            onClick={() => setIsDrawerOpen(!isDrawerOpen)}
             className="group inline-flex h-12 min-h-[44px] touch-manipulation items-center gap-2 rounded-full border border-purple-600 bg-purple-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg transition-all hover:border-purple-700 hover:bg-purple-700 hover:shadow-xl active:scale-95 active:bg-purple-800"
             title="Open filters"
             aria-label="Open filters"
@@ -3056,49 +3027,6 @@ const KalifindSearch: React.FC<{
                 <div
                   ref={drawerScrollRef}
                   className="kalifinder-drawer-scroll flex-1 overflow-y-auto bg-gray-50"
-                  onScroll={(e) => {
-                    const target = e.currentTarget;
-                    console.log('📜 [SCROLL] Drawer scrolled:', {
-                      scrollTop: target.scrollTop,
-                      scrollHeight: target.scrollHeight,
-                      clientHeight: target.clientHeight,
-                      scrollable: target.scrollHeight > target.clientHeight,
-                    });
-                  }}
-                  onWheel={(e) => {
-                    console.log('🖱️ [WHEEL] Mouse wheel event:', {
-                      deltaY: e.deltaY,
-                      deltaX: e.deltaX,
-                      deltaMode: e.deltaMode,
-                    });
-                  }}
-                  onTouchStart={(e) => {
-                    console.log('👆 [TOUCH] Touch start:', {
-                      touches: e.touches.length,
-                      clientY: e.touches[0]?.clientY,
-                    });
-                  }}
-                  onTouchMove={(e) => {
-                    console.log('👆 [TOUCH] Touch move:', {
-                      touches: e.touches.length,
-                      clientY: e.touches[0]?.clientY,
-                    });
-                  }}
-                  onTouchEnd={() => {
-                    console.log('👆 [TOUCH] Touch end');
-                  }}
-                  onPointerDown={(e) => {
-                    console.log('👉 [POINTER] Pointer down:', {
-                      pointerType: e.pointerType,
-                      clientY: e.clientY,
-                    });
-                  }}
-                  onPointerMove={(e) => {
-                    console.log('👉 [POINTER] Pointer move:', {
-                      pointerType: e.pointerType,
-                      clientY: e.clientY,
-                    });
-                  }}
                   style={{
                     WebkitOverflowScrolling: 'touch',
                     overscrollBehavior: 'contain',
