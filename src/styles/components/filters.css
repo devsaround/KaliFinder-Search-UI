@@ -592,24 +592,31 @@
 }
 
 /* Scrollbar for mobile filter drawer */
+.kalifinder-drawer-scroll::-webkit-scrollbar,
 [data-vaul-no-drag]::-webkit-scrollbar,
 .vaul-scrollable::-webkit-scrollbar {
   width: 8px;
+  height: 8px;
 }
 
-[data-vaul-no-drag]::-webkit-scrollbar-track,
-.vaul-scrollable::-webkit-scrollbar-track {
+.kalifinder-drawer-scroll::-webkit-scrollbar-track {
   background: #f3f4f6;
   border-radius: 4px;
+  margin: 8px 0;
 }
 
-[data-vaul-no-drag]::-webkit-scrollbar-thumb,
-.vaul-scrollable::-webkit-scrollbar-thumb {
+.kalifinder-drawer-scroll::-webkit-scrollbar-thumb {
   background: #9333ea;
   border-radius: 4px;
+  transition: background-color 0.2s ease;
 }
 
-[data-vaul-no-drag]::-webkit-scrollbar-thumb:hover,
-.vaul-scrollable::-webkit-scrollbar-thumb:hover {
+.kalifinder-drawer-scroll::-webkit-scrollbar-thumb:hover {
   background: #7e22ce;
+}
+
+/* Firefox scrollbar styling */
+.kalifinder-drawer-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: #9333ea #f3f4f6;
 }

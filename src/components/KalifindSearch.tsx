@@ -14,7 +14,6 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
-import { Drawer, DrawerClose, DrawerContent, DrawerTrigger } from '@/components/ui/drawer';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -255,8 +254,10 @@ const CategoryTreeNode: React.FC<{
   return (
     <div>
       <label
-        className={`flex cursor-pointer items-center justify-between rounded-lg p-2 transition-all ${
-          isSelected ? 'bg-purple-50 ring-2 ring-purple-600 ring-inset' : 'hover:bg-gray-50'
+        className={`flex cursor-pointer touch-manipulation items-center justify-between rounded-lg p-2 transition-all ${
+          isSelected
+            ? 'bg-purple-50 ring-2 ring-purple-600 ring-inset'
+            : 'hover:bg-gray-50 active:bg-gray-100'
         }`}
         style={{ paddingLeft: hasChildren || level > 0 ? `${level * 1 + 0.5}rem` : undefined }}
       >
@@ -399,6 +400,41 @@ const KalifindSearch: React.FC<{
 
   // Control drawer open state to hide Filter Button when drawer is open
   const [isDrawerOpen, setIsDrawerOpen] = useState<boolean>(false);
+
+  // Debug ref for scroll container
+  const drawerScrollRef = React.useRef<HTMLDivElement>(null);
+
+  // Debug scroll container when drawer opens
+  useEffect(() => {
+    console.log(
+      '🔧 [DEBUG] useEffect fired, isDrawerOpen:',
+      isDrawerOpen,
+      'ref:',
+      !!drawerScrollRef.current
+    );
+    if (isDrawerOpen) {
+      setTimeout(() => {
+        const el = drawerScrollRef.current;
+        console.log('🔧 [DEBUG] After timeout, ref element:', !!el);
+        if (el) {
+          const styles = window.getComputedStyle(el);
+          console.log('🔍 [DEBUG] Scroll container computed styles:', {
+            overflow: styles.overflow,
+            overflowY: styles.overflowY,
+            overflowX: styles.overflowX,
+            height: styles.height,
+            maxHeight: styles.maxHeight,
+            scrollHeight: el.scrollHeight,
+            clientHeight: el.clientHeight,
+            offsetHeight: el.offsetHeight,
+            isScrollable: el.scrollHeight > el.clientHeight,
+            pointerEvents: styles.pointerEvents,
+            touchAction: styles.touchAction,
+          });
+        }
+      }, 300);
+    }
+  }, [isDrawerOpen]);
 
   // Track search input focus state for keyboard hint
   const [isSearchFocused, setIsSearchFocused] = useState<boolean>(false);
@@ -2815,6 +2851,7 @@ const KalifindSearch: React.FC<{
       {/* Shadow DOM Fixed Positioning: Host with no transforms, child with true viewport-fixed */}
       <div
         className="lg:hidden"
+        onClick={() => console.log('🔵 [DEBUG] Mobile floating container CLICKED')}
         style={{
           position: 'static',
           contain: 'none',
@@ -2828,6 +2865,7 @@ const KalifindSearch: React.FC<{
           data-floating-container="mobile"
           data-base-offset="1.5rem"
           className="fixed inset-x-0 z-[99999] flex items-end justify-between gap-3 px-4"
+          onClick={() => console.log('🟣 [DEBUG] Fixed floating container CLICKED')}
           style={{
             bottom: 'calc(env(safe-area-inset-bottom, 0px) + 1.5rem)',
             left: 0,
@@ -2835,492 +2873,308 @@ const KalifindSearch: React.FC<{
           }}
         >
           {/* Mobile Filter Button - Left Side */}
-          <Drawer
-            open={isDrawerOpen}
-            onOpenChange={setIsDrawerOpen}
-            shouldScaleBackground={false}
-            dismissible={true}
-            modal={true}
+          <button
+            onClick={() => {
+              console.log('🟢 [DEBUG] Mobile Filter Button CLICKED');
+              console.log('🟢 [DEBUG] Current drawer state:', isDrawerOpen);
+              console.log('🚪 [DRAWER] State changing:', { from: isDrawerOpen, to: !isDrawerOpen });
+              setIsDrawerOpen(!isDrawerOpen);
+            }}
+            className="group inline-flex h-12 min-h-[44px] touch-manipulation items-center gap-2 rounded-full border border-purple-600 bg-purple-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg transition-all hover:border-purple-700 hover:bg-purple-700 hover:shadow-xl active:scale-95 active:bg-purple-800"
+            title="Open filters"
+            aria-label="Open filters"
           >
-            <DrawerTrigger asChild>
-              <button
-                className="group inline-flex h-12 min-h-[44px] touch-manipulation items-center gap-2 rounded-full border border-purple-600 bg-purple-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg transition-all hover:border-purple-700 hover:bg-purple-700 hover:shadow-xl active:scale-95 active:bg-purple-800"
-                title="Open filters"
-                aria-label="Open filters"
-              >
-                <Filter className="h-5 w-5" />
-                Filters
-                <span className="rounded-full bg-white px-2 py-0.5 text-xs font-bold text-purple-600">
-                  {filters.categories.length +
-                    filters.colors.length +
-                    filters.sizes.length +
-                    filters.brands.length +
-                    filters.tags.length +
-                    filters.stockStatus.length +
-                    filters.featuredProducts.length +
-                    filters.saleStatus.length +
-                    (filters.priceRange[1] < filteredMaxPrice ? 1 : 0)}
-                </span>
-              </button>
-            </DrawerTrigger>
-            <DrawerContent className="z-[100000] flex h-[85vh] max-h-[85vh] flex-col overflow-hidden rounded-t-[24px] bg-white">
-              {/* Drag Handle - Industry standard */}
-              <div className="flex-shrink-0 rounded-t-[24px] bg-white px-4 pt-3 pb-2">
-                <div className="mx-auto h-1 w-12 rounded-full bg-gray-300" />
-              </div>
+            <Filter className="h-5 w-5" />
+            Filters
+            <span className="rounded-full bg-white px-2 py-0.5 text-xs font-bold text-purple-600">
+              {filters.categories.length +
+                filters.colors.length +
+                filters.sizes.length +
+                filters.brands.length +
+                filters.tags.length +
+                filters.stockStatus.length +
+                filters.featuredProducts.length +
+                filters.saleStatus.length +
+                (filters.priceRange[1] < filteredMaxPrice ? 1 : 0)}
+            </span>
+          </button>
 
-              {/* Mobile Filter Header - Shows active filters */}
-              <div className="sticky top-0 z-10 flex flex-shrink-0 flex-col border-b border-gray-200 bg-white px-5 py-4 shadow-sm">
-                <div className="flex items-center gap-2.5">
-                  <Filter className="h-5 w-5 text-purple-600" />
-                  <h2 className="text-xl font-bold text-gray-900">Filters</h2>
-                  {filters.categories.length +
-                    filters.colors.length +
-                    filters.sizes.length +
-                    filters.brands.length +
-                    filters.tags.length +
-                    filters.stockStatus.length +
-                    filters.featuredProducts.length +
-                    filters.saleStatus.length +
-                    (filters.priceRange[1] < filteredMaxPrice ? 1 : 0) >
-                    0 && (
-                    <span className="rounded-full bg-purple-600 px-2.5 py-1 text-xs font-bold text-white">
-                      {filters.categories.length +
-                        filters.colors.length +
-                        filters.sizes.length +
-                        filters.brands.length +
-                        filters.tags.length +
-                        filters.stockStatus.length +
-                        filters.featuredProducts.length +
-                        filters.saleStatus.length +
-                        (filters.priceRange[1] < filteredMaxPrice ? 1 : 0)}
-                    </span>
-                  )}
+          {/* Mobile Filter Drawer - Pure React + Tailwind */}
+          {isDrawerOpen && (
+            <>
+              {/* Overlay */}
+              <div
+                className="fixed inset-0 z-[99998] bg-black/50"
+                onClick={() => setIsDrawerOpen(false)}
+                style={{
+                  animation: 'fadeIn 200ms ease-out',
+                }}
+              />
+
+              {/* Drawer */}
+              <div
+                className="fixed inset-x-0 bottom-0 z-[100000] flex h-[85vh] max-h-[85vh] flex-col rounded-t-[24px] bg-white"
+                style={{
+                  animation: 'slideUp 300ms ease-out',
+                }}
+              >
+                {/* Inline keyframes */}
+                <style>{`
+                    @keyframes fadeIn {
+                      from { opacity: 0; }
+                      to { opacity: 1; }
+                    }
+                    @keyframes slideUp {
+                      from { transform: translateY(100%); }
+                      to { transform: translateY(0); }
+                    }
+                  `}</style>
+
+                {/* Drag Handle */}
+                <div className="flex-shrink-0 rounded-t-[24px] bg-white px-4 pt-3 pb-2">
+                  <div className="mx-auto h-1 w-12 rounded-full bg-gray-300" />
                 </div>
 
-                {/* Active Filters Display */}
-                {(filters.categories.length > 0 ||
-                  filters.colors.length > 0 ||
-                  filters.sizes.length > 0 ||
-                  filters.brands.length > 0 ||
-                  filters.tags.length > 0 ||
-                  filters.stockStatus.length > 0 ||
-                  filters.featuredProducts.length > 0 ||
-                  filters.saleStatus.length > 0 ||
-                  filters.priceRange[1] < filteredMaxPrice) && (
-                  <div
-                    className="mt-3 flex flex-nowrap gap-2 overflow-x-auto overflow-y-hidden pb-2"
-                    style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-                  >
-                    <style>{`.mt-3::-webkit-scrollbar { display: none; }`}</style>
-                    {filters.categories.map((category) => (
-                      <span
-                        key={category}
-                        className="inline-flex flex-shrink-0 items-center gap-1 rounded-full bg-purple-100 px-2.5 py-1 text-xs font-medium whitespace-nowrap text-purple-700"
-                      >
-                        {category.split(' > ').pop()}
-                      </span>
-                    ))}
-                    {filters.brands.map((brand) => (
-                      <span
-                        key={brand}
-                        className="inline-flex flex-shrink-0 items-center gap-1 rounded-full bg-blue-100 px-2.5 py-1 text-xs font-medium whitespace-nowrap text-blue-700"
-                      >
-                        {brand}
-                      </span>
-                    ))}
-                    {filters.sizes.map((size) => (
-                      <span
-                        key={size}
-                        className="inline-flex flex-shrink-0 items-center gap-1 rounded-full bg-green-100 px-2.5 py-1 text-xs font-medium whitespace-nowrap text-green-700"
-                      >
-                        {size}
-                      </span>
-                    ))}
-                    {filters.colors.map((color) => (
-                      <span
-                        key={color}
-                        className="inline-flex flex-shrink-0 items-center gap-1 rounded-full bg-pink-100 px-2.5 py-1 text-xs font-medium whitespace-nowrap text-pink-700"
-                      >
-                        {color}
-                      </span>
-                    ))}
-                    {filters.tags.map((tag) => (
-                      <span
-                        key={tag}
-                        className="inline-flex flex-shrink-0 items-center gap-1 rounded-full bg-amber-100 px-2.5 py-1 text-xs font-medium whitespace-nowrap text-amber-700"
-                      >
-                        {tag}
-                      </span>
-                    ))}
-                    {filters.stockStatus.map((status) => (
-                      <span
-                        key={status}
-                        className="inline-flex flex-shrink-0 items-center gap-1 rounded-full bg-teal-100 px-2.5 py-1 text-xs font-medium whitespace-nowrap text-teal-700"
-                      >
-                        {status}
-                      </span>
-                    ))}
-                    {filters.featuredProducts.map((status) => (
-                      <span
-                        key={status}
-                        className="inline-flex flex-shrink-0 items-center gap-1 rounded-full bg-yellow-100 px-2.5 py-1 text-xs font-medium whitespace-nowrap text-yellow-700"
-                      >
-                        {status}
-                      </span>
-                    ))}
-                    {filters.saleStatus.map((status) => (
-                      <span
-                        key={status}
-                        className="inline-flex flex-shrink-0 items-center gap-1 rounded-full bg-red-100 px-2.5 py-1 text-xs font-medium whitespace-nowrap text-red-700"
-                      >
-                        {status}
-                      </span>
-                    ))}
-                    {filters.priceRange[1] < filteredMaxPrice && (
-                      <span className="inline-flex flex-shrink-0 items-center gap-1 rounded-full bg-indigo-100 px-2.5 py-1 text-xs font-medium whitespace-nowrap text-indigo-700">
-                        Max: {filters.priceRange[1]}€
+                {/* Mobile Filter Header - Shows active filters */}
+                <div className="sticky top-0 z-10 flex flex-shrink-0 flex-col border-b border-gray-200 bg-white px-5 py-4 shadow-sm">
+                  <div className="flex items-center gap-2.5">
+                    <Filter className="h-5 w-5 text-purple-600" />
+                    <h2 className="text-xl font-bold text-gray-900">Filters</h2>
+                    {filters.categories.length +
+                      filters.colors.length +
+                      filters.sizes.length +
+                      filters.brands.length +
+                      filters.tags.length +
+                      filters.stockStatus.length +
+                      filters.featuredProducts.length +
+                      filters.saleStatus.length +
+                      (filters.priceRange[1] < filteredMaxPrice ? 1 : 0) >
+                      0 && (
+                      <span className="rounded-full bg-purple-600 px-2.5 py-1 text-xs font-bold text-white">
+                        {filters.categories.length +
+                          filters.colors.length +
+                          filters.sizes.length +
+                          filters.brands.length +
+                          filters.tags.length +
+                          filters.stockStatus.length +
+                          filters.featuredProducts.length +
+                          filters.saleStatus.length +
+                          (filters.priceRange[1] < filteredMaxPrice ? 1 : 0)}
                       </span>
                     )}
                   </div>
-                )}
-              </div>
 
-              {/* Scrollable Filter Content */}
-              <div data-vaul-no-drag className="flex-1 overflow-y-auto bg-gray-50">
-                <div className="space-y-1 px-5 py-5 pb-4">
-                  <Accordion
-                    type="multiple"
-                    defaultValue={[
-                      ...(showMandatoryFilters.categories ? ['category'] : []),
-                      ...(showMandatoryFilters.price ? ['price'] : []),
-                      ...(showMandatoryFilters.stockStatus ? ['stockStatus'] : []),
-                      ...(!isShopifyStore && showMandatoryFilters.featured ? ['featured'] : []),
-                      ...(showMandatoryFilters.sale ? ['sale'] : []),
-                      ...(showOptionalFilters.sizes ? ['size'] : []),
-                      ...(showOptionalFilters.colors ? ['color'] : []),
-                      ...(showOptionalFilters.brands ? ['brand'] : []),
-                      ...(showOptionalFilters.tags ? ['tags'] : []),
-                    ]}
-                    className="space-y-3"
-                  >
-                    {showMandatoryFilters.categories && (
-                      <AccordionItem
-                        value="category"
-                        className="overflow-hidden rounded-xl border border-gray-200 bg-white px-4"
-                      >
-                        <AccordionTrigger className="py-4 text-base font-bold text-gray-900 hover:no-underline">
-                          Categories
-                        </AccordionTrigger>
-                        <AccordionContent className="pt-3">
-                          <div className="space-y-1">
-                            {availableCategories.length > 0 ? (
-                              (() => {
-                                const categoryTree = buildCategoryTree(
-                                  availableCategories,
-                                  categoryCounts
-                                );
-                                return Array.from(categoryTree.children.values()).map(
-                                  (rootNode) => (
-                                    <CategoryTreeNode
-                                      key={rootNode.fullPath}
-                                      node={rootNode}
-                                      selectedCategories={filters.categories}
-                                      expandedCategories={expandedCategories}
-                                      onToggle={handleCategoryChange}
-                                      onExpand={handleCategoryExpand}
-                                      level={0}
-                                      getFacetCount={getFacetCount}
-                                    />
-                                  )
-                                );
-                              })()
-                            ) : (
-                              <p className="text-muted-foreground p-2 text-sm">
-                                No categories available
-                              </p>
-                            )}
-                          </div>
-                        </AccordionContent>
-                      </AccordionItem>
-                    )}
-                    {showOptionalFilters.brands && (
-                      <AccordionItem
-                        value="brand"
-                        className="overflow-hidden rounded-xl border border-gray-200 bg-white px-4"
-                      >
-                        <AccordionTrigger className="py-4 text-base font-bold text-gray-900 hover:no-underline">
-                          Brand
-                        </AccordionTrigger>
-                        <AccordionContent className="pt-3">
-                          <div className="space-y-1">
-                            {availableBrands.map((brand) => (
-                              <label
-                                key={brand}
-                                className={`flex min-h-[48px] cursor-pointer items-center justify-between rounded-lg p-3 transition-all ${
-                                  filters.brands.includes(brand)
-                                    ? 'bg-purple-50 ring-2 ring-purple-600 ring-inset'
-                                    : 'hover:bg-gray-50 active:bg-gray-100'
-                                }`}
-                              >
-                                <div className="flex flex-1 items-center gap-3">
-                                  <div className="relative flex min-h-[44px] min-w-[44px] items-center justify-center">
-                                    <input
-                                      type="checkbox"
-                                      checked={filters.brands.includes(brand)}
-                                      onChange={() => handleBrandChange(brand)}
-                                      className="text-primary bg-background border-border h-5 w-5 rounded"
-                                    />
-                                  </div>
-                                  <span className="text-foreground flex-1 text-sm">{brand}</span>
-                                </div>
-                                <span className="text-muted-foreground bg-muted rounded-full px-2.5 py-1 text-xs font-medium">
-                                  {getFacetCount('brand', brand)}
-                                </span>
-                              </label>
-                            ))}
-                          </div>
-                        </AccordionContent>
-                      </AccordionItem>
-                    )}
-                    {showMandatoryFilters.price && (
-                      <AccordionItem
-                        value="price"
-                        className="overflow-hidden rounded-xl border border-gray-200 bg-white px-4"
-                      >
-                        <AccordionTrigger className="py-4 text-base font-bold text-gray-900 hover:no-underline">
-                          Price
-                        </AccordionTrigger>
-                        <AccordionContent className="pt-3">
-                          <div className="space-y-4">
-                            <div className="px-2">
-                              <Slider
-                                value={[Math.min(filters.priceRange[1], filteredMaxPrice)]}
-                                onValueChange={(value: number[]) =>
-                                  updateFilter('priceRange', [
-                                    filters.priceRange[0],
-                                    value[0] ?? filteredMaxPrice,
-                                  ])
-                                }
-                                max={filteredMaxPrice}
-                                step={1}
-                                style={{
-                                  paddingTop: '16px',
-                                  paddingBottom: '16px',
-                                }}
-                              />
+                  {/* Active Filters Display */}
+                  {(filters.categories.length > 0 ||
+                    filters.colors.length > 0 ||
+                    filters.sizes.length > 0 ||
+                    filters.brands.length > 0 ||
+                    filters.tags.length > 0 ||
+                    filters.stockStatus.length > 0 ||
+                    filters.featuredProducts.length > 0 ||
+                    filters.saleStatus.length > 0 ||
+                    filters.priceRange[1] < filteredMaxPrice) && (
+                    <div
+                      className="mt-3 flex flex-nowrap gap-2 overflow-x-auto overflow-y-hidden pb-2"
+                      style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                    >
+                      <style>{`.mt-3::-webkit-scrollbar { display: none; }`}</style>
+                      {filters.categories.map((category) => (
+                        <span
+                          key={category}
+                          className="inline-flex flex-shrink-0 items-center gap-1 rounded-full bg-purple-100 px-2.5 py-1 text-xs font-medium whitespace-nowrap text-purple-700"
+                        >
+                          {category.split(' > ').pop()}
+                        </span>
+                      ))}
+                      {filters.brands.map((brand) => (
+                        <span
+                          key={brand}
+                          className="inline-flex flex-shrink-0 items-center gap-1 rounded-full bg-blue-100 px-2.5 py-1 text-xs font-medium whitespace-nowrap text-blue-700"
+                        >
+                          {brand}
+                        </span>
+                      ))}
+                      {filters.sizes.map((size) => (
+                        <span
+                          key={size}
+                          className="inline-flex flex-shrink-0 items-center gap-1 rounded-full bg-green-100 px-2.5 py-1 text-xs font-medium whitespace-nowrap text-green-700"
+                        >
+                          {size}
+                        </span>
+                      ))}
+                      {filters.colors.map((color) => (
+                        <span
+                          key={color}
+                          className="inline-flex flex-shrink-0 items-center gap-1 rounded-full bg-pink-100 px-2.5 py-1 text-xs font-medium whitespace-nowrap text-pink-700"
+                        >
+                          {color}
+                        </span>
+                      ))}
+                      {filters.tags.map((tag) => (
+                        <span
+                          key={tag}
+                          className="inline-flex flex-shrink-0 items-center gap-1 rounded-full bg-amber-100 px-2.5 py-1 text-xs font-medium whitespace-nowrap text-amber-700"
+                        >
+                          {tag}
+                        </span>
+                      ))}
+                      {filters.stockStatus.map((status) => (
+                        <span
+                          key={status}
+                          className="inline-flex flex-shrink-0 items-center gap-1 rounded-full bg-teal-100 px-2.5 py-1 text-xs font-medium whitespace-nowrap text-teal-700"
+                        >
+                          {status}
+                        </span>
+                      ))}
+                      {filters.featuredProducts.map((status) => (
+                        <span
+                          key={status}
+                          className="inline-flex flex-shrink-0 items-center gap-1 rounded-full bg-yellow-100 px-2.5 py-1 text-xs font-medium whitespace-nowrap text-yellow-700"
+                        >
+                          {status}
+                        </span>
+                      ))}
+                      {filters.saleStatus.map((status) => (
+                        <span
+                          key={status}
+                          className="inline-flex flex-shrink-0 items-center gap-1 rounded-full bg-red-100 px-2.5 py-1 text-xs font-medium whitespace-nowrap text-red-700"
+                        >
+                          {status}
+                        </span>
+                      ))}
+                      {filters.priceRange[1] < filteredMaxPrice && (
+                        <span className="inline-flex flex-shrink-0 items-center gap-1 rounded-full bg-indigo-100 px-2.5 py-1 text-xs font-medium whitespace-nowrap text-indigo-700">
+                          Max: {filters.priceRange[1]}€
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* Scrollable Filter Content */}
+                <div
+                  ref={drawerScrollRef}
+                  className="kalifinder-drawer-scroll flex-1 overflow-y-auto bg-gray-50"
+                  onScroll={(e) => {
+                    const target = e.currentTarget;
+                    console.log('📜 [SCROLL] Drawer scrolled:', {
+                      scrollTop: target.scrollTop,
+                      scrollHeight: target.scrollHeight,
+                      clientHeight: target.clientHeight,
+                      scrollable: target.scrollHeight > target.clientHeight,
+                    });
+                  }}
+                  onWheel={(e) => {
+                    console.log('🖱️ [WHEEL] Mouse wheel event:', {
+                      deltaY: e.deltaY,
+                      deltaX: e.deltaX,
+                      deltaMode: e.deltaMode,
+                    });
+                  }}
+                  onTouchStart={(e) => {
+                    console.log('👆 [TOUCH] Touch start:', {
+                      touches: e.touches.length,
+                      clientY: e.touches[0]?.clientY,
+                    });
+                  }}
+                  onTouchMove={(e) => {
+                    console.log('👆 [TOUCH] Touch move:', {
+                      touches: e.touches.length,
+                      clientY: e.touches[0]?.clientY,
+                    });
+                  }}
+                  onTouchEnd={() => {
+                    console.log('👆 [TOUCH] Touch end');
+                  }}
+                  onPointerDown={(e) => {
+                    console.log('👉 [POINTER] Pointer down:', {
+                      pointerType: e.pointerType,
+                      clientY: e.clientY,
+                    });
+                  }}
+                  onPointerMove={(e) => {
+                    console.log('👉 [POINTER] Pointer move:', {
+                      pointerType: e.pointerType,
+                      clientY: e.clientY,
+                    });
+                  }}
+                  style={{
+                    WebkitOverflowScrolling: 'touch',
+                    overscrollBehavior: 'contain',
+                  }}
+                >
+                  <div className="space-y-1 px-5 py-5 pb-4">
+                    <Accordion
+                      type="multiple"
+                      defaultValue={[
+                        ...(showMandatoryFilters.categories ? ['category'] : []),
+                        ...(showMandatoryFilters.price ? ['price'] : []),
+                        ...(showMandatoryFilters.stockStatus ? ['stockStatus'] : []),
+                        ...(!isShopifyStore && showMandatoryFilters.featured ? ['featured'] : []),
+                        ...(showMandatoryFilters.sale ? ['sale'] : []),
+                        ...(showOptionalFilters.sizes ? ['size'] : []),
+                        ...(showOptionalFilters.colors ? ['color'] : []),
+                        ...(showOptionalFilters.brands ? ['brand'] : []),
+                        ...(showOptionalFilters.tags ? ['tags'] : []),
+                      ]}
+                      className="space-y-3"
+                    >
+                      {showMandatoryFilters.categories && (
+                        <AccordionItem
+                          value="category"
+                          className="overflow-hidden rounded-xl border border-gray-200 bg-white px-4"
+                        >
+                          <AccordionTrigger className="py-4 text-base font-bold text-gray-900 hover:no-underline">
+                            Categories
+                          </AccordionTrigger>
+                          <AccordionContent className="pt-3">
+                            <div className="space-y-1">
+                              {availableCategories.length > 0 ? (
+                                (() => {
+                                  const categoryTree = buildCategoryTree(
+                                    availableCategories,
+                                    categoryCounts
+                                  );
+                                  return Array.from(categoryTree.children.values()).map(
+                                    (rootNode) => (
+                                      <CategoryTreeNode
+                                        key={rootNode.fullPath}
+                                        node={rootNode}
+                                        selectedCategories={filters.categories}
+                                        expandedCategories={expandedCategories}
+                                        onToggle={handleCategoryChange}
+                                        onExpand={handleCategoryExpand}
+                                        level={0}
+                                        getFacetCount={getFacetCount}
+                                      />
+                                    )
+                                  );
+                                })()
+                              ) : (
+                                <p className="text-muted-foreground p-2 text-sm">
+                                  No categories available
+                                </p>
+                              )}
                             </div>
-                            <div className="text-foreground flex items-center justify-between rounded-lg bg-gray-50 px-4 py-3 text-base font-medium">
-                              <span className="text-muted-foreground text-sm">From</span>
-                              <span className="text-lg font-semibold">
-                                {filters.priceRange[0]} €
-                              </span>
-                              <span className="text-muted-foreground mx-2">-</span>
-                              <span className="text-muted-foreground text-sm">To</span>
-                              <span className="text-lg font-semibold">
-                                {Math.min(filters.priceRange[1], filteredMaxPrice)} €
-                              </span>
-                            </div>
-                          </div>
-                        </AccordionContent>
-                      </AccordionItem>
-                    )}
-                    {showOptionalFilters.sizes && (
-                      <AccordionItem
-                        value="size"
-                        className="overflow-hidden rounded-xl border border-gray-200 bg-white px-4"
-                      >
-                        <AccordionTrigger className="py-4 text-base font-bold text-gray-900 hover:no-underline">
-                          Size
-                        </AccordionTrigger>
-                        <AccordionContent className="pt-3">
-                          <div className="grid grid-cols-4 gap-2">
-                            {availableSizes.map((size) => (
-                              <button
-                                key={size}
-                                onClick={() => handleSizeChange(size)}
-                                className={`my-border min-h-[48px] rounded-lg py-2 text-center text-sm font-medium transition-all active:scale-95 ${
-                                  filters.sizes.includes(size)
-                                    ? 'bg-primary text-primary-foreground shadow-md'
-                                    : 'hover:bg-gray-100'
-                                }`}
-                              >
-                                {size}
-                              </button>
-                            ))}
-                          </div>
-                        </AccordionContent>
-                      </AccordionItem>
-                    )}
-                    {showOptionalFilters.colors && (
-                      <AccordionItem
-                        value="color"
-                        className="overflow-hidden rounded-xl border border-gray-200 bg-white px-4"
-                      >
-                        <AccordionTrigger className="py-4 text-base font-bold text-gray-900 hover:no-underline">
-                          Color
-                        </AccordionTrigger>
-                        <AccordionContent className="pt-3">
-                          <div className="flex flex-wrap gap-3">
-                            {availableColors.map((color) => (
-                              <button
-                                key={color}
-                                onClick={() => handleColorChange(color)}
-                                className={`min-h-[48px] min-w-[48px] rounded-full border-4 transition-all active:scale-95 ${
-                                  filters.colors.includes(color)
-                                    ? 'border-primary scale-110 shadow-lg'
-                                    : 'border-border hover:border-gray-400 hover:shadow-md'
-                                }`}
-                                style={{
-                                  backgroundColor: color.toLowerCase(),
-                                }}
-                                title={`Filter by ${color} color`}
-                                aria-label={`Filter by ${color} color${filters.colors.includes(color) ? ' (selected)' : ''}`}
-                              />
-                            ))}
-                          </div>
-                        </AccordionContent>
-                      </AccordionItem>
-                    )}
-                    {showOptionalFilters.tags && (
-                      <AccordionItem
-                        value="tags"
-                        className="overflow-hidden rounded-xl border border-gray-200 bg-white px-4"
-                      >
-                        <AccordionTrigger className="py-4 text-base font-bold text-gray-900 hover:no-underline">
-                          Tags
-                        </AccordionTrigger>
-                        <AccordionContent className="pt-3">
-                          <div className="space-y-1">
-                            {availableTags.map((tag) => (
-                              <label
-                                key={tag}
-                                className={`flex min-h-[48px] cursor-pointer items-center justify-between rounded-lg p-3 transition-all ${
-                                  filters.tags.includes(tag)
-                                    ? 'bg-purple-50 ring-2 ring-purple-600 ring-inset'
-                                    : 'hover:bg-gray-50 active:bg-gray-100'
-                                }`}
-                              >
-                                <div className="flex flex-1 items-center gap-3">
-                                  <div className="relative flex min-h-[44px] min-w-[44px] items-center justify-center">
-                                    <input
-                                      type="checkbox"
-                                      checked={filters.tags.includes(tag)}
-                                      onChange={() => handleTagChange(tag)}
-                                      className="text-primary bg-background border-border h-5 w-5 rounded"
-                                    />
-                                  </div>
-                                  <span className="text-foreground flex-1 text-sm">{tag}</span>
-                                </div>
-                                <span className="text-muted-foreground bg-muted rounded-full px-2.5 py-1 text-xs font-medium">
-                                  {getFacetCount('tag', tag)}
-                                </span>
-                              </label>
-                            ))}
-                          </div>
-                        </AccordionContent>
-                      </AccordionItem>
-                    )}
-
-                    {/* Mandatory Facets for Mobile */}
-                    {showMandatoryFilters.stockStatus && (
-                      <AccordionItem
-                        value="stockStatus"
-                        className="overflow-hidden rounded-xl border border-gray-200 bg-white px-4"
-                      >
-                        <AccordionTrigger className="py-4 text-base font-bold text-gray-900 hover:no-underline">
-                          Stock Status
-                        </AccordionTrigger>
-                        <AccordionContent className="pt-3">
-                          <div className="space-y-1">
-                            {['In Stock', 'Out of Stock', 'On Backorder'].map((status) => (
-                              <label
-                                key={status}
-                                className={`flex min-h-[48px] cursor-pointer items-center justify-between rounded-lg p-3 transition-all ${
-                                  filters.stockStatus.includes(status)
-                                    ? 'bg-purple-50 ring-2 ring-purple-600 ring-inset'
-                                    : 'hover:bg-gray-50 active:bg-gray-100'
-                                }`}
-                              >
-                                <div className="flex flex-1 items-center gap-3">
-                                  <div className="relative flex min-h-[44px] min-w-[44px] items-center justify-center">
-                                    <input
-                                      type="checkbox"
-                                      checked={filters.stockStatus.includes(status)}
-                                      onChange={() => handleStockStatusChange(status)}
-                                      className="border-border bg-background text-primary h-5 w-5 rounded"
-                                    />
-                                  </div>
-                                  <span className="text-foreground flex-1 text-sm">{status}</span>
-                                </div>
-                                <span className="bg-muted text-muted-foreground rounded-full px-2.5 py-1 text-xs font-medium">
-                                  {stockStatusCounts[status] ?? 0}
-                                </span>
-                              </label>
-                            ))}
-                          </div>
-                        </AccordionContent>
-                      </AccordionItem>
-                    )}
-
-                    {!isShopifyStore && showMandatoryFilters.featured && (
-                      <AccordionItem
-                        value="featured"
-                        className="overflow-hidden rounded-xl border border-gray-200 bg-white px-4"
-                      >
-                        <AccordionTrigger className="py-4 text-base font-bold text-gray-900 hover:no-underline">
-                          Featured Products
-                        </AccordionTrigger>
-                        <AccordionContent className="pt-3">
-                          <div className="space-y-1">
-                            {['Featured', 'Not Featured'].map((status) => (
-                              <label
-                                key={status}
-                                className={`flex min-h-[48px] cursor-pointer items-center justify-between rounded-lg p-3 transition-all ${
-                                  filters.featuredProducts.includes(status)
-                                    ? 'bg-purple-50 ring-2 ring-purple-600 ring-inset'
-                                    : 'hover:bg-gray-50 active:bg-gray-100'
-                                }`}
-                              >
-                                <div className="flex flex-1 items-center gap-3">
-                                  <div className="relative flex min-h-[44px] min-w-[44px] items-center justify-center">
-                                    <input
-                                      type="checkbox"
-                                      checked={filters.featuredProducts.includes(status)}
-                                      onChange={() => handleFeaturedProductsChange(status)}
-                                      className="border-border bg-background text-primary h-5 w-5 rounded"
-                                    />
-                                  </div>
-                                  <span className="text-foreground flex-1 text-sm">{status}</span>
-                                </div>
-                                <span className="bg-muted text-muted-foreground rounded-full px-2.5 py-1 text-xs font-medium">
-                                  {status === 'Featured' ? featuredCount : notFeaturedCount}
-                                </span>
-                              </label>
-                            ))}
-                          </div>
-                        </AccordionContent>
-                      </AccordionItem>
-                    )}
-
-                    {showMandatoryFilters.sale && (
-                      <AccordionItem
-                        value="sale"
-                        className="overflow-hidden rounded-xl border border-gray-200 bg-white px-4"
-                      >
-                        <AccordionTrigger className="py-4 text-base font-bold text-gray-900 hover:no-underline">
-                          Sale Status
-                        </AccordionTrigger>
-                        <AccordionContent className="pt-3">
-                          <div className="space-y-1">
-                            {['On Sale', 'Not On Sale'].map((status) => {
-                              const count = status === 'On Sale' ? saleCount : notSaleCount;
-                              console.log(`📊 [RENDER-MOBILE] Displaying ${status}: ${count}`);
-                              return (
+                          </AccordionContent>
+                        </AccordionItem>
+                      )}
+                      {showOptionalFilters.brands && (
+                        <AccordionItem
+                          value="brand"
+                          className="overflow-hidden rounded-xl border border-gray-200 bg-white px-4"
+                        >
+                          <AccordionTrigger className="py-4 text-base font-bold text-gray-900 hover:no-underline">
+                            Brand
+                          </AccordionTrigger>
+                          <AccordionContent className="pt-3">
+                            <div className="space-y-1">
+                              {availableBrands.map((brand) => (
                                 <label
-                                  key={status}
-                                  className={`flex min-h-[48px] cursor-pointer items-center justify-between rounded-lg p-3 transition-all ${
-                                    filters.saleStatus.includes(status)
+                                  key={brand}
+                                  className={`flex min-h-[48px] cursor-pointer touch-manipulation items-center justify-between rounded-lg p-3 transition-all ${
+                                    filters.brands.includes(brand)
                                       ? 'bg-purple-50 ring-2 ring-purple-600 ring-inset'
                                       : 'hover:bg-gray-50 active:bg-gray-100'
                                   }`}
@@ -3329,78 +3183,341 @@ const KalifindSearch: React.FC<{
                                     <div className="relative flex min-h-[44px] min-w-[44px] items-center justify-center">
                                       <input
                                         type="checkbox"
-                                        checked={filters.saleStatus.includes(status)}
-                                        onChange={() => handleSaleStatusChange(status)}
+                                        checked={filters.brands.includes(brand)}
+                                        onChange={() => handleBrandChange(brand)}
+                                        className="text-primary bg-background border-border h-5 w-5 rounded"
+                                      />
+                                    </div>
+                                    <span className="text-foreground flex-1 text-sm">{brand}</span>
+                                  </div>
+                                  <span className="text-muted-foreground bg-muted rounded-full px-2.5 py-1 text-xs font-medium">
+                                    {getFacetCount('brand', brand)}
+                                  </span>
+                                </label>
+                              ))}
+                            </div>
+                          </AccordionContent>
+                        </AccordionItem>
+                      )}
+                      {showMandatoryFilters.price && (
+                        <AccordionItem
+                          value="price"
+                          className="overflow-hidden rounded-xl border border-gray-200 bg-white px-4"
+                        >
+                          <AccordionTrigger className="py-4 text-base font-bold text-gray-900 hover:no-underline">
+                            Price
+                          </AccordionTrigger>
+                          <AccordionContent className="pt-3">
+                            <div className="space-y-4">
+                              <div className="px-2">
+                                <Slider
+                                  value={[Math.min(filters.priceRange[1], filteredMaxPrice)]}
+                                  onValueChange={(value: number[]) =>
+                                    updateFilter('priceRange', [
+                                      filters.priceRange[0],
+                                      value[0] ?? filteredMaxPrice,
+                                    ])
+                                  }
+                                  max={filteredMaxPrice}
+                                  step={1}
+                                  style={{
+                                    paddingTop: '16px',
+                                    paddingBottom: '16px',
+                                  }}
+                                />
+                              </div>
+                              <div className="text-foreground flex items-center justify-between rounded-lg bg-gray-50 px-4 py-3 text-base font-medium">
+                                <span className="text-muted-foreground text-sm">From</span>
+                                <span className="text-lg font-semibold">
+                                  {filters.priceRange[0]} €
+                                </span>
+                                <span className="text-muted-foreground mx-2">-</span>
+                                <span className="text-muted-foreground text-sm">To</span>
+                                <span className="text-lg font-semibold">
+                                  {Math.min(filters.priceRange[1], filteredMaxPrice)} €
+                                </span>
+                              </div>
+                            </div>
+                          </AccordionContent>
+                        </AccordionItem>
+                      )}
+                      {showOptionalFilters.sizes && (
+                        <AccordionItem
+                          value="size"
+                          className="overflow-hidden rounded-xl border border-gray-200 bg-white px-4"
+                        >
+                          <AccordionTrigger className="py-4 text-base font-bold text-gray-900 hover:no-underline">
+                            Size
+                          </AccordionTrigger>
+                          <AccordionContent className="pt-3">
+                            <div className="grid grid-cols-4 gap-2">
+                              {availableSizes.map((size) => (
+                                <button
+                                  key={size}
+                                  onClick={() => handleSizeChange(size)}
+                                  className={`my-border min-h-[48px] touch-manipulation rounded-lg py-2 text-center text-sm font-medium transition-all active:scale-95 ${
+                                    filters.sizes.includes(size)
+                                      ? 'bg-primary text-primary-foreground shadow-md'
+                                      : 'hover:bg-gray-100 active:bg-gray-200'
+                                  }`}
+                                >
+                                  {size}
+                                </button>
+                              ))}
+                            </div>
+                          </AccordionContent>
+                        </AccordionItem>
+                      )}
+                      {showOptionalFilters.colors && (
+                        <AccordionItem
+                          value="color"
+                          className="overflow-hidden rounded-xl border border-gray-200 bg-white px-4"
+                        >
+                          <AccordionTrigger className="py-4 text-base font-bold text-gray-900 hover:no-underline">
+                            Color
+                          </AccordionTrigger>
+                          <AccordionContent className="pt-3">
+                            <div className="flex flex-wrap gap-3">
+                              {availableColors.map((color) => (
+                                <button
+                                  key={color}
+                                  onClick={() => handleColorChange(color)}
+                                  className={`min-h-[48px] min-w-[48px] touch-manipulation rounded-full border-4 transition-all active:scale-95 ${
+                                    filters.colors.includes(color)
+                                      ? 'border-primary scale-110 shadow-lg'
+                                      : 'border-border hover:border-gray-400 hover:shadow-md'
+                                  }`}
+                                  style={{
+                                    backgroundColor: color.toLowerCase(),
+                                  }}
+                                  title={`Filter by ${color} color`}
+                                  aria-label={`Filter by ${color} color${filters.colors.includes(color) ? ' (selected)' : ''}`}
+                                />
+                              ))}
+                            </div>
+                          </AccordionContent>
+                        </AccordionItem>
+                      )}
+                      {showOptionalFilters.tags && (
+                        <AccordionItem
+                          value="tags"
+                          className="overflow-hidden rounded-xl border border-gray-200 bg-white px-4"
+                        >
+                          <AccordionTrigger className="py-4 text-base font-bold text-gray-900 hover:no-underline">
+                            Tags
+                          </AccordionTrigger>
+                          <AccordionContent className="pt-3">
+                            <div className="space-y-1">
+                              {availableTags.map((tag) => (
+                                <label
+                                  key={tag}
+                                  className={`flex min-h-[48px] cursor-pointer items-center justify-between rounded-lg p-3 transition-all ${
+                                    filters.tags.includes(tag)
+                                      ? 'bg-purple-50 ring-2 ring-purple-600 ring-inset'
+                                      : 'hover:bg-gray-50 active:bg-gray-100'
+                                  }`}
+                                >
+                                  <div className="flex flex-1 items-center gap-3">
+                                    <div className="relative flex min-h-[44px] min-w-[44px] items-center justify-center">
+                                      <input
+                                        type="checkbox"
+                                        checked={filters.tags.includes(tag)}
+                                        onChange={() => handleTagChange(tag)}
+                                        className="text-primary bg-background border-border h-5 w-5 rounded"
+                                      />
+                                    </div>
+                                    <span className="text-foreground flex-1 text-sm">{tag}</span>
+                                  </div>
+                                  <span className="text-muted-foreground bg-muted rounded-full px-2.5 py-1 text-xs font-medium">
+                                    {getFacetCount('tag', tag)}
+                                  </span>
+                                </label>
+                              ))}
+                            </div>
+                          </AccordionContent>
+                        </AccordionItem>
+                      )}
+
+                      {/* Mandatory Facets for Mobile */}
+                      {showMandatoryFilters.stockStatus && (
+                        <AccordionItem
+                          value="stockStatus"
+                          className="overflow-hidden rounded-xl border border-gray-200 bg-white px-4"
+                        >
+                          <AccordionTrigger className="py-4 text-base font-bold text-gray-900 hover:no-underline">
+                            Stock Status
+                          </AccordionTrigger>
+                          <AccordionContent className="pt-3">
+                            <div className="space-y-1">
+                              {['In Stock', 'Out of Stock', 'On Backorder'].map((status) => (
+                                <label
+                                  key={status}
+                                  className={`flex min-h-[48px] cursor-pointer items-center justify-between rounded-lg p-3 transition-all ${
+                                    filters.stockStatus.includes(status)
+                                      ? 'bg-purple-50 ring-2 ring-purple-600 ring-inset'
+                                      : 'hover:bg-gray-50 active:bg-gray-100'
+                                  }`}
+                                >
+                                  <div className="flex flex-1 items-center gap-3">
+                                    <div className="relative flex min-h-[44px] min-w-[44px] items-center justify-center">
+                                      <input
+                                        type="checkbox"
+                                        checked={filters.stockStatus.includes(status)}
+                                        onChange={() => handleStockStatusChange(status)}
                                         className="border-border bg-background text-primary h-5 w-5 rounded"
                                       />
                                     </div>
                                     <span className="text-foreground flex-1 text-sm">{status}</span>
                                   </div>
                                   <span className="bg-muted text-muted-foreground rounded-full px-2.5 py-1 text-xs font-medium">
-                                    {count}
+                                    {stockStatusCounts[status] ?? 0}
                                   </span>
                                 </label>
-                              );
-                            })}
-                          </div>
-                        </AccordionContent>
-                      </AccordionItem>
-                    )}
-                  </Accordion>
+                              ))}
+                            </div>
+                          </AccordionContent>
+                        </AccordionItem>
+                      )}
+
+                      {!isShopifyStore && showMandatoryFilters.featured && (
+                        <AccordionItem
+                          value="featured"
+                          className="overflow-hidden rounded-xl border border-gray-200 bg-white px-4"
+                        >
+                          <AccordionTrigger className="py-4 text-base font-bold text-gray-900 hover:no-underline">
+                            Featured Products
+                          </AccordionTrigger>
+                          <AccordionContent className="pt-3">
+                            <div className="space-y-1">
+                              {['Featured', 'Not Featured'].map((status) => (
+                                <label
+                                  key={status}
+                                  className={`flex min-h-[48px] cursor-pointer items-center justify-between rounded-lg p-3 transition-all ${
+                                    filters.featuredProducts.includes(status)
+                                      ? 'bg-purple-50 ring-2 ring-purple-600 ring-inset'
+                                      : 'hover:bg-gray-50 active:bg-gray-100'
+                                  }`}
+                                >
+                                  <div className="flex flex-1 items-center gap-3">
+                                    <div className="relative flex min-h-[44px] min-w-[44px] items-center justify-center">
+                                      <input
+                                        type="checkbox"
+                                        checked={filters.featuredProducts.includes(status)}
+                                        onChange={() => handleFeaturedProductsChange(status)}
+                                        className="border-border bg-background text-primary h-5 w-5 rounded"
+                                      />
+                                    </div>
+                                    <span className="text-foreground flex-1 text-sm">{status}</span>
+                                  </div>
+                                  <span className="bg-muted text-muted-foreground rounded-full px-2.5 py-1 text-xs font-medium">
+                                    {status === 'Featured' ? featuredCount : notFeaturedCount}
+                                  </span>
+                                </label>
+                              ))}
+                            </div>
+                          </AccordionContent>
+                        </AccordionItem>
+                      )}
+
+                      {showMandatoryFilters.sale && (
+                        <AccordionItem
+                          value="sale"
+                          className="overflow-hidden rounded-xl border border-gray-200 bg-white px-4"
+                        >
+                          <AccordionTrigger className="py-4 text-base font-bold text-gray-900 hover:no-underline">
+                            Sale Status
+                          </AccordionTrigger>
+                          <AccordionContent className="pt-3">
+                            <div className="space-y-1">
+                              {['On Sale', 'Not On Sale'].map((status) => {
+                                const count = status === 'On Sale' ? saleCount : notSaleCount;
+                                console.log(`📊 [RENDER-MOBILE] Displaying ${status}: ${count}`);
+                                return (
+                                  <label
+                                    key={status}
+                                    className={`flex min-h-[48px] cursor-pointer items-center justify-between rounded-lg p-3 transition-all ${
+                                      filters.saleStatus.includes(status)
+                                        ? 'bg-purple-50 ring-2 ring-purple-600 ring-inset'
+                                        : 'hover:bg-gray-50 active:bg-gray-100'
+                                    }`}
+                                  >
+                                    <div className="flex flex-1 items-center gap-3">
+                                      <div className="relative flex min-h-[44px] min-w-[44px] items-center justify-center">
+                                        <input
+                                          type="checkbox"
+                                          checked={filters.saleStatus.includes(status)}
+                                          onChange={() => handleSaleStatusChange(status)}
+                                          className="border-border bg-background text-primary h-5 w-5 rounded"
+                                        />
+                                      </div>
+                                      <span className="text-foreground flex-1 text-sm">
+                                        {status}
+                                      </span>
+                                    </div>
+                                    <span className="bg-muted text-muted-foreground rounded-full px-2.5 py-1 text-xs font-medium">
+                                      {count}
+                                    </span>
+                                  </label>
+                                );
+                              })}
+                            </div>
+                          </AccordionContent>
+                        </AccordionItem>
+                      )}
+                    </Accordion>
+                  </div>
                 </div>
-              </div>
 
-              {/* Footer - Three buttons: Show Products, Reset, Close */}
-              <div className="flex-shrink-0 bg-gray-100 px-5 py-4 shadow-lg">
-                <div className="flex gap-3">
-                  {/* Reset Button */}
-                  <button
-                    onClick={handleClearAll}
-                    disabled={!isAnyFilterActive}
-                    className="flex h-12 w-12 items-center justify-center rounded-xl border-2 border-gray-300 bg-white text-gray-500 transition-all hover:bg-gray-50 active:scale-95 disabled:cursor-not-allowed disabled:text-gray-300"
-                    aria-label="Reset all filters"
-                    title="Reset all filters"
-                  >
-                    <svg
-                      className="h-5 w-5"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                      strokeWidth={2.5}
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                      />
-                    </svg>
-                  </button>
-
-                  {/* Show Products Button - Primary */}
-                  <DrawerClose asChild>
+                {/* Footer - Three buttons: Show Products, Reset, Close */}
+                <div className="flex-shrink-0 bg-gray-100 px-5 py-4 shadow-lg">
+                  <div className="flex gap-3">
+                    {/* Reset Button */}
                     <button
+                      onClick={handleClearAll}
+                      disabled={!isAnyFilterActive}
+                      className="flex h-12 min-h-[44px] w-12 min-w-[44px] touch-manipulation items-center justify-center rounded-xl border-2 border-gray-300 bg-white text-gray-500 transition-all hover:bg-gray-50 active:scale-95 active:bg-gray-100 disabled:cursor-not-allowed disabled:text-gray-300"
+                      aria-label="Reset all filters"
+                      title="Reset all filters"
+                    >
+                      <svg
+                        className="h-5 w-5"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth={2.5}
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                        />
+                      </svg>
+                    </button>
+
+                    {/* Show Products Button - Primary */}
+                    <button
+                      onClick={() => setIsDrawerOpen(false)}
                       aria-label="Show filtered products"
                       title="Show filtered products"
-                      className="h-12 flex-1 rounded-xl bg-purple-600 px-5 text-base font-bold text-white shadow-lg transition-all hover:bg-purple-700 active:scale-95"
+                      className="h-12 min-h-[44px] flex-1 touch-manipulation rounded-xl bg-purple-600 px-5 text-base font-bold text-white shadow-lg transition-all hover:bg-purple-700 active:scale-95 active:bg-purple-800"
                     >
                       Show {totalProducts} {totalProducts === 1 ? 'Product' : 'Products'}
                     </button>
-                  </DrawerClose>
 
-                  {/* Close Button */}
-                  <DrawerClose asChild>
+                    {/* Close Button */}
                     <button
-                      className="flex h-12 w-12 items-center justify-center rounded-xl border-2 border-gray-300 bg-white text-gray-700 transition-all hover:bg-gray-50 active:scale-95"
+                      onClick={() => setIsDrawerOpen(false)}
+                      className="flex h-12 min-h-[44px] w-12 min-w-[44px] touch-manipulation items-center justify-center rounded-xl border-2 border-gray-300 bg-white text-gray-700 transition-all hover:bg-gray-50 active:scale-95 active:bg-gray-100"
                       aria-label="Close without applying"
                       title="Close filters"
                     >
                       <X className="h-5 w-5" />
                     </button>
-                  </DrawerClose>
+                  </div>
                 </div>
               </div>
-            </DrawerContent>
-          </Drawer>
+            </>
+          )}
 
           {/* KaliFinder Watermark - Right Side - MOBILE ONLY */}
           <a
@@ -3709,10 +3826,10 @@ const KalifindSearch: React.FC<{
                             <button
                               key={size}
                               onClick={() => handleSizeChange(size)}
-                              className={`my-border rounded py-2 text-xs font-medium transition-all lg:text-sm ${
+                              className={`my-border min-h-[36px] touch-manipulation rounded py-2 text-xs font-medium transition-all active:scale-95 lg:text-sm ${
                                 isActive
                                   ? 'bg-purple-600 text-white shadow-md ring-2 ring-purple-600 ring-offset-2'
-                                  : 'bg-white text-gray-700 hover:border-purple-400 hover:bg-gray-50'
+                                  : 'bg-white text-gray-700 hover:border-purple-400 hover:bg-gray-50 active:bg-gray-100'
                               }`}
                             >
                               {size}
@@ -3746,7 +3863,7 @@ const KalifindSearch: React.FC<{
                             <button
                               key={color}
                               onClick={() => handleColorChange(color)}
-                              className={`h-6 w-6 rounded-full border-2 transition-all lg:h-8 lg:w-8 ${
+                              className={`h-6 min-h-[32px] w-6 min-w-[32px] touch-manipulation rounded-full border-2 transition-all active:scale-95 lg:h-8 lg:w-8 ${
                                 isActive
                                   ? 'scale-110 border-purple-600 shadow-lg ring-2 ring-purple-600 ring-offset-2'
                                   : 'border-gray-300 hover:scale-105 hover:border-purple-400'
@@ -4066,7 +4183,7 @@ const KalifindSearch: React.FC<{
                       className="bg-muted hover:bg-muted/80 group flex items-center gap-2 rounded-full border border-gray-200 px-4 py-2 transition-all hover:border-gray-300 hover:shadow-sm"
                     >
                       <span
-                        className="text-foreground cursor-pointer text-sm font-medium transition-colors group-hover:text-purple-600"
+                        className="text-foreground cursor-pointer touch-manipulation text-sm font-medium transition-colors group-hover:text-purple-600"
                         onClick={() => {
                           handleSearch(search);
                         }}
@@ -4181,7 +4298,7 @@ const KalifindSearch: React.FC<{
                         setShowAutocomplete(false);
                       }
                     }}
-                    className="group flex min-h-[40px] items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-2.5 py-2 text-sm font-medium text-gray-700 shadow-sm transition-all hover:bg-purple-50 active:scale-95 sm:px-3"
+                    className="group flex min-h-[40px] touch-manipulation items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-2.5 py-2 text-sm font-medium text-gray-700 shadow-sm transition-all hover:bg-purple-50 active:scale-95 active:bg-purple-100 sm:px-3"
                     title={suggestionsEnabled ? 'Hide suggestions' : 'Show suggestions'}
                     aria-label={suggestionsEnabled ? 'Hide suggestions' : 'Show suggestions'}
                   >
@@ -4209,7 +4326,7 @@ const KalifindSearch: React.FC<{
                       <button
                         data-sort-button
                         aria-label="Sort results"
-                        className="group flex min-h-[40px] items-center gap-1 rounded-lg border border-gray-300 bg-white px-2.5 py-2 text-sm font-medium text-gray-700 shadow-sm transition-all hover:bg-purple-50 active:scale-95 sm:gap-1.5 sm:px-3"
+                        className="group flex min-h-[40px] touch-manipulation items-center gap-1 rounded-lg border border-gray-300 bg-white px-2.5 py-2 text-sm font-medium text-gray-700 shadow-sm transition-all hover:bg-purple-50 active:scale-95 active:bg-purple-100 sm:gap-1.5 sm:px-3"
                       >
                         <svg
                           className="h-4 w-4 text-gray-500 group-hover:text-purple-600"
@@ -4245,10 +4362,10 @@ const KalifindSearch: React.FC<{
                           e.preventDefault();
                           setSortOption('default');
                         }}
-                        className={`group cursor-pointer rounded-lg px-3 py-2.5 text-sm transition-all ${
+                        className={`group cursor-pointer touch-manipulation rounded-lg px-3 py-2.5 text-sm transition-all active:scale-[0.98] ${
                           sortOption === 'default'
                             ? 'bg-purple-100 font-semibold text-purple-700 shadow-sm'
-                            : 'text-gray-700 hover:bg-purple-50'
+                            : 'text-gray-700 hover:bg-purple-50 active:bg-purple-100'
                         }`}
                       >
                         <div className="flex items-center justify-between">
@@ -4575,7 +4692,7 @@ const KalifindSearch: React.FC<{
                       <button
                         onClick={() => void loadMoreProducts()}
                         disabled={isLoadingMore}
-                        className="bg-primary text-primary-foreground hover:bg-primary-hover flex items-center gap-2 rounded-lg px-8 py-3 font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+                        className="bg-primary text-primary-foreground hover:bg-primary-hover flex min-h-[44px] touch-manipulation items-center gap-2 rounded-lg px-8 py-3 font-medium transition-all active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100"
                       >
                         {isLoadingMore ? (
                           <>

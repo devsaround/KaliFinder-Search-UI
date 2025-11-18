@@ -176,12 +176,15 @@
 /**
  * Optimize rendering and prevent layout thrashing
  * Especially important for mobile devices
+ * 
+ * CRITICAL: Do NOT use transform: translateZ(0) or any transform
+ * as it breaks position:fixed in Shadow DOM on iOS Chrome!
+ * Use will-change and backface-visibility instead.
  */
 
 [data-floating-container] {
-  /* GPU acceleration for smooth animations */
-  -webkit-transform: translateZ(0);
-  transform: translateZ(0);
+  /* GPU acceleration WITHOUT transform (which breaks fixed positioning) */
+  will-change: bottom;
 
   /* Optimize compositing */
   -webkit-backface-visibility: hidden;
@@ -228,20 +231,29 @@
 
 /**
  * Vendor-specific fixes for known issues
+ * 
+ * CRITICAL iOS FIX: Do NOT use any transform (including translateZ(0))
+ * as it creates a containing block and breaks position:fixed in Shadow DOM.
+ * This affects iOS Chrome specifically.
+ * 
+ * Alternative GPU acceleration methods:
+ * - will-change: bottom (already set above)
+ * - backface-visibility: hidden (already set above)
+ * - isolation: isolate (already set above)
  */
 
-/* Safari/WebKit: Force GPU acceleration */
-@supports (-webkit-appearance: none) {
+/* iOS-specific fixes for position:fixed */
+@supports (-webkit-touch-callout: none) {
   [data-floating-container] {
-    -webkit-transform: translateZ(0);
-    transform: translateZ(0);
-  }
-}
+    /* Force layer creation without transform */
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
 
-/* Firefox: Prevent subpixel rendering issues */
-@-moz-document url-prefix() {
-  [data-floating-container] {
-    transform: translateZ(0);
+    /* Ensure proper z-index stacking */
+    z-index: 2147483647 !important; /* Max safe z-index */
+
+    /* Prevent iOS scroll bounce from affecting fixed elements */
+    -webkit-overflow-scrolling: auto;
   }
 }
 

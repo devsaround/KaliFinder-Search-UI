@@ -83,6 +83,10 @@ export interface SearchResponse {
   showingRecommended?: boolean; // Flag indicating recommended products are shown instead of search results
   // ✅ NEW: Store currency from backend (e.g., "USD", "EUR")
   currency?: string | null; // Store currency for price display
+  // ✅ NEW: Analytics metadata from backend (for UBI tracking)
+  vendorId?: number; // Vendor ID for analytics tracking
+  storeId?: number; // Store ID for analytics tracking
+  storeType?: string; // Store type (shopify/woocommerce) for analytics tracking
 }
 
 export interface AutocompleteSuggestion {

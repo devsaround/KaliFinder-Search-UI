@@ -169,19 +169,32 @@ class SearchService {
       // Determine dynamic TTL based on result size
       const response = await this.httpClient.get<SearchResponse>(url);
 
-      // Extract and set vendor/store IDs and platform for analytics if available
-      if ((response as any).vendorId && (response as any).storeId) {
+      // ✅ FIXED: Extract and set vendor/store IDs and platform for analytics
+      // These are returned by the backend search endpoint for UBI tracking
+      if (response.vendorId && response.storeId) {
         const globalWindow = window as Window & {
           KALIFIND_VENDOR_ID?: string;
           KALIFIND_STORE_ID?: string;
           KALIFIND_PLATFORM?: string;
         };
-        globalWindow.KALIFIND_VENDOR_ID = String((response as any).vendorId);
-        globalWindow.KALIFIND_STORE_ID = String((response as any).storeId);
+        globalWindow.KALIFIND_VENDOR_ID = String(response.vendorId);
+        globalWindow.KALIFIND_STORE_ID = String(response.storeId);
 
-        if ((response as any).storeType) {
-          globalWindow.KALIFIND_PLATFORM = String((response as any).storeType);
+        if (response.storeType) {
+          globalWindow.KALIFIND_PLATFORM = String(response.storeType);
         }
+
+        logger.debug('Set analytics IDs from search response', {
+          vendorId: response.vendorId,
+          storeId: response.storeId,
+          storeType: response.storeType,
+        });
+      } else {
+        logger.warn('Search response missing vendorId/storeId for analytics', {
+          hasVendorId: !!response.vendorId,
+          hasStoreId: !!response.storeId,
+          hasStoreType: !!response.storeType,
+        });
       }
 
       logger.debug('Fresh search API call completed', {
