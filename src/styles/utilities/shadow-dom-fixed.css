@@ -80,17 +80,15 @@
 [data-floating-container='mobile'] {
   left: 0 !important;
   right: 0 !important;
-  bottom: calc(env(safe-area-inset-bottom, 0px) + 1.5rem) !important;
-
-  /* Responsive offset for small screens */
-  @media (max-width: 480px) {
-    bottom: calc(env(safe-area-inset-bottom, 0px) + 1rem) !important;
-  }
+  /* Bottom offset managed by useSafeFloatingBottom hook via --kf-floating-bottom CSS variable */
+  /* Fallback: 2.5rem provides good spacing on Safari iOS 26.1 */
+  bottom: var(--kf-floating-bottom, calc(env(safe-area-inset-bottom, 0px) + 2.5rem)) !important;
 }
 
 /* Desktop container - positioned to right side */
 [data-floating-container='desktop'] {
   right: 1.5rem !important;
+  /* Desktop uses fixed offset - no dynamic adjustment needed */
   bottom: calc(env(safe-area-inset-bottom, 0px) + 1.5rem) !important;
 
   /* Responsive offset for medium screens */
@@ -202,27 +200,6 @@
 
 [data-floating-container] > * {
   pointer-events: auto;
-}
-
-/* ========================================
-   KEYBOARD VISIBLE STATE
-   ======================================== */
-
-/**
- * Dynamic adjustments when mobile keyboard is open
- * Handled via JavaScript visual viewport API
- * These classes are toggled programmatically
- */
-
-[data-floating-container][data-keyboard-visible='true'] {
-  /* Extra offset is applied via inline styles */
-  /* to keep button visible above keyboard */
-  transition: bottom 0.3s ease-out;
-}
-
-[data-floating-container][data-keyboard-visible='false'] {
-  /* Restore default offset when keyboard closes */
-  transition: bottom 0.2s ease-in;
 }
 
 /* ========================================

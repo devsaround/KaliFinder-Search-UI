@@ -27,6 +27,7 @@ import { Slider } from '@/components/ui/slider';
 import { useDebounce } from '@/hooks/use-debounce';
 import { useCart } from '@/hooks/useCart';
 import { useFilters } from '@/hooks/useFilters';
+import { useSafeFloatingBottom } from '@/hooks/useSafeFloatingBottom';
 
 import type { Product } from '../types';
 import { isSearchResponse, type FacetBucket } from '../types/api.types';
@@ -414,6 +415,13 @@ const KalifindSearch: React.FC<{
     );
   }, [isDrawerOpen]);
 
+  // iOS floating bottom fix: Handle Chrome iOS bottom toolbar overlay
+  const mobileFloatingRef = useRef<HTMLDivElement>(null);
+  useSafeFloatingBottom(mobileFloatingRef.current, {
+    baseOffsetPx: 40, // 2.5rem (increased from 1.5rem for better spacing)
+    minGapPx: 12, // breathing room above browser UI
+  });
+
   // Track search input focus state for keyboard hint
   const [isSearchFocused, setIsSearchFocused] = useState<boolean>(false);
   const [totalProducts, setTotalProducts] = useState(0); // Filtered results count
@@ -597,102 +605,6 @@ const KalifindSearch: React.FC<{
       document.body.style.overflow = '';
     };
   }, [isDrawerOpen]);
-
-  // ✅ Shadow DOM Fixed Positioning + Mobile Keyboard Handler
-  // Comprehensive fix for position:fixed in Shadow DOM with mobile keyboard handling
-  // Addresses: transform containment, safe-area-insets, visual viewport changes
-  // Reference: https://developer.mozilla.org/en-US/docs/Web/API/Visual_Viewport_API
-  useEffect(() => {
-    const isMobileDevice = /iPad|iPhone|iPod|Android/i.test(navigator.userAgent);
-    if (!isMobileDevice) return;
-
-    // Get all floating containers
-    const containers = document.querySelectorAll<HTMLElement>('[data-floating-container]');
-    if (containers.length === 0) return;
-
-    // Store initial viewport height for fallback comparison
-    const initialInnerHeight = window.innerHeight;
-    const initialVisualHeight = window.visualViewport?.height ?? initialInnerHeight;
-    let isKeyboardVisible = false;
-
-    // Dev mode logging (only in development)
-    const isDev = import.meta.env.DEV;
-    const logViewportChange = (data: Record<string, unknown>) => {
-      if (isDev) {
-        console.log('[Shadow DOM Fixed] Viewport change:', data);
-      }
-    };
-
-    const handleViewportChange = () => {
-      // Use visualViewport if available, fallback to window.innerHeight
-      const vv = window.visualViewport;
-      const currentHeight = vv?.height ?? window.innerHeight;
-      const referenceHeight = vv ? initialVisualHeight : initialInnerHeight;
-      const heightDifference = referenceHeight - currentHeight;
-
-      // Detect keyboard: viewport shrinks by >150px (threshold works for most devices)
-      const keyboardNowVisible = heightDifference > 150;
-
-      // Log viewport changes in dev mode
-      if (isDev && keyboardNowVisible !== isKeyboardVisible) {
-        logViewportChange({
-          hasVisualViewport: !!vv,
-          currentHeight,
-          referenceHeight,
-          heightDifference,
-          keyboardVisible: keyboardNowVisible,
-          containers: containers.length,
-        });
-      }
-
-      if (keyboardNowVisible !== isKeyboardVisible) {
-        isKeyboardVisible = keyboardNowVisible;
-
-        // Update all floating containers
-        containers.forEach((container) => {
-          // Get base offset from data attribute or use default
-          const baseOffset = container.dataset.baseOffset ?? '1.5rem';
-
-          if (isKeyboardVisible) {
-            // Keyboard open: add extra offset to keep button visible above keyboard
-            // Use 30% of height difference, capped at 80px (5rem)
-            const extraOffset = Math.min(heightDifference * 0.3, 80);
-            container.style.bottom = `calc(env(safe-area-inset-bottom, 0px) + ${parseFloat(baseOffset) + extraOffset / 16}rem)`;
-          } else {
-            // Keyboard closed: restore base offset
-            container.style.bottom = `calc(env(safe-area-inset-bottom, 0px) + ${baseOffset})`;
-          }
-        });
-      }
-    };
-
-    // Listen to visual viewport changes (keyboard show/hide, orientation changes)
-    // Guard against missing visualViewport in embedded webviews
-    if (window.visualViewport) {
-      window.visualViewport.addEventListener('resize', handleViewportChange);
-      window.visualViewport.addEventListener('scroll', handleViewportChange);
-    }
-
-    // Always listen to window resize as fallback for older browsers/webviews
-    window.addEventListener('resize', handleViewportChange);
-
-    // Initial check
-    handleViewportChange();
-
-    return () => {
-      // Cleanup listeners
-      if (window.visualViewport) {
-        window.visualViewport.removeEventListener('resize', handleViewportChange);
-        window.visualViewport.removeEventListener('scroll', handleViewportChange);
-      }
-      window.removeEventListener('resize', handleViewportChange);
-
-      // Restore default offsets on unmount
-      containers.forEach((container) => {
-        container.style.bottom = '';
-      });
-    };
-  }, []);
 
   // Global keyboard shortcut: "/" to focus search input
   useEffect(() => {
@@ -2839,11 +2751,11 @@ const KalifindSearch: React.FC<{
         }}
       >
         <div
+          ref={mobileFloatingRef}
           data-floating-container="mobile"
-          data-base-offset="1.5rem"
           className="fixed inset-x-0 z-[99999] flex items-end justify-between gap-3 px-4"
           style={{
-            bottom: 'calc(env(safe-area-inset-bottom, 0px) + 1.5rem)',
+            bottom: 'var(--kf-floating-bottom, calc(env(safe-area-inset-bottom, 0px) + 2.5rem))',
             left: 0,
             right: 0,
           }}
