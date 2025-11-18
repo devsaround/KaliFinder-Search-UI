@@ -9,7 +9,6 @@ interface RecommendationsProps {
   addingToCart: string | null;
   handleAddToCart: (product: Product) => void;
   formatPrice: (value?: string | null) => string;
-  currencyCode?: string;
 }
 
 const Recommendations: React.FC<RecommendationsProps> = ({
@@ -19,7 +18,6 @@ const Recommendations: React.FC<RecommendationsProps> = ({
   addingToCart,
   handleAddToCart,
   formatPrice,
-  currencyCode,
 }) => {
   if (recommendations.length === 0) {
     return (
@@ -81,7 +79,6 @@ const Recommendations: React.FC<RecommendationsProps> = ({
             isAddingToCart={addingToCart === product.id}
             calculateDiscountPercentage={calculateDiscountPercentage}
             formatPrice={formatPrice}
-            currencyCode={currencyCode}
           />
         ))}
       </div>

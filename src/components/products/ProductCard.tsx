@@ -16,7 +16,6 @@ interface ProductCardProps {
   isAddingToCart: boolean;
   calculateDiscountPercentage?: (regularPrice: string, salePrice: string) => number | null;
   formatPrice: (value?: string | null) => string;
-  currencyCode?: string; // Currency code from backend
 }
 
 const ProductCardComponent: React.FC<ProductCardProps> = ({
@@ -26,7 +25,6 @@ const ProductCardComponent: React.FC<ProductCardProps> = ({
   isAddingToCart,
   calculateDiscountPercentage,
   formatPrice,
-  currencyCode, // Currency from backend
 }) => {
   // Memoize expensive calculations
   const hasDiscount = useMemo(
@@ -51,9 +49,8 @@ const ProductCardComponent: React.FC<ProductCardProps> = ({
       primary: hasPrimaryPrice ? formatPrice(primary) || primary : 'No Price',
       secondary: secondary ? formatPrice(secondary) || secondary : null,
       isValid: hasPrimaryPrice,
-      currencyCode: currencyCode, // Use currency from backend
     };
-  }, [product, formatPrice, currencyCode]);
+  }, [product, formatPrice]);
 
   // Stock status
   const stockStatus = useMemo(() => {
@@ -204,12 +201,6 @@ const ProductCardComponent: React.FC<ProductCardProps> = ({
                 aria-label={`Price ${prices.primary}`}
               >
                 {prices.primary}
-              </span>
-            )}
-            {/* Currency Code - Inline after price */}
-            {prices.currencyCode && (
-              <span className="text-[11px] font-semibold text-gray-500 uppercase sm:text-xs">
-                {prices.currencyCode}
               </span>
             )}
           </div>

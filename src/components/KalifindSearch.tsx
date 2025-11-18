@@ -4003,56 +4003,6 @@ const KalifindSearch: React.FC<{
                 Reset
               </button>
             )}
-
-            {/* Desktop Watermark - Inside sidebar at bottom */}
-            <a
-              href="https://kalifinder.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="group mt-6 inline-flex w-full items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-3 transition-all hover:border-purple-300 hover:shadow-md"
-              style={{
-                backdropFilter: 'blur(8px)',
-                backgroundColor: 'rgba(255, 255, 255, 0.95)',
-              }}
-            >
-              <span className="text-xs font-medium text-gray-500 transition-colors group-hover:text-gray-700">
-                Powered by
-              </span>
-              <div className="flex items-center gap-1.5">
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  className="transition-transform group-hover:scale-110"
-                >
-                  <path
-                    d="M12 2L2 7L12 12L22 7L12 2Z"
-                    fill="#7c3aed"
-                    className="transition-colors group-hover:fill-purple-600"
-                  />
-                  <path
-                    d="M2 17L12 22L22 17"
-                    stroke="#7c3aed"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="transition-colors group-hover:stroke-purple-600"
-                  />
-                  <path
-                    d="M2 12L12 17L22 12"
-                    stroke="#7c3aed"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="transition-colors group-hover:stroke-purple-600"
-                  />
-                </svg>
-                <span className="text-sm font-semibold text-gray-900 transition-colors group-hover:text-purple-600">
-                  KaliFinder
-                </span>
-              </div>
-            </a>
           </aside>{' '}
           <main ref={mainContentRef} className="kalifinder-results flex-1">
             {recentSearches.length > 0 && (
@@ -4484,7 +4434,6 @@ const KalifindSearch: React.FC<{
                       addingToCart={addingToCart}
                       handleAddToCart={handleAddToCart}
                       formatPrice={formatPrice}
-                      currencyCode={storeCurrencyCode}
                     />
                   ) : (
                     // Show skeleton loaders while recommendations are loading
@@ -4541,7 +4490,6 @@ const KalifindSearch: React.FC<{
                       isAddingToCart={addingToCart === product.id}
                       calculateDiscountPercentage={calculateDiscountPercentage}
                       formatPrice={formatPrice}
-                      currencyCode={storeCurrencyCode}
                     />
                   ))}
                 </div>
