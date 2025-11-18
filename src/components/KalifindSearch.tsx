@@ -2577,10 +2577,10 @@ const KalifindSearch: React.FC<{
                     setShowAutocomplete(false);
                   }
                 }}
-                className={`hidden items-center gap-1.5 rounded-lg px-2.5 py-3 text-xs font-medium transition-all sm:flex sm:gap-2 sm:px-3 ${
+                className={`hidden min-h-[44px] touch-manipulation items-center gap-1.5 rounded-lg px-2.5 py-3 text-xs font-medium transition-all active:scale-95 sm:flex sm:gap-2 sm:px-3 ${
                   suggestionsEnabled
-                    ? 'bg-purple-100 text-purple-700 hover:bg-purple-200'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    ? 'bg-purple-100 text-purple-700 hover:bg-purple-200 active:bg-purple-300'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200 active:bg-gray-300'
                 }`}
                 title={
                   suggestionsEnabled
@@ -2685,7 +2685,7 @@ const KalifindSearch: React.FC<{
                         setSearchQuery('');
                         inputRef.current?.focus();
                       }}
-                      className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-gray-100 transition-colors hover:bg-gray-200 active:scale-95"
+                      className="flex h-6 min-h-[32px] w-6 min-w-[32px] flex-shrink-0 touch-manipulation items-center justify-center rounded-full bg-gray-100 transition-all hover:scale-110 hover:bg-gray-200 active:scale-95 active:bg-gray-300"
                       aria-label="Clear search"
                       type="button"
                     >
@@ -2739,10 +2739,10 @@ const KalifindSearch: React.FC<{
                                       handleSuggestionClick(suggestion);
                                     }
                                   }}
-                                  className={`flex cursor-pointer items-center gap-3 rounded-md p-2 transition-colors ${
+                                  className={`flex cursor-pointer touch-manipulation items-center gap-3 rounded-md p-2 transition-all active:scale-[0.98] ${
                                     index === highlightedSuggestionIndex
                                       ? 'bg-muted'
-                                      : 'hover:bg-muted/50'
+                                      : 'hover:bg-muted/50 active:bg-muted'
                                   }`}
                                   onClick={(e) => {
                                     e.preventDefault();
@@ -2801,7 +2801,7 @@ const KalifindSearch: React.FC<{
                   // Dispatch event for other listeners
                   window.dispatchEvent(new CustomEvent('kalifinder:close'));
                 }}
-                className="group flex h-[44px] w-[44px] flex-shrink-0 cursor-pointer items-center justify-center rounded-lg border border-gray-200 bg-white shadow-sm transition-all hover:border-gray-300 hover:bg-gray-50 hover:shadow-md focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:outline-none sm:h-[50px] sm:w-[50px] sm:rounded-xl"
+                className="group flex h-[44px] min-h-[44px] w-[44px] min-w-[44px] flex-shrink-0 cursor-pointer touch-manipulation items-center justify-center rounded-lg border border-gray-200 bg-white shadow-sm transition-all hover:border-gray-300 hover:bg-gray-50 hover:shadow-md focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:outline-none active:scale-95 active:bg-gray-100 sm:h-[50px] sm:w-[50px] sm:rounded-xl"
                 aria-label="Close search"
                 title="Close search"
               >
@@ -2844,7 +2844,7 @@ const KalifindSearch: React.FC<{
           >
             <DrawerTrigger asChild>
               <button
-                className="group inline-flex h-12 items-center gap-2 rounded-full border border-purple-600 bg-purple-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg transition-all hover:border-purple-700 hover:shadow-xl active:scale-95"
+                className="group inline-flex h-12 min-h-[44px] touch-manipulation items-center gap-2 rounded-full border border-purple-600 bg-purple-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg transition-all hover:border-purple-700 hover:bg-purple-700 hover:shadow-xl active:scale-95 active:bg-purple-800"
                 title="Open filters"
                 aria-label="Open filters"
               >
@@ -4040,7 +4040,7 @@ const KalifindSearch: React.FC<{
               <button
                 onClick={handleClearAll}
                 aria-label="Reset all filters and search"
-                className="mt-6 min-h-[44px] w-full rounded-lg bg-purple-600 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-purple-700"
+                className="mt-6 min-h-[44px] w-full touch-manipulation rounded-lg bg-purple-600 px-4 py-3 text-sm font-semibold text-white transition-all hover:bg-purple-700 hover:shadow-lg active:scale-[0.98] active:bg-purple-800"
               >
                 Reset
               </button>
@@ -4288,10 +4288,10 @@ const KalifindSearch: React.FC<{
                           e.preventDefault();
                           setSortOption('a-z');
                         }}
-                        className={`group cursor-pointer rounded-lg px-3 py-2.5 text-sm transition-all ${
+                        className={`group cursor-pointer touch-manipulation rounded-lg px-3 py-2.5 text-sm transition-all active:scale-[0.98] ${
                           sortOption === 'a-z'
                             ? 'bg-purple-100 font-semibold text-purple-700 shadow-sm'
-                            : 'text-gray-700 hover:bg-purple-50'
+                            : 'text-gray-700 hover:bg-purple-50 active:bg-purple-100'
                         }`}
                       >
                         <div className="flex items-center justify-between">
@@ -4331,10 +4331,10 @@ const KalifindSearch: React.FC<{
                           e.preventDefault();
                           setSortOption('z-a');
                         }}
-                        className={`group cursor-pointer rounded-lg px-3 py-2.5 text-sm transition-all ${
+                        className={`group cursor-pointer touch-manipulation rounded-lg px-3 py-2.5 text-sm transition-all active:scale-[0.98] ${
                           sortOption === 'z-a'
                             ? 'bg-purple-100 font-semibold text-purple-700 shadow-sm'
-                            : 'text-gray-700 hover:bg-purple-50'
+                            : 'text-gray-700 hover:bg-purple-50 active:bg-purple-100'
                         }`}
                       >
                         <div className="flex items-center justify-between">
@@ -4374,10 +4374,10 @@ const KalifindSearch: React.FC<{
                           e.preventDefault();
                           setSortOption('price-asc');
                         }}
-                        className={`group cursor-pointer rounded-lg px-3 py-2.5 text-sm transition-all ${
+                        className={`group cursor-pointer touch-manipulation rounded-lg px-3 py-2.5 text-sm transition-all active:scale-[0.98] ${
                           sortOption === 'price-asc'
                             ? 'bg-purple-100 font-semibold text-purple-700 shadow-sm'
-                            : 'text-gray-700 hover:bg-purple-50'
+                            : 'text-gray-700 hover:bg-purple-50 active:bg-purple-100'
                         }`}
                       >
                         <div className="flex items-center justify-between">
@@ -4417,10 +4417,10 @@ const KalifindSearch: React.FC<{
                           e.preventDefault();
                           setSortOption('price-desc');
                         }}
-                        className={`group cursor-pointer rounded-lg px-3 py-2.5 text-sm transition-all ${
+                        className={`group cursor-pointer touch-manipulation rounded-lg px-3 py-2.5 text-sm transition-all active:scale-[0.98] ${
                           sortOption === 'price-desc'
                             ? 'bg-purple-100 font-semibold text-purple-700 shadow-sm'
-                            : 'text-gray-700 hover:bg-purple-50'
+                            : 'text-gray-700 hover:bg-purple-50 active:bg-purple-100'
                         }`}
                       >
                         <div className="flex items-center justify-between">
@@ -4629,7 +4629,7 @@ const KalifindSearch: React.FC<{
                                 setHasSearched(false);
                                 inputRef.current?.focus();
                               }}
-                              className="text-primary hover:text-primary-hover text-sm font-medium underline transition-colors"
+                              className="text-primary hover:text-primary-hover min-h-[44px] touch-manipulation rounded px-2 py-1 text-sm font-medium underline transition-all hover:bg-purple-50 active:scale-95 active:bg-purple-100"
                             >
                               Clear search
                             </button>
@@ -4639,7 +4639,7 @@ const KalifindSearch: React.FC<{
                                 handleClearAll();
                                 inputRef.current?.focus();
                               }}
-                              className="text-primary hover:text-primary-hover text-sm font-medium underline transition-colors"
+                              className="text-primary hover:text-primary-hover min-h-[44px] touch-manipulation rounded px-2 py-1 text-sm font-medium underline transition-all hover:bg-purple-50 active:scale-95 active:bg-purple-100"
                             >
                               Clear all filters
                             </button>
