@@ -7,6 +7,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import WidgetEmbed from '../../components/WidgetEmbed';
 import { ShadowRootProvider } from '../../contexts/ShadowRootContext';
+import { safeLocalStorage } from '../../utils/safe-storage';
 
 export interface DOMElements {
   container: HTMLDivElement;
@@ -23,7 +24,7 @@ function diagEnabled(): boolean {
   try {
     const url = new URL(window.location.href);
     if (url.searchParams.get('kfdiag') === '1') return true;
-    if (localStorage.getItem('KF_DEBUG') === '1') return true;
+    if (safeLocalStorage.getItem('KF_DEBUG') === '1') return true;
     const g: unknown = window as unknown as { __KF_DEBUG__?: boolean };
     if (typeof g === 'object' && g && (g as { __KF_DEBUG__?: boolean }).__KF_DEBUG__ === true)
       return true;

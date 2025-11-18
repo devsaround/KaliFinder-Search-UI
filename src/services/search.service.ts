@@ -5,6 +5,7 @@
 
 import { normalizeStoreUrl } from '@/lib/normalize';
 import type { AutocompleteResponse, SearchResponse } from '@/types/api.types';
+import { logger } from '@/utils/logger';
 import { HttpClient } from './http-client';
 import { ResponseCache, buildCacheKey } from './response-cache';
 
@@ -159,7 +160,7 @@ class SearchService {
     if (this.config.cache.enabled && !hasFilters) {
       const cached = this.cache.get<SearchResponse>(cacheKey);
       if (cached) {
-        console.log('KaliFinder Search Service: Returning cached result, total =', cached.total);
+        logger.debug('Returning cached search result', { total: cached.total });
         return cached;
       }
     }
@@ -183,12 +184,10 @@ class SearchService {
         }
       }
 
-      console.log(
-        'KaliFinder Search Service: Fresh API call, total =',
-        response.total,
-        'products =',
-        response.products?.length
-      );
+      logger.debug('Fresh search API call completed', {
+        total: response.total,
+        productCount: response.products?.length,
+      });
 
       // Calculate dynamic TTL based on result size
       // Larger result sets get shorter TTL to manage memory better
@@ -205,7 +204,7 @@ class SearchService {
 
       return response;
     } catch (error) {
-      console.error('Search failed:', error);
+      logger.error('Search failed', error);
       // Throw error instead of returning empty results for better error handling
       throw new Error(
         error instanceof Error ? `Search request failed: ${error.message}` : 'Search request failed'
@@ -250,7 +249,7 @@ class SearchService {
 
       return response;
     } catch (error) {
-      console.error('Autocomplete failed:', error);
+      logger.error('Autocomplete failed', error);
       return [];
     }
   }
@@ -288,7 +287,7 @@ class SearchService {
 
       return searches;
     } catch (error) {
-      console.error('Failed to fetch popular searches:', error);
+      logger.error('Failed to fetch popular searches', error);
       return [];
     }
   }
@@ -326,7 +325,7 @@ class SearchService {
 
       return facets;
     } catch (error) {
-      console.error('Failed to fetch facet configuration:', error);
+      logger.error('Failed to fetch facet configuration', error);
       return [];
     }
   }

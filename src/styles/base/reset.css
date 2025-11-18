@@ -8,13 +8,11 @@
    CRITICAL: Prevent External CSS Interference
    ======================================== */
 
-/* Reset ALL inherited transformations and scaling from WordPress/external themes */
+/* Reset inherited transformations and scaling from WordPress/external themes
+   NOTE: Widget-specific resets (.kalifinder-widget-root) are in layout/widget-container.css
+   This file focuses on Shadow DOM :host resets to avoid duplication */
 :host,
-:host(*),
-.kalifinder-widget-root,
-.kalifinder-widget-root *,
-#my-ui,
-#my-ui * {
+:host(*) {
   /* Reset transforms (WordPress themes often apply scale/zoom) */
   transform: none !important;
   -webkit-transform: none !important;

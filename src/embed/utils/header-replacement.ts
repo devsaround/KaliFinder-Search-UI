@@ -51,6 +51,7 @@ function createReplacementIcon(
   button.style.color = 'inherit';
   button.style.fontSize = 'inherit';
 
+  // Search icon SVG - Static content, no XSS risk
   button.innerHTML = getSearchIconSVG();
 
   button.onclick = (e) => {

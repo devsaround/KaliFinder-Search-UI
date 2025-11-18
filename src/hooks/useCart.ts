@@ -1,6 +1,8 @@
 import { useCallback, useState } from 'react';
 import type { Product } from '../types';
 import { addToCart as addToCartUtil, handleCartError } from '../utils/cart';
+import { logger } from '../utils/logger';
+import { safeLocalStorage, storageHelpers } from '../utils/safe-storage';
 
 interface UseCartReturn {
   addingToCart: string | null;
@@ -33,7 +35,7 @@ export function useCart(): UseCartReturn {
         throw new Error('Failed to add to cart');
       }
     } catch (error) {
-      console.error('Add to cart error:', error);
+      logger.error('Add to cart error', error);
       const errorMessage = handleCartError(error, product);
       setCartMessage(`✗ ${errorMessage}`);
 
@@ -62,13 +64,19 @@ export function useCart(): UseCartReturn {
  */
 const trackCheckoutInitiation = (): void => {
   try {
-    const cartData = localStorage.getItem('kalifind_cart_data');
-    if (cartData) {
-      const parsed = JSON.parse(cartData);
+    const cartData = storageHelpers.getJSON<{
+      itemCount: number;
+      totalValue: number;
+      productIds: string[];
+    }>(safeLocalStorage, 'kalifind_cart_data');
 
+    if (cartData) {
       // Track checkout initiation when user has 2+ items or high-value cart
-      if (parsed.itemCount >= 2 || parsed.totalValue >= 50) {
-        console.log('🛒 Checkout initiation triggered - cart has enough items');
+      if (cartData.itemCount >= 2 || cartData.totalValue >= 50) {
+        logger.debug('Checkout initiation triggered', {
+          itemCount: cartData.itemCount,
+          totalValue: cartData.totalValue,
+        });
 
         // Import and use UBI client
         import('../analytics/ubiClient')
@@ -76,18 +84,18 @@ const trackCheckoutInitiation = (): void => {
             const ubiClient = getUBIClient();
             if (ubiClient) {
               ubiClient.trackCheckoutInitiated(
-                parsed.totalValue,
-                parsed.itemCount,
-                parsed.productIds
+                cartData.totalValue,
+                cartData.itemCount,
+                cartData.productIds
               );
             }
           })
           .catch((error) => {
-            console.warn('Failed to track checkout initiation:', error);
+            logger.warn('Failed to track checkout initiation', error);
           });
       }
     }
   } catch (error) {
-    console.warn('Failed to track checkout initiation:', error);
+    logger.warn('Failed to track checkout initiation', error);
   }
 };

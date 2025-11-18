@@ -60,6 +60,15 @@
    SAFE AREA INSETS (iOS Notches & Home Indicators)
    ======================================== */
 
+/**
+ * Modal content padding approach - DO NOT CONFUSE with shadow-dom-fixed.css
+ * 
+ * This file: Adds PADDING to modal content for safe areas
+ * shadow-dom-fixed.css: Uses calc() BOTTOM offset for floating containers
+ * 
+ * Both are needed and serve different purposes - not redundant!
+ */
+
 /* Modal content - respect safe areas and ensure proper viewport handling */
 .kalifinder-widget-modal-content {
   /* Respect safe areas on mobile */

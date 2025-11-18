@@ -7,6 +7,8 @@
 import { toast } from 'sonner';
 import type { CartProduct, CartResponse, Product } from '../types';
 import { createCartInstance, detectPlatform } from './ajax-cart';
+import { logger } from './logger';
+import { safeLocalStorage, storageHelpers } from './safe-storage';
 
 // ============================================================================
 // HELPER FUNCTIONS
@@ -17,14 +19,15 @@ import { createCartInstance, detectPlatform } from './ajax-cart';
  */
 const updateCartDataForTracking = (product: CartProduct, price: number): void => {
   try {
-    const existingData = localStorage.getItem('kalifind_cart_data');
-    const cartData = existingData
-      ? JSON.parse(existingData)
-      : {
-          totalValue: 0,
-          itemCount: 0,
-          productIds: [],
-        };
+    const cartData = storageHelpers.getJSONWithDefault<{
+      totalValue: number;
+      itemCount: number;
+      productIds: string[];
+    }>(safeLocalStorage, 'kalifind_cart_data', {
+      totalValue: 0,
+      itemCount: 0,
+      productIds: [],
+    });
 
     // Add new item to cart data
     cartData.totalValue += price;
@@ -34,14 +37,14 @@ const updateCartDataForTracking = (product: CartProduct, price: number): void =>
     }
 
     // Save updated cart data
-    localStorage.setItem('kalifind_cart_data', JSON.stringify(cartData));
+    storageHelpers.setJSON(safeLocalStorage, 'kalifind_cart_data', cartData);
 
     // Also update global state for immediate access
     (window as Window & { kalifindCart?: typeof cartData }).kalifindCart = cartData;
 
-    console.log('📊 Cart tracking data updated:', cartData);
+    logger.debug('Cart tracking data updated', cartData);
   } catch (error) {
-    console.warn('Failed to update cart tracking data:', error);
+    logger.warn('Failed to update cart tracking data', error);
   }
 };
 
@@ -90,7 +93,7 @@ export const addToCart = async (product: Product, storeUrl: string): Promise<Car
       ? normalizedStoreUrl
       : `https://${normalizedStoreUrl}`;
 
-    console.log('🛒 Cart operation initiated:', {
+    logger.debug('Cart operation initiated', {
       product: product.title,
       productId: product.id,
       storeUrl: storeUrlWithProtocol,

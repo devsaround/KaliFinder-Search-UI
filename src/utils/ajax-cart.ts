@@ -10,6 +10,7 @@
  */
 
 import type { Product } from '../types';
+import { safeLocalStorage } from './safe-storage';
 
 // ============================================================================
 // TYPE DEFINITIONS
@@ -179,11 +180,14 @@ export class WooCommerceAjaxCart {
 
   /**
    * Update WooCommerce cart fragments (mini cart, cart count, etc.)
+   * SECURITY NOTE: HTML comes from WooCommerce API response, which is trusted.
+   * WooCommerce sanitizes fragment content server-side.
    */
   private updateFragments(fragments: Record<string, string>): void {
     Object.entries(fragments).forEach(([selector, html]) => {
       const elements = document.querySelectorAll(selector);
       elements.forEach((element) => {
+        // Using innerHTML for WooCommerce cart fragments (server-sanitized content)
         element.innerHTML = html;
       });
     });
@@ -311,7 +315,7 @@ export class ShopifyAjaxCart {
    * Save cart token to localStorage
    */
   private saveCartToken(token: string): void {
-    localStorage.setItem('shopify_cart_token', token);
+    safeLocalStorage.setItem('shopify_cart_token', token);
   } /**
    * Add product to Shopify cart using AJAX
    * Follows: https://shopify.dev/docs/api/ajax/reference/cart

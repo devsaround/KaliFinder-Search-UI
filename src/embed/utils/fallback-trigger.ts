@@ -35,7 +35,7 @@ export function createFallbackTrigger(openWidget: OpenWidgetFn): HTMLButtonEleme
   trigger.style.background = 'linear-gradient(135deg,#7c3aed 0%,#6d28d9 100%)';
   trigger.style.boxShadow = '0 4px 12px rgba(124,58,237,0.4)';
 
-  // Search icon SVG
+  // Search icon SVG - Static content, no XSS risk
   trigger.innerHTML =
     '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:block;pointer-events:none"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.35-4.35"></path></svg>';
 

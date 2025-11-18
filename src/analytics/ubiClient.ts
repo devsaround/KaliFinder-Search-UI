@@ -3,6 +3,9 @@
  * Handles UBI event tracking for the storefront embed
  */
 
+import { logger } from '../utils/logger';
+import { safeLocalStorage } from '../utils/safe-storage';
+
 interface UBIEvent {
   event_name: string;
   event_details: Record<string, unknown>;
@@ -30,7 +33,7 @@ class UBIClient {
     this.storeId = this.getStoreId();
     this.platform = this.getPlatform();
 
-    // Initialize URL monitoring for purchase tracking
+    // Initialize purchase tracking with URL monitoring
     this.initializePurchaseTracking();
 
     // Set up page unload handler
@@ -180,17 +183,16 @@ class UBIClient {
     }
 
     // Require backend URL environment variable
-    if (!import.meta.env.VITE_BACKEND_URL) {
-      console.error('VITE_BACKEND_URL environment variable is required');
+    const backendUrl = import.meta.env.VITE_BACKEND_URL || 'https://api.kalifinder.com';
+    if (!backendUrl) {
+      logger.error('VITE_BACKEND_URL environment variable is required');
       return;
     }
-    const backendUrl = import.meta.env.VITE_BACKEND_URL;
     const collectUrl = `${backendUrl}/api/v1/analytics/ubi/collect`;
 
-    console.log('UBI Client: Flushing events to backend:', {
+    logger.debug('Flushing UBI events to backend', {
       count: eventsToSend.length,
-      events: eventsToSend,
-      backendUrl: collectUrl,
+      url: collectUrl,
     });
 
     try {
@@ -200,7 +202,7 @@ class UBIClient {
           type: 'application/json',
         });
         const success = navigator.sendBeacon(collectUrl, blob);
-        console.log('UBI Client: SendBeacon result:', success);
+        logger.debug('SendBeacon result', { success });
       } else {
         // Fallback to fetch
         const response = await fetch(collectUrl, {
@@ -208,10 +210,13 @@ class UBIClient {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ events: eventsToSend }),
         });
-        console.log('UBI Client: Fetch response:', response.status, response.statusText);
+        logger.debug('Fetch response', {
+          status: response.status,
+          statusText: response.statusText,
+        });
       }
     } catch (error) {
-      console.error('Failed to send UBI events:', error);
+      logger.error('Failed to send UBI events', error);
       // Re-add events to queue for retry
       this.events.unshift(...eventsToSend);
     }
@@ -224,8 +229,8 @@ class UBIClient {
     const now = Date.now();
     const sessionTimeout = 30 * 60 * 1000; // 30 minutes
 
-    let sessionId = localStorage.getItem(sessionKey);
-    const sessionExpiry = localStorage.getItem(sessionExpiryKey);
+    let sessionId = safeLocalStorage.getItem(sessionKey);
+    const sessionExpiry = safeLocalStorage.getItem(sessionExpiryKey);
 
     // Check if session expired
     if (sessionId && sessionExpiry && now < parseInt(sessionExpiry)) {
@@ -236,8 +241,8 @@ class UBIClient {
     sessionId = `sess_${now}_${Math.random().toString(36).substr(2, 9)}`;
     const newExpiry = now + sessionTimeout;
 
-    localStorage.setItem(sessionKey, sessionId);
-    localStorage.setItem(sessionExpiryKey, newExpiry.toString());
+    safeLocalStorage.setItem(sessionKey, sessionId);
+    safeLocalStorage.setItem(sessionExpiryKey, newExpiry.toString());
 
     return sessionId;
   }
@@ -245,11 +250,11 @@ class UBIClient {
   // Get or create anonymous ID
   private getOrCreateAnonymousId(): string {
     const anonKey = 'ubi_anonymous_id';
-    let anonymousId = localStorage.getItem(anonKey);
+    let anonymousId = safeLocalStorage.getItem(anonKey);
 
     if (!anonymousId) {
       anonymousId = `anon_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      localStorage.setItem(anonKey, anonymousId);
+      safeLocalStorage.setItem(anonKey, anonymousId);
     }
 
     return anonymousId;
@@ -261,11 +266,11 @@ class UBIClient {
     const globalWindow = window as Window & { KALIFIND_VENDOR_ID?: string };
     if (globalWindow.KALIFIND_VENDOR_ID) {
       const vendorId = globalWindow.KALIFIND_VENDOR_ID;
-      console.log('UBI Client: Found vendor ID from global variable:', vendorId);
+      logger.debug('Found vendor ID from global variable', { vendorId });
       return vendorId;
     }
 
-    console.warn('UBI Client: No vendor ID found, using unknown');
+    logger.warn('No vendor ID found, using unknown');
     return 'unknown';
   }
 
@@ -275,11 +280,11 @@ class UBIClient {
     const globalWindow = window as Window & { KALIFIND_STORE_ID?: string };
     if (globalWindow.KALIFIND_STORE_ID) {
       const storeId = globalWindow.KALIFIND_STORE_ID;
-      console.log('UBI Client: Found store ID from global variable:', storeId);
+      logger.debug('Found store ID from global variable', { storeId });
       return storeId;
     }
 
-    console.warn('UBI Client: No store ID found, using unknown');
+    logger.warn('No store ID found, using unknown');
     return 'unknown';
   }
 
@@ -294,7 +299,7 @@ class UBIClient {
       newStoreId !== this.storeId ||
       newPlatform !== this.platform
     ) {
-      console.log('UBI Client: Re-syncing IDs:', {
+      logger.debug('Re-syncing UBI IDs', {
         oldVendorId: this.vendorId,
         newVendorId,
         oldStoreId: this.storeId,
@@ -334,12 +339,17 @@ class UBIClient {
 
   /**
    * Initialize purchase tracking with URL monitoring
-   * Note: URL monitoring service has been removed for cleaner architecture
    */
   private initializePurchaseTracking(): void {
-    // Purchase tracking can be re-enabled by implementing URL monitoring
-    // For now, we track add-to-cart events directly in the cart handlers
-    console.log('🛒 Purchase tracking ready (cart events tracked directly)');
+    // Import and initialize purchase tracker
+    import('../services/purchase-tracker')
+      .then(({ initializePurchaseTracking }) => {
+        initializePurchaseTracking();
+        logger.debug('Purchase tracking initialized with URL monitoring');
+      })
+      .catch((error) => {
+        logger.warn('Failed to initialize purchase tracking', error);
+      });
   }
 }
 

@@ -9,7 +9,7 @@ env:
   AWS_REGION: us-east-1
   S3_BUCKET: kalifinder-prod-search-ui
   CLOUDFRONT_DISTRIBUTION_ID: E1IOWPQDX7ER51
-  NODE_VERSION: "22"
+  NODE_VERSION: '22'
 
 jobs:
   deploy:
@@ -68,11 +68,28 @@ jobs:
       - name: Deploy to S3
         run: |
           echo "Deploying to S3 bucket: ${{ env.S3_BUCKET }}"
-          # Deploy with NO caching - always serve fresh content
+          # Deploy HTML files with no caching (always revalidate)
           aws s3 sync dist/ s3://${{ env.S3_BUCKET }}/ \
             --delete \
-            --cache-control "no-cache, no-store, must-revalidate"
-          echo "✅ Deployed to S3 with no caching"
+            --exclude "*" \
+            --include "*.html" \
+            --cache-control "no-cache, must-revalidate"
+
+          # Deploy JS/CSS with long-term caching (immutable with content hash)
+          aws s3 sync dist/ s3://${{ env.S3_BUCKET }}/ \
+            --exclude "*.html" \
+            --include "*.js" \
+            --include "*.css" \
+            --cache-control "public, max-age=31536000, immutable"
+
+          # Deploy other assets with 1-day cache
+          aws s3 sync dist/ s3://${{ env.S3_BUCKET }}/ \
+            --exclude "*.html" \
+            --exclude "*.js" \
+            --exclude "*.css" \
+            --cache-control "public, max-age=86400"
+
+          echo "✅ Deployed to S3 with optimized caching"
 
       - name: Invalidate CloudFront cache
         run: |

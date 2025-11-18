@@ -1,5 +1,6 @@
 // API service for Kalifind Search
 import type { AutocompleteResponse, SearchResponse } from '@/types/api.types';
+import { logger } from '@/utils/logger';
 
 export interface FacetConfig {
   field: string;
@@ -33,7 +34,7 @@ interface CacheEntry<T = unknown> {
 }
 
 class ApiServiceImpl implements ApiService {
-  private baseUrl = import.meta.env.VITE_BACKEND_URL; // Replace with actual API URL
+  private baseUrl = import.meta.env.VITE_BACKEND_URL || 'https://api.kalifinder.com';
   private cache = new Map<string, CacheEntry>();
   private rateLimitState: RateLimitState | null = null;
 
@@ -107,7 +108,7 @@ class ApiServiceImpl implements ApiService {
       const limit = response.headers.get('ratelimit-limit');
 
       if (remaining && parseInt(remaining) < 10) {
-        console.warn(`⚠️ Rate limit warning: ${remaining}/${limit} requests remaining`);
+        logger.warn('Rate limit warning', { remaining, limit });
       }
 
       // Handle 429 Rate Limit
@@ -123,7 +124,7 @@ class ApiServiceImpl implements ApiService {
           message: data.message || 'Rate limit exceeded',
         };
 
-        console.error(`🚫 Rate limit exceeded:`, this.rateLimitState);
+        logger.error('Rate limit exceeded', this.rateLimitState);
 
         // Dispatch custom event for UI to handle
         window.dispatchEvent(
@@ -142,7 +143,7 @@ class ApiServiceImpl implements ApiService {
 
       return await response.json();
     } catch (error) {
-      console.error('API request failed:', error);
+      logger.error('API request failed', error);
       return null;
     }
   }

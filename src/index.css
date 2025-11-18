@@ -52,6 +52,7 @@
 @import './styles/utilities/helpers.css';
 @import './styles/utilities/responsive.css';
 @import './styles/utilities/mobile-cross-browser.css';
+@import './styles/utilities/shadow-dom-fixed.css';
 
 /* ========================================
    TAILWIND THEME OVERRIDES
