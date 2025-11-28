@@ -5,12 +5,12 @@ phases:
     runtime-versions:
       nodejs: 20
     commands:
-      - echo Installing pnpm...
-      - npm install -g pnpm
+      - echo Installing latest pnpm...
+      - npm install -g pnpm@latest
   pre_build:
     commands:
       - echo Installing dependencies...
-      - pnpm install --frozen-lockfile
+      - pnpm install --no-frozen-lockfile
   build:
     commands:
       - echo Build started on `date`
